@@ -606,7 +606,7 @@
                     
                     ctx.fillStyle = '#e94560';
                     ctx.beginPath();
-                    ctx.arc(meanX, topY + 15, 8, 0, 2 * Math.PI);
+                    ctx.arc(meanX, plotY - 15, 8, 0, 2 * Math.PI);
                     ctx.fill();
                 }
                 
@@ -666,7 +666,7 @@
                     
                     ctx.fillStyle = '#4ecca3';
                     ctx.beginPath();
-                    ctx.arc(aX, topY + 15, 8, 0, 2 * Math.PI);
+                    ctx.arc(aX, plotY - 15, 8, 0, 2 * Math.PI);
                     ctx.fill();
                 }
                 
@@ -680,7 +680,7 @@
                     
                     ctx.fillStyle = '#4ecca3';
                     ctx.beginPath();
-                    ctx.arc(bX, topY + 15, 8, 0, 2 * Math.PI);
+                    ctx.arc(bX, plotY - 15, 8, 0, 2 * Math.PI);
                     ctx.fill();
                 }
             } else if (currentDist === 'cauchy') {
@@ -709,7 +709,7 @@
                     
                     ctx.fillStyle = '#e94560';
                     ctx.beginPath();
-                    ctx.arc(muX, topY + 15, 8, 0, 2 * Math.PI);
+                    ctx.arc(muX, plotY - 15, 8, 0, 2 * Math.PI);
                     ctx.fill();
                 }
             }
@@ -770,11 +770,11 @@
             if (currentDist === 'gamma') {
                 container.innerHTML = `
                     <div class="param-group">
-                        <div class="param-label">α (shape): <span class="param-value">${p.alpha.toFixed(2)}</span></div>
+                        <div class="param-label">α (shape): <span class="param-value" id="gamma-alpha-val">${p.alpha.toFixed(2)}</span></div>
                         <input type="range" id="gamma-alpha" min="0.5" max="10" step="0.1" value="${p.alpha}">
                     </div>
                     <div class="param-group">
-                        <div class="param-label">β (rate): <span class="param-value">${p.beta.toFixed(2)}</span></div>
+                        <div class="param-label">β (rate): <span class="param-value" id="gamma-beta-val">${p.beta.toFixed(2)}</span></div>
                         <input type="range" id="gamma-beta" min="0.1" max="3" step="0.1" value="${p.beta}">
                     </div>
                     <div style="margin-top: 10px; padding: 8px; background: rgba(78,204,163,0.1); border-radius: 4px; font-size: 11px; color: #aaa;">
@@ -785,13 +785,13 @@
                 
                 document.getElementById('gamma-alpha').addEventListener('input', (e) => {
                     params.gamma.alpha = parseFloat(e.target.value);
-                    updateParamDisplay();
+                    document.getElementById('gamma-alpha-val').textContent = params.gamma.alpha.toFixed(2);
                     draw();
                 });
                 
                 document.getElementById('gamma-beta').addEventListener('input', (e) => {
                     params.gamma.beta = parseFloat(e.target.value);
-                    updateParamDisplay();
+                    document.getElementById('gamma-beta-val').textContent = params.gamma.beta.toFixed(2);
                     draw();
                 });
                 return;
@@ -800,11 +800,11 @@
             if (currentDist === 'cauchy') {
                 container.innerHTML = `
                     <div class="param-group">
-                        <div class="param-label">x₀ (location): <span class="param-value">${p.x0.toFixed(2)}</span></div>
+                        <div class="param-label">x₀ (location): <span class="param-value" id="cauchy-x0-val">${p.x0.toFixed(2)}</span></div>
                         <input type="range" id="cauchy-x0" min="-8" max="8" step="0.1" value="${p.x0}">
                     </div>
                     <div class="param-group">
-                        <div class="param-label">γ (scale): <span class="param-value">${p.gamma.toFixed(2)}</span></div>
+                        <div class="param-label">γ (scale): <span class="param-value" id="cauchy-gamma-val">${p.gamma.toFixed(2)}</span></div>
                         <input type="range" id="cauchy-gamma" min="0.1" max="3" step="0.1" value="${p.gamma}">
                     </div>
                     <div style="margin-top: 10px; padding: 8px; background: rgba(78,204,163,0.1); border-radius: 4px; font-size: 11px; color: #aaa;">
@@ -815,13 +815,13 @@
                 
                 document.getElementById('cauchy-x0').addEventListener('input', (e) => {
                     params.cauchy.x0 = parseFloat(e.target.value);
-                    updateParamDisplay();
+                    document.getElementById('cauchy-x0-val').textContent = params.cauchy.x0.toFixed(2);
                     draw();
                 });
                 
                 document.getElementById('cauchy-gamma').addEventListener('input', (e) => {
                     params.cauchy.gamma = parseFloat(e.target.value);
-                    updateParamDisplay();
+                    document.getElementById('cauchy-gamma-val').textContent = params.cauchy.gamma.toFixed(2);
                     draw();
                 });
                 return;
@@ -831,11 +831,11 @@
                 container.innerHTML = `
                     <div class="param-group">
                         <div class="param-label">μ (drag on plot)</div>
-                        <div class="param-value">${p.mu.toFixed(3)}</div>
+                        <div class="param-value" id="normal-mu-val">${p.mu.toFixed(3)}</div>
                     </div>
                     <div class="param-group">
                         <div class="param-label">σ (drag on plot)</div>
-                        <div class="param-value">${p.sigma.toFixed(3)}</div>
+                        <div class="param-value" id="normal-sigma-val">${p.sigma.toFixed(3)}</div>
                     </div>
                 `;
                 return;
@@ -845,11 +845,11 @@
                 container.innerHTML = `
                     <div class="param-group">
                         <div class="param-label">a (drag on plot)</div>
-                        <div class="param-value">${p.a.toFixed(3)}</div>
+                        <div class="param-value" id="uniform-a-val">${p.a.toFixed(3)}</div>
                     </div>
                     <div class="param-group">
                         <div class="param-label">b (drag on plot)</div>
-                        <div class="param-value">${p.b.toFixed(3)}</div>
+                        <div class="param-value" id="uniform-b-val">${p.b.toFixed(3)}</div>
                     </div>
                 `;
                 return;
@@ -858,7 +858,7 @@
             if (currentDist === 'exponential') {
                 container.innerHTML = `
                     <div class="param-group">
-                        <div class="param-label">λ (rate): <span class="param-value">${p.lambda.toFixed(2)}</span></div>
+                        <div class="param-label">λ (rate): <span class="param-value" id="exp-lambda-val">${p.lambda.toFixed(2)}</span></div>
                         <input type="range" id="exp-lambda" min="0.1" max="3" step="0.1" value="${p.lambda}">
                     </div>
                     <div style="margin-top: 10px; padding: 8px; background: rgba(78,204,163,0.1); border-radius: 4px; font-size: 11px; color: #aaa;">
@@ -869,7 +869,7 @@
                 
                 document.getElementById('exp-lambda').addEventListener('input', (e) => {
                     params.exponential.lambda = parseFloat(e.target.value);
-                    updateParamDisplay();
+                    document.getElementById('exp-lambda-val').textContent = params.exponential.lambda.toFixed(2);
                     draw();
                 });
                 return;
@@ -879,10 +879,10 @@
                 container.innerHTML = `
                     <div class="param-group">
                         <div class="param-label">μ (drag on plot)</div>
-                        <div class="param-value">${p.mu.toFixed(3)}</div>
+                        <div class="param-value" id="laplace-mu-val">${p.mu.toFixed(3)}</div>
                     </div>
                     <div class="param-group">
-                        <div class="param-label">b (scale): <span class="param-value">${p.b.toFixed(2)}</span></div>
+                        <div class="param-label">b (scale): <span class="param-value" id="laplace-b-val">${p.b.toFixed(2)}</span></div>
                         <input type="range" id="laplace-b" min="0.1" max="3" step="0.1" value="${p.b}">
                     </div>
                     <div style="margin-top: 10px; padding: 8px; background: rgba(78,204,163,0.1); border-radius: 4px; font-size: 11px; color: #aaa;">
@@ -892,7 +892,7 @@
                 
                 document.getElementById('laplace-b').addEventListener('input', (e) => {
                     params.laplace.b = parseFloat(e.target.value);
-                    updateParamDisplay();
+                    document.getElementById('laplace-b-val').textContent = params.laplace.b.toFixed(2);
                     draw();
                 });
                 return;
@@ -925,12 +925,12 @@
 
             if (currentDist === 'normal') {
                 const meanX = toCanvasX(p.mu);
-                const topY = plotY - plotHeight;
-                if (near(meanX, topY + 15, mx, my)) {
+                if (near(meanX, plotY - 15, mx, my)) {
                     dragging = 'mean';
                     return;
                 }
                 const stdX = toCanvasX(p.mu + p.sigma);
+                const topY = plotY - plotHeight;
                 if (near(stdX, topY, mx, my, 15)) {
                     dragging = 'std';
                     return;
@@ -939,20 +939,18 @@
             else if (currentDist === 'uniform') {
                 const aX = toCanvasX(p.a);
                 const bX = toCanvasX(p.b);
-                const topY = plotY - plotHeight;
-                if (near(aX, topY + 15, mx, my)) {
+                if (near(aX, plotY - 15, mx, my)) {
                     dragging = 'uniform-min';
                     return;
                 }
-                if (near(bX, topY + 15, mx, my)) {
+                if (near(bX, plotY - 15, mx, my)) {
                     dragging = 'uniform-max';
                     return;
                 }
             }
             else if (currentDist === 'laplace') {
                 const muX = toCanvasX(p.mu);
-                const topY = plotY - plotHeight;
-                if (near(muX, topY + 15, mx, my)) {
+                if (near(muX, plotY - 15, mx, my)) {
                     dragging = 'laplace-loc';
                     return;
                 }
@@ -976,23 +974,34 @@
 
             if (dragging === 'mean') {
                 params.normal.mu = toDataX(mx);
+                const muVal = document.getElementById('normal-mu-val');
+                const sigmaVal = document.getElementById('normal-sigma-val');
+                if (muVal) muVal.textContent = params.normal.mu.toFixed(3);
+                if (sigmaVal) sigmaVal.textContent = params.normal.sigma.toFixed(3);
             }
             else if (dragging === 'std') {
                 const newStd = Math.abs(toDataX(mx) - params.normal.mu);
                 params.normal.sigma = Math.max(0.1, newStd);
+                const sigmaVal = document.getElementById('normal-sigma-val');
+                if (sigmaVal) sigmaVal.textContent = params.normal.sigma.toFixed(3);
             }
             else if (dragging === 'uniform-min') {
                 params.uniform.a = Math.min(toDataX(mx), params.uniform.b - 0.1);
+                const aVal = document.getElementById('uniform-a-val');
+                if (aVal) aVal.textContent = params.uniform.a.toFixed(3);
             }
             else if (dragging === 'uniform-max') {
                 params.uniform.b = Math.max(toDataX(mx), params.uniform.a + 0.1);
+                const bVal = document.getElementById('uniform-b-val');
+                if (bVal) bVal.textContent = params.uniform.b.toFixed(3);
             }
             else if (dragging === 'laplace-loc') {
                 params.laplace.mu = toDataX(mx);
+                const muVal = document.getElementById('laplace-mu-val');
+                if (muVal) muVal.textContent = params.laplace.mu.toFixed(3);
             }
 
             if (dragging) {
-                updateParamDisplay();
                 draw();
             }
         });
