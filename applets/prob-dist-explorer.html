@@ -606,7 +606,7 @@
                     
                     ctx.fillStyle = '#e94560';
                     ctx.beginPath();
-                    ctx.arc(meanX, plotY - 15, 8, 0, 2 * Math.PI);
+                    ctx.arc(meanX, plotY - 30, 8, 0, 2 * Math.PI);
                     ctx.fill();
                 }
                 
@@ -666,7 +666,7 @@
                     
                     ctx.fillStyle = '#4ecca3';
                     ctx.beginPath();
-                    ctx.arc(aX, plotY - 15, 8, 0, 2 * Math.PI);
+                    ctx.arc(aX, plotY - 30, 8, 0, 2 * Math.PI);
                     ctx.fill();
                 }
                 
@@ -680,7 +680,7 @@
                     
                     ctx.fillStyle = '#4ecca3';
                     ctx.beginPath();
-                    ctx.arc(bX, plotY - 15, 8, 0, 2 * Math.PI);
+                    ctx.arc(bX, plotY - 30, 8, 0, 2 * Math.PI);
                     ctx.fill();
                 }
             } else if (currentDist === 'cauchy') {
@@ -709,7 +709,7 @@
                     
                     ctx.fillStyle = '#e94560';
                     ctx.beginPath();
-                    ctx.arc(muX, plotY - 15, 8, 0, 2 * Math.PI);
+                    ctx.arc(muX, plotY - 30, 8, 0, 2 * Math.PI);
                     ctx.fill();
                 }
             }
@@ -925,7 +925,7 @@
 
             if (currentDist === 'normal') {
                 const meanX = toCanvasX(p.mu);
-                if (near(meanX, plotY - 15, mx, my)) {
+                if (near(meanX, plotY - 30, mx, my)) {
                     dragging = 'mean';
                     return;
                 }
@@ -939,18 +939,18 @@
             else if (currentDist === 'uniform') {
                 const aX = toCanvasX(p.a);
                 const bX = toCanvasX(p.b);
-                if (near(aX, plotY - 15, mx, my)) {
+                if (near(aX, plotY - 30, mx, my)) {
                     dragging = 'uniform-min';
                     return;
                 }
-                if (near(bX, plotY - 15, mx, my)) {
+                if (near(bX, plotY - 30, mx, my)) {
                     dragging = 'uniform-max';
                     return;
                 }
             }
             else if (currentDist === 'laplace') {
                 const muX = toCanvasX(p.mu);
-                if (near(muX, plotY - 15, mx, my)) {
+                if (near(muX, plotY - 30, mx, my)) {
                     dragging = 'laplace-loc';
                     return;
                 }
@@ -974,34 +974,32 @@
 
             if (dragging === 'mean') {
                 params.normal.mu = toDataX(mx);
-                const muVal = document.getElementById('normal-mu-val');
-                const sigmaVal = document.getElementById('normal-sigma-val');
-                if (muVal) muVal.textContent = params.normal.mu.toFixed(3);
-                if (sigmaVal) sigmaVal.textContent = params.normal.sigma.toFixed(3);
             }
             else if (dragging === 'std') {
                 const newStd = Math.abs(toDataX(mx) - params.normal.mu);
                 params.normal.sigma = Math.max(0.1, newStd);
-                const sigmaVal = document.getElementById('normal-sigma-val');
-                if (sigmaVal) sigmaVal.textContent = params.normal.sigma.toFixed(3);
             }
             else if (dragging === 'uniform-min') {
                 params.uniform.a = Math.min(toDataX(mx), params.uniform.b - 0.1);
-                const aVal = document.getElementById('uniform-a-val');
-                if (aVal) aVal.textContent = params.uniform.a.toFixed(3);
             }
             else if (dragging === 'uniform-max') {
                 params.uniform.b = Math.max(toDataX(mx), params.uniform.a + 0.1);
-                const bVal = document.getElementById('uniform-b-val');
-                if (bVal) bVal.textContent = params.uniform.b.toFixed(3);
             }
             else if (dragging === 'laplace-loc') {
                 params.laplace.mu = toDataX(mx);
-                const muVal = document.getElementById('laplace-mu-val');
-                if (muVal) muVal.textContent = params.laplace.mu.toFixed(3);
             }
 
             if (dragging) {
+                const muVal = document.getElementById('laplace-mu-val');
+                if (muVal) muVal.textContent = params.laplace.mu.toFixed(3);
+                const muNormVal = document.getElementById('normal-mu-val');
+                if (muNormVal) muNormVal.textContent = params.normal.mu.toFixed(3);
+                const sigmaNormVal = document.getElementById('normal-sigma-val');
+                if (sigmaNormVal) sigmaNormVal.textContent = params.normal.sigma.toFixed(3);
+                const uniAVal = document.getElementById('uniform-a-val');
+                if (uniAVal) uniAVal.textContent = params.uniform.a.toFixed(3);
+                const uniBVal = document.getElementById('uniform-b-val');
+                if (uniBVal) uniBVal.textContent = params.uniform.b.toFixed(3);
                 draw();
             }
         });
