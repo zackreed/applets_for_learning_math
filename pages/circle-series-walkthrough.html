@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geometric Series - Convergence and Partial Sums</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <script src="https://sagecell.sagemath.org/static/embedded_sagecell.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/quiz.js"></script>
+</head>
+<body>
+    <div class="page-container">
+        <header>
+            <a href="../index.html" style="color: #00d9ff; text-decoration: none; font-weight: bold;">&larr; Back to Home</a>
+            <h1>🔄 Geometric Series: Convergence and Partial Sums</h1>
+            <p style="font-size: 1.2em; margin-top: 10px;">Visualize infinite series through circle sectors and understand convergence</p>
+        </header>
+        
+        <div class="content">
+            <!-- Introduction Section -->
+            <div class="section">
+                <h2>🎯 Introduction</h2>
+                <p>A <strong>geometric series</strong> is a sum where each term is a constant ratio times the previous term. This visualization uses circle sectors to show how an infinite series can converge to a finite value.</p>
+                
+                <div class="key-concepts">
+                    <h4>Key Concept: Geometric Series</h4>
+                    <p>A <strong>geometric series</strong> is a sum where each term is a constant ratio times the previous term:</p>
+                    <p style="text-align: center; font-size: 1.3em; margin: 15px 0;">
+                        \(S = a + ar + ar^2 + ar^3 + \cdots\)
+                    </p>
+                    <p>where \(a\) is the first term and \(r\) is the common ratio between consecutive terms.</p>
+                    <p style="margin-top: 15px;"><strong>Your Goal:</strong> Through the visualization and questions below, you'll discover whether infinite series can have finite sums, and if so, what determines the sum's value!</p>
+                </div>
+            </div>
+            
+            <!-- Interactive Applet -->
+            <div class="section">
+                <h2>🎨 Circle Sector Visualization</h2>
+                <p><strong>Instructions:</strong></p>
+                <ol>
+                    <li>Each sector represents one term in the series. The area is \(\frac{\pi r^2}{\text{base}^N}\).</li>
+                    <li>Click "Next Step" to add more sectors and watch the partial sum grow.</li>
+                    <li>Change the base to see different convergence rates (base = 2 means each term is half the previous).</li>
+                    <li>Observe how the sectors get smaller and the sum approaches a limit.</li>
+                </ol>
+                
+                <div class="applet-container">
+                    <iframe src="../applets/circle-series-viz.html" width="100%" height="850" style="border: none; border-radius: 8px;"></iframe>
+                </div>
+            </div>
+            
+            <!-- Guided Explorations -->
+            <div class="section">
+                <h2>🧪 Guided Explorations</h2>
+                
+                <div class="exploration" id="exp1">
+                    <h4>Exploration 1: Partial Sums</h4>
+                    <p><strong>Try this:</strong> Set base = 2 and radius = 6. Click "Next Step" several times.</p>
+                    <p><strong>Question:</strong> As you add more sectors (increase N), what happens to the size of each new sector?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'exp1', 'a')">
+                            <input type="radio" name="exp1" value="a"> Each new sector is half the size of the previous one.
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp1', 'b')">
+                            <input type="radio" name="exp1" value="b"> All sectors are the same size.
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp1', 'c')">
+                            <input type="radio" name="exp1" value="c"> Each new sector is twice the size of the previous one.
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('exp1', 'a')">Check Answer</button>
+                    <div class="feedback" id="exp1-feedback"></div>
+                </div>
+                
+                <div class="exploration" id="exp2">
+                    <h4>Exploration 2: Convergence</h4>
+                    <p><strong>Observe:</strong> Continue adding sectors with base = 2. Watch the "Partial Sum" value.</p>
+                    <p><strong>Question:</strong> Does the partial sum keep growing without bound, or does it approach a specific limit?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'exp2', 'a')">
+                            <input type="radio" name="exp2" value="a"> It grows without bound (diverges).
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp2', 'b')">
+                            <input type="radio" name="exp2" value="b"> It approaches a specific finite value (converges).
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp2', 'c')">
+                            <input type="radio" name="exp2" value="c"> It oscillates up and down.
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('exp2', 'b')">Check Answer</button>
+                    <div class="feedback" id="exp2-feedback"></div>
+                </div>
+                
+                <div class="exploration" id="exp3">
+                    <h4>Exploration 3: Effect of the Ratio</h4>
+                    <p><strong>Try this:</strong> Reset and change base to 3 (each term is 1/3 the previous).</p>
+                    <p><strong>Question:</strong> Compared to base = 2, does base = 3 converge faster or slower?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'exp3', 'a')">
+                            <input type="radio" name="exp3" value="a"> Faster (terms shrink more quickly).
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp3', 'b')">
+                            <input type="radio" name="exp3" value="b"> Slower (terms shrink more slowly).
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp3', 'c')">
+                            <input type="radio" name="exp3" value="c"> Same rate.
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('exp3', 'a')">Check Answer</button>
+                    <div class="feedback" id="exp3-feedback"></div>
+                </div>
+            </div>
+            
+            <!-- Practice Questions -->
+            <div class="section">
+                <h2>📝 Practice Questions</h2>
+                
+                <div class="question" id="q1">
+                    <h4>Question 1: Discovering the Pattern</h4>
+                    <p>Consider the series \(1 + \frac{1}{2} + \frac{1}{4} + \frac{1}{8} + \cdots\)</p>
+                    <p><strong>(a)</strong> What is the first term \(a\)?</p>
+                    <div class="number-input">
+                        <label>\(a\) =</label>
+                        <input type="number" id="q1a-input" step="0.1" placeholder="Enter value">
+                    </div>
+                    <button class="check-btn" onclick="checkNumericAnswer('q1a', 1, 0.01)">Check Answer</button>
+                    <div class="feedback" id="q1a-feedback"></div>
+                    
+                    <p style="margin-top: 20px;"><strong>(b)</strong> What is the common ratio \(r\) (the number you multiply each term by to get the next)?</p>
+                    <div class="number-input">
+                        <label>\(r\) =</label>
+                        <input type="number" id="q1b-input" step="0.1" placeholder="Enter value">
+                    </div>
+                    <button class="check-btn" onclick="checkNumericAnswer('q1b', 0.5, 0.01)">Check Answer</button>
+                    <div class="feedback" id="q1b-feedback"></div>
+                    
+                    <p style="margin-top: 20px;"><strong>(c)</strong> Add up the first few terms: \(1 + 0.5 + 0.25 + 0.125 + 0.0625 = ?\)</p>
+                    <p class="hint">This is the partial sum \(S_5\)</p>
+                    <div class="number-input">
+                        <label>\(S_5\) =</label>
+                        <input type="number" id="q1c-input" step="0.01" placeholder="Enter value">
+                    </div>
+                    <button class="check-btn" onclick="checkNumericAnswer('q1c', 1.9375, 0.01)">Check Answer</button>
+                    <div class="feedback" id="q1c-feedback"></div>
+                    
+                    <p style="margin-top: 20px;"><strong>(d)</strong> Based on the pattern, what value does the infinite sum appear to approach?</p>
+                    <div class="number-input">
+                        <label>\(S_{\infty}\) ≈</label>
+                        <input type="number" id="q1d-input" step="0.1" placeholder="Enter value">
+                    </div>
+                    <button class="check-btn" onclick="checkNumericAnswer('q1d', 2, 0.1)">Check Answer</button>
+                    <div class="feedback" id="q1d-feedback"></div>
+                </div>
+                
+                <div class="question" id="q2">
+                    <h4>Question 2: Convergence Test</h4>
+                    <p>Which of the following series converge?</p>
+                    <p><strong>(a)</strong> \(\sum_{n=0}^{\infty} \left(\frac{3}{4}\right)^n\)</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'q2a', 'a')">
+                            <input type="radio" name="q2a" value="a"> Converges (because \(|r| = 3/4 < 1\))
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q2a', 'b')">
+                            <input type="radio" name="q2a" value="b"> Diverges
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('q2a', 'a')">Check Answer</button>
+                    <div class="feedback" id="q2a-feedback"></div>
+                    
+                    <p style="margin-top: 20px;"><strong>(b)</strong> \(\sum_{n=0}^{\infty} 2^n\)</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'q2b', 'a')">
+                            <input type="radio" name="q2b" value="a"> Converges
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q2b', 'b')">
+                            <input type="radio" name="q2b" value="b"> Diverges (because \(r = 2 > 1\))
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('q2b', 'b')">Check Answer</button>
+                    <div class="feedback" id="q2b-feedback"></div>
+                </div>
+                
+                <div class="question" id="q3">
+                    <h4>Question 3: Finding the Limit Formula</h4>
+                    <p>You've seen that \(1 + \frac{1}{2} + \frac{1}{4} + \cdots\) approaches 2. Let's discover the general pattern!</p>
+                    <p><strong>(a)</strong> For a series with \(a = 1\) and \(r = \frac{1}{2}\), the sum is 2. Try to express 2 in terms of \(a\) and \(r\).</p>
+                    <p class="hint">Hint: Notice that \(2 = \frac{1}{1 - \frac{1}{2}} = \frac{a}{1-r}\)</p>
+                    <p><strong>(b)</strong> Test this formula: For \(a = 3\) and \(r = \frac{1}{3}\), what should the infinite sum be?</p>
+                    <div class="number-input">
+                        <label>\(S\) =</label>
+                        <input type="number" id="q3-input" step="0.01" placeholder="Enter value">
+                    </div>
+                    <button class="check-btn" onclick="checkNumericAnswer('q3', 4.5, 0.1)">Check Answer</button>
+                    <div class="feedback" id="q3-feedback"></div>
+                    
+                    <p style="margin-top: 20px;"><strong>(c)</strong> Based on these examples, what is the general formula for the sum of a convergent geometric series?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'q3c', 'a')">
+                            <input type="radio" name="q3c" value="a"> \(S = \frac{a}{1-r}\) when \(|r| < 1\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q3c', 'b')">
+                            <input type="radio" name="q3c" value="b"> \(S = a \cdot r\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q3c', 'c')">
+                            <input type="radio" name="q3c" value="c"> \(S = \frac{a + r}{2}\)
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('q3c', 'a')">Check Answer</button>
+                    <div class="feedback" id="q3c-feedback"></div>
+                </div>
+            </div>
+            
+            <!-- Symbolic Computation Section -->
+            <div class="section">
+                <h2>🖥️ Symbolic Computation</h2>
+                <p>Use Python with SymPy to calculate geometric series sums and verify convergence.</p>
+                
+                <div class="sage-container">
+                    <h4>Geometric Series Calculator</h4>
+                    <p>The code below computes partial sums and the infinite sum (if it converges).</p>
+                    
+                    <div class="sagecell-python" id="sagecell1">from sympy import *
+
+n = Symbol('n')
+
+# Define the geometric series parameters
+a = 1      # First term
+r = S(1)/2  # Common ratio (use S() for exact rational)
+
+# Compute partial sum formula: S_n = a(1 - r^n)/(1 - r)
+S_n = a * (1 - r**n) / (1 - r)
+
+print(f"Geometric Series: a = {a}, r = {r}")
+print(f"\nPartial Sum Formula:")
+print(f"S_n = {S_n}")
+
+# Evaluate specific partial sums
+for k in [1, 2, 3, 5, 10]:
+    partial_sum = S_n.subs(n, k)
+    print(f"S_{k} = {partial_sum} = {float(partial_sum):.6f}")
+
+# Infinite sum (if |r| < 1)
+if abs(r) < 1:
+    S_inf = a / (1 - r)
+    print(f"\nInfinite Sum (converges):")
+    print(f"S = {S_inf} = {float(S_inf)}")
+else:
+    print(f"\nSeries diverges (|r| >= 1)")</div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Geometric Series Walkthrough | Built with Claude and Sage | For educational purposes</p>
+            <footer style="text-align:center; margin: 40px 0 10px 0; font-size: 0.95em; color: #888;">
+    © 2025 Zackery Reed. All rights reserved.
+</footer>
+        </footer>
+    </div>
+    
+    <script>
+        sagecell.makeSagecell({
+            inputLocation: '.sagecell-python',
+            languages: ['python'],
+            evalButtonText: 'Run Code'
+        });
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.renderMathInElement) {
+                renderMathInElement(document.body, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '\\(', right: '\\)', display: false}
+                    ]
+                });
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Derivatives Explorer</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <script src="https://sagecell.sagemath.org/static/embedded_sagecell.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/quiz.js"></script>
+</head>
+<body>
+    <div class="page-container">
+        <header>
+            <a href="../index.html" style="color: #00d9ff; text-decoration: none; font-weight: bold;">&larr; Back to Home</a>
+            <h1>📊 Interactive Derivatives Explorer</h1>
+            <p style="font-size: 1.2em; margin-top: 10px;">Visualize and understand the relationship between functions and their derivatives</p>
+        </header>
+        
+        <div class="content">
+            <!-- Introduction Section -->
+            <div class="section">
+                <h2>🎯 Introduction</h2>
+                <p>Welcome to the Interactive Derivatives Explorer! This tool helps you visualize how derivatives work by showing you:</p>
+                <ul>
+                    <li><strong style="color: #4ecca3;">The function</strong> y = f(x) in turquoise</li>
+                    <li><strong style="color: #ffe66d;">Small changes dx</strong> in yellow</li>
+                    <li><strong style="color: #ff9d76;">The rate of change dy/dx</strong> in orange</li>
+                    <li>How the derivative relates to the <strong>slope of the tangent line</strong></li>
+                </ul>
+                
+                <div class="key-concepts">
+                    <h4>Key Concept: What is dy/dx?</h4>
+                    <p>The derivative <strong>dy/dx</strong> tells us how much <em>y</em> changes when <em>x</em> changes by a tiny amount. The relationship is:</p>
+                    <p style="text-align: center; font-size: 1.3em; margin: 15px 0;"><strong>dy = (dy/dx) · dx</strong></p>
+                    <p>This means: the change in the linear approximation of <em>y</em> equals the derivative times the change in <em>x</em>!</p>
+                </div>
+            </div>
+            
+            <!-- Interactive Applet -->
+            <div class="section">
+                <h2>🔬 Interactive Applet</h2>
+                <p>Use the applet below to explore different functions. Drag the red point to see how the derivative changes at different locations!</p>
+                
+                <div class="applet-container">
+                    <iframe src="../applets/differential-viz-dynamic.html" width="100%" height="700" style="border: none; border-radius: 8px;"></iframe>
+                </div>
+                
+                <div class="hint">
+                    <strong>💡 Tip:</strong> Try entering different functions like <code>x^3</code>, <code>sin(x)</code>, <code>exp(x)</code>, or <code>sqrt(x)</code> and observe how the derivative changes!
+                </div>
+            </div>
+            
+            <!-- Guided Explorations -->
+            <div class="section">
+                <h2>🧪 Guided Explorations</h2>
+                
+                <div class="exploration" id="exp1">
+                    <h4>Exploration 1: Linear Functions</h4>
+                    <p><strong>Try this:</strong> Enter the function <code>2*x + 1</code> with domain from 0 to 5.</p>
+                    <p><strong>Question:</strong> What do you notice about dy/dx as you move the point? Why does this make sense for a linear function?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'exp1', 'a')">
+                            <input type="radio" name="exp1" value="a"> It increases as x increases
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp1', 'b')">
+                            <input type="radio" name="exp1" value="b"> It is constant and equal to 2
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp1', 'c')">
+                            <input type="radio" name="exp1" value="c"> It is constant and equal to 1
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp1', 'd')">
+                            <input type="radio" name="exp1" value="d"> It decreases as x increases
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('exp1', 'b')">Check Answer</button>
+                    <div class="feedback" id="exp1-feedback"></div>
+                </div>
+                
+                <div class="exploration" id="exp2">
+                    <h4>Exploration 2: Quadratic Functions</h4>
+                    <p><strong>Try this:</strong> Enter <code>x^2</code> with domain from -3 to 3.</p>
+                    <p><strong>Observe:</strong> Move the point from left to right. What is the value of the derivative at x = 0?</p>
+                    <div class="number-input">
+                        <label>dy/dx at x=0:</label>
+                        <input type="number" id="exp2-input" step="0.1" placeholder="Enter value">
+                    </div>
+                    <button class="check-btn" onclick="checkNumericAnswer('exp2', 0, 0.1)">Check Answer</button>
+                    <div class="feedback" id="exp2-feedback"></div>
+                </div>
+                
+                <div class="exploration" id="exp3">
+                    <h4>Exploration 3: The Mysterious e^x</h4>
+                    <p><strong>Try this:</strong> Enter <code>exp(x)</code> with domain from -2 to 3.</p>
+                    <p><strong>Challenge:</strong> Compare the value of the function f(x) to the value of its derivative dy/dx at several points. What pattern do you notice?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'exp3', 'a')">
+                            <input type="radio" name="exp3" value="a"> The derivative is always larger than the function
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp3', 'b')">
+                            <input type="radio" name="exp3" value="b"> The derivative is always smaller than the function
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp3', 'c')">
+                            <input type="radio" name="exp3" value="c"> The derivative equals the function value
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp3', 'd')">
+                            <input type="radio" name="exp3" value="d"> They are unrelated
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('exp3', 'c')">Check Answer</button>
+                    <div class="feedback" id="exp3-feedback"></div>
+                </div>
+            </div>
+            
+            <!-- Practice Questions -->
+            <div class="section">
+                <h2>📝 Practice Questions</h2>
+                
+                <div class="question" id="q1">
+                    <h4>Question 1: Computing with dx and dy</h4>
+                    <p>Set the function to <code>x^2</code> and move the point to x = 3.</p>
+                    
+                    <p><strong>(a)</strong> What is the value of dy/dx at x = 3?</p>
+                    <div class="number-input">
+                        <label>dy/dx =</label>
+                        <input type="number" id="q1a-input" step="0.1" placeholder="Enter value">
+                    </div>
+                    <button class="check-btn" onclick="checkNumericAnswer('q1a', 6, 0.1)">Check Answer (a)</button>
+                    <div class="feedback" id="q1a-feedback"></div>
+                    
+                    <p style="margin-top: 20px;"><strong>(b)</strong> If dx = 0.1 (as shown in the zoomed view), what is dy? Use the relationship dy = (dy/dx) · dx to calculate it.</p>
+                    <div class="number-input">
+                        <label>dy =</label>
+                        <input type="number" id="q1b-input" step="0.01" placeholder="Enter value">
+                    </div>
+                    <button class="check-btn" onclick="checkNumericAnswer('q1b', 0.6, 0.01)">Check Answer (b)</button>
+                    <div class="feedback" id="q1b-feedback"></div>
+                </div>
+                
+                <div class="question" id="q2">
+                    <h4>Question 2: Understanding the Tangent Line</h4>
+                    <p>Set the function to <code>x^3 - 3*x</code> with domain from -2 to 2.</p>
+                    
+                    <p><strong>(a)</strong> Find a positive x-value where the tangent line is horizontal (dy/dx = 0).</p>
+                    <div class="number-input">
+                        <label>x =</label>
+                        <input type="number" id="q2a-input" step="0.1" placeholder="Enter value">
+                    </div>
+                    <button class="check-btn" onclick="checkNumericAnswer('q2a', 1, 0.1)">Check Answer (a)</button>
+                    <div class="feedback" id="q2a-feedback"></div>
+                    
+                    <p style="margin-top: 20px;"><strong>(b)</strong> At x = 2, is the function increasing or decreasing? How does the sign of dy/dx tell you this?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'q2b', 'a')">
+                            <input type="radio" name="q2b" value="a"> Increasing (dy/dx > 0)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q2b', 'b')">
+                            <input type="radio" name="q2b" value="b"> Decreasing (dy/dx < 0)
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('q2b', 'a')">Check Answer (b)</button>
+                    <div class="feedback" id="q2b-feedback"></div>
+                </div>
+                
+                <div class="question" id="q3">
+                    <h4>Question 3: Rate of Change</h4>
+                    <p>Set the function to <code>sqrt(x)</code> with domain from 0.1 to 9.</p>
+                    
+                    <p><strong>(a)</strong> What happens to dy/dx as x increases? Does the function change faster or slower as x gets larger?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'q3a', 'a')">
+                            <input type="radio" name="q3a" value="a"> Increases (changes faster)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q3a', 'b')">
+                            <input type="radio" name="q3a" value="b"> Decreases (changes slower)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q3a', 'c')">
+                            <input type="radio" name="q3a" value="c"> Stays constant
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('q3a', 'b')">Check Answer (a)</button>
+                    <div class="feedback" id="q3a-feedback"></div>
+                    
+                    <p style="margin-top: 20px;"><strong>(b)</strong> At x = 4, estimate dy/dx from the applet. Then calculate: if x changes by 0.2, approximately how much does y change?</p>
+                    <div class="number-input">
+                        <label>change in y ≈</label>
+                        <input type="number" id="q3b-input" step="0.01" placeholder="Enter value">
+                    </div>
+                    <button class="check-btn" onclick="checkNumericAnswer('q3b', 0.05, 0.01)">Check Answer (b)</button>
+                    <div class="feedback" id="q3b-feedback"></div>
+                </div>
+                
+                <div class="question" id="q4">
+                    <h4>Question 4: The Special Property of e^x</h4>
+                    <p>Set the function to <code>exp(x)</code> with domain from -1 to 3.</p>
+                    
+                    <p><strong>(a)</strong> Based on your observations in Exploration 3, which statement best describes the derivative of \(e^x\)?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'q4a', 'a')">
+                            <input type="radio" name="q4a" value="a"> \(f'(x) = x \cdot e^{x-1}\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q4a', 'b')">
+                            <input type="radio" name="q4a" value="b"> \(f'(x) = e^x\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q4a', 'c')">
+                            <input type="radio" name="q4a" value="c"> \(f'(x) = \frac{e^x}{x}\)
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('q4a', 'b')">Check Answer</button>
+                    <div class="feedback" id="q4a-feedback"></div>
+                </div>
+            </div>
+            
+            <!-- Symbolic Computation Section -->
+            <div class="section">
+                <h2>��️ Symbolic Derivative Calculator</h2>
+                <p>Use Python with SymPy to verify your answers and explore derivatives symbolically!</p>
+                
+                <div class="sage-container">
+                    <h4>Calculate and Evaluate Derivatives</h4>
+                    <p>Run the code below to calculate derivatives symbolically. Modify it to explore different functions!</p>
+                    
+                    <div class="sagecell-python" id="sagecell1">from sympy import *
+
+# Define the variable
+x = Symbol('x')
+
+# Define your function
+f = x**2
+
+# Calculate the derivative
+f_prime = diff(f, x)
+
+print(f"Function: f(x) = {f}")
+print(f"Derivative: f'(x) = {f_prime}")
+
+# Evaluate at a specific point
+x_value = 3
+result = f_prime.subs(x, x_value)
+print(f"\nAt x = {x_value}:")
+print(f"f'({x_value}) = {result}")</div>
+                </div>
+                
+                <div class="sage-container">
+                    <h4>Template for Your Own Explorations</h4>
+                    <p>Use this template to explore any function you want!</p>
+                    
+                    <div class="sagecell-python" id="sagecell2">from sympy import *
+
+# Define variable
+x = Symbol('x')
+
+# YOUR FUNCTION HERE - try: exp(x), sin(x), sqrt(x), etc.
+f = # Enter your function
+
+# Calculate derivative
+f_prime = diff(f, x)
+
+# Simplify if needed
+f_prime_simplified = simplify(f_prime)
+
+print(f"Function: {f}")
+print(f"Derivative: {f_prime_simplified}")
+
+# Evaluate at multiple points
+test_points = [0, 1, 2, 3]
+print("\nEvaluation table:")
+print("x\t|\tf(x)\t|\tf'(x)")
+print("-" * 40)
+for x_val in test_points:
+    f_val = f.subs(x, x_val)
+    fp_val = f_prime_simplified.subs(x, x_val)
+    print(f"{x_val}\t|\t{f_val}\t|\t{fp_val}")</div>
+                </div>
+                
+                <div class="hint">
+                    <strong>💡 SymPy Tips:</strong>
+                    <ul>
+                        <li>Use <code>exp(x)</code> for e^x</li>
+                        <li>Use <code>sqrt(x)</code> for square root</li>
+                        <li>Use <code>sin(x)</code>, <code>cos(x)</code>, <code>tan(x)</code> for trig functions</li>
+                        <li>Use <code>log(x)</code> for natural logarithm</li>
+                        <li>Use <code>**</code> for exponents: <code>x**3</code> means x³</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Challenge Section -->
+            <div class="section">
+                <h2>🏆 Challenge Problems</h2>
+                
+                <div class="question" id="c1">
+                    <h4>Challenge 1: Product Patterns</h4>
+                    <p>Explore <code>x*exp(x)</code> from 0 to 3. At x = 1, what is dy/dx? (Use e ≈ 2.718)</p>
+                    <div class="number-input">
+                        <label>dy/dx ≈</label>
+                        <input type="number" id="c1-input" step="0.01" placeholder="Enter value">
+                    </div>
+                    <button class="check-btn" onclick="checkNumericAnswer('c1', 5.436, 0.1)">Check Answer</button>
+                    <div class="feedback" id="c1-feedback"></div>
+                </div>
+                
+                <div class="question" id="c2">
+                    <h4>Challenge 2: Chain Rule Discovery</h4>
+                    <p>Comparing \(f(x) = x^2\) and \(g(x) = \sin(x^2)\), which rule explains the derivative of \(g(x)\)?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'c2', 'a')">
+                            <input type="radio" name="c2" value="a"> Product Rule
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'c2', 'b')">
+                            <input type="radio" name="c2" value="b"> Chain Rule
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'c2', 'c')">
+                            <input type="radio" name="c2" value="c"> Power Rule
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('c2', 'b')">Check Answer</button>
+                    <div class="feedback" id="c2-feedback"></div>
+                </div>
+                
+                <div class="question" id="c3">
+                    <h4>Challenge 3: Design a Function</h4>
+                    <p>Which of these functions has a derivative of 10 at x = 2?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'c3', 'a')">
+                            <input type="radio" name="c3" value="a"> \(y = 5x\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'c3', 'b')">
+                            <input type="radio" name="c3" value="b"> \(y = x^2 + 6x\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'c3', 'c')">
+                            <input type="radio" name="c3" value="c"> \(y = x^3\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'c3', 'd')">
+                            <input type="radio" name="c3" value="d"> \(y = 2^x\)
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('c3', 'b')">Check Answer</button>
+                    <div class="feedback" id="c3-feedback"></div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Interactive Derivatives Explorer | For educational purposes</p>
+            <p style="margin-top: 10px; opacity: 0.7;">Drag the red point • Enter functions • Explore derivatives • Learn calculus visually</p>
+        </footer>
+        <footer style="text-align:center; margin: 40px 0 10px 0; font-size: 0.95em; color: #888;">
+    © 2025 Zackery Reed. All rights reserved.
+</footer>
+    </div>
+    
+    <script>
+        sagecell.makeSagecell({
+            inputLocation: '.sagecell-python',
+            languages: ['python'],
+            evalButtonText: 'Run Code'
+        });
+    </script>
+</body>
+</html>

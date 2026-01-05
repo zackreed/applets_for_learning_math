@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vector Projection Applet</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #16213e;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            padding: 20px;
+        }
+        h1 {
+            color: #e8e8e8;
+            margin-bottom: 20px;
+        }
+        .canvas-container {
+            position: relative;
+            display: inline-block;
+            margin: 20px 0;
+        }
+        canvas {
+            border: 2px solid #0f3460;
+            background: #0f1925;
+            cursor: crosshair;
+        }
+        .legend-overlay {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(22, 33, 62, 0.95);
+            padding: 12px;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            font-size: 12px;
+            max-width: 200px;
+            border: 1px solid #0f3460;
+        }
+        .legend-overlay h3 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            color: #e8e8e8;
+        }
+        .stats-overlay {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(22, 33, 62, 0.95);
+            padding: 10px;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            font-size: 12px;
+            border: 1px solid #0f3460;
+        }
+        .stats-overlay .stat-item {
+            margin: 5px 0;
+            color: #e8e8e8;
+        }
+        .stats-overlay .stat-label {
+            font-weight: bold;
+            color: #00d9ff;
+        }
+        .vector-overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(22, 33, 62, 0.95);
+            padding: 10px;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            font-size: 14px;
+            border: 1px solid #0f3460;
+            color: #e8e8e8;
+        }
+        .controls {
+            margin: 20px 0;
+            padding: 15px;
+            background: #0f3460;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .input-section {
+            flex: 1;
+            min-width: 300px;
+        }
+        .input-section h3 {
+            color: #e8e8e8;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #0f3460;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 11px;
+            resize: vertical;
+            background: #0f1925;
+            color: #e8e8e8;
+            min-height: 60px;
+        }
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        button {
+            padding: 8px 16px;
+            margin: 0;
+            background: #0f3460;
+            color: #e8e8e8;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            white-space: nowrap;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #00b8d4;
+        }
+        button.active {
+            background: #00d9ff;
+            color: #0f1925;
+        }
+        .stats {
+            display: none;
+        }
+        .legend {
+            display: none;
+        }
+        .vector-display {
+            display: none;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+            color: #e8e8e8;
+        }
+        .color-box {
+            width: 30px;
+            height: 20px;
+            margin-right: 10px;
+            border: 1px solid #0f3460;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Vector Projection Visualization</h1>
+        
+        <div class="controls">
+            <div class="input-section">
+                <h3>Data Points (up to 10)</h3>
+                <textarea id="points1" rows="2">[(1, 0.5), (1.1, 0.6), (1, -1), (-2, 1), (-2.1, 1.1), (0.9, -1.1), (0.5, 0.8), (-0.3, 1.2), (1.5, -0.5), (-1.8, 0.7)]</textarea>
+            </div>
+            
+            <div class="button-group">
+                <button id="updateBtn" onclick="appInstance.updateVectors()">Update Points</button>
+                <button id="projBtn" onclick="appInstance.toggleProjections()">Toggle Projections</button>
+                <button id="distBtn" onclick="appInstance.toggleDistances()">Toggle Distances</button>
+            </div>
+        </div>
+
+        <div class="canvas-container">
+            <canvas id="canvas" width="700" height="500"></canvas>
+            
+            <div class="vector-overlay">
+                <span id="vectorDisplay"></span>
+            </div>
+            
+            <div class="stats-overlay">
+                <div class="stat-item">
+                    <span class="stat-label">Projection Square Sum:</span>
+                    <span id="projectionSum">0.000</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Distance Square Sum:</span>
+                    <span id="distanceSum">0.000</span>
+                </div>
+            </div>
+            
+            <div class="legend-overlay">
+                <h3>Legend</h3>
+                <div class="legend-item" id="legend-circle">
+                    <div class="color-box" style="background: #0d92f4;"></div>
+                    <span>Vector \(\vec{v}\)</span>
+                </div>
+                <div class="legend-item" id="legend-proj1">
+                    <div class="color-box" style="background: #77e4c8;"></div>
+                    <span>Projections</span>
+                </div>
+                <div class="legend-item" id="legend-dist">
+                    <div class="color-box" style="background: #ff6b9d;"></div>
+                    <span>Distances</span>
+                </div>
+                <div class="legend-item" id="legend-points">
+                    <div class="color-box" style="background: #c44569;"></div>
+                    <span>Data Points</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="vector-display">
+            <strong>Vector v:</strong> <span id="vectorDisplay2"></span>
+        </div>
+
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-label">Projection Square Sum</div>
+                <div class="stat-value" id="projectionSum2">0.000</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Distance Square Sum</div>
+                <div class="stat-value" id="distanceSum2">0.000</div>
+            </div>
+        </div>
+
+        <div class="legend" style="display: none;">
+            <h3>Legend</h3>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            class VectorProjectionApp {
+                constructor() {
+                    this.canvas = document.getElementById('canvas');
+                    this.ctx = this.canvas.getContext('2d');
+                    this.scale = 80;
+                    this.originX = this.canvas.width / 2;
+                    this.originY = this.canvas.height / 2;
+                    
+                    this.A = { x: -0.852, y: -0.523 };
+                    this.points1 = [
+                        { x: 1, y: 0.5 },
+                        { x: 1.1, y: 0.6 },
+                        { x: 1, y: -1 },
+                        { x: -2, y: 1 },
+                        { x: -2.1, y: 1.1 },
+                        { x: 0.9, y: -1.1 },
+                        { x: 0.5, y: 0.8 },
+                        { x: -0.3, y: 1.2 },
+                        { x: 1.5, y: -0.5 },
+                        { x: -1.8, y: 0.7 }
+                    ];
+                    
+                    this.showProjections = false;
+                    this.showDistances = true;
+                    
+                    this.draggingPoint = null;
+                    this.draggingVector = false;
+                    
+                    this.setupDragging();
+                    this.calculate();
+                    this.draw();
+                    this.updateButtonStates();
+                }
+
+                setupDragging() {
+                    this.canvas.addEventListener('mousedown', (e) => {
+                        const pos = this.getMousePos(e);
+                        
+                        // Check if clicking on vector A
+                        const distA = Math.sqrt((pos.x - this.A.x) ** 2 + (pos.y - this.A.y) ** 2);
+                        if (distA < 0.3) {
+                            this.draggingVector = true;
+                            return;
+                        }
+                        
+                        // Check if clicking on any data point
+                        for (let i = 0; i < this.points1.length; i++) {
+                            const p = this.points1[i];
+                            const dist = Math.sqrt((pos.x - p.x) ** 2 + (pos.y - p.y) ** 2);
+                            if (dist < 0.3) {
+                                this.draggingPoint = i;
+                                return;
+                            }
+                        }
+                    });
+                    
+                    this.canvas.addEventListener('mousemove', (e) => {
+                        const pos = this.getMousePos(e);
+                        
+                        if (this.draggingVector) {
+                            const length = Math.sqrt(pos.x ** 2 + pos.y ** 2);
+                            if (length > 0.1) {
+                                this.A.x = pos.x / length;
+                                this.A.y = pos.y / length;
+                                this.calculate();
+                                this.draw();
+                            }
+                        } else if (this.draggingPoint !== null) {
+                            this.points1[this.draggingPoint].x = pos.x;
+                            this.points1[this.draggingPoint].y = pos.y;
+                            this.updateTextarea();
+                            this.calculate();
+                            this.draw();
+                        }
+                    });
+                    
+                    this.canvas.addEventListener('mouseup', () => {
+                        this.draggingVector = false;
+                        this.draggingPoint = null;
+                    });
+                    
+                    this.canvas.addEventListener('mouseleave', () => {
+                        this.draggingVector = false;
+                        this.draggingPoint = null;
+                    });
+                }
+
+                getMousePos(e) {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const x = (e.clientX - rect.left - this.originX) / this.scale;
+                    const y = (this.originY - (e.clientY - rect.top)) / this.scale;
+                    return { x, y };
+                }
+
+                updateVectors() {
+                    try {
+                        const text1 = document.getElementById('points1').value;
+                        this.points1 = this.parsePoints(text1);
+                        
+                        if (this.points1.length > 10) {
+                            alert('Maximum 10 points allowed. Using first 10.');
+                            this.points1 = this.points1.slice(0, 10);
+                        }
+                        
+                        this.calculate();
+                        this.draw();
+                    } catch (e) {
+                        alert('Invalid format. Use: [(x1, y1), (x2, y2), ...]');
+                    }
+                }
+
+                updateTextarea() {
+                    const pointsStr = '[' + this.points1.map(p => 
+                        `(${p.x.toFixed(1)}, ${p.y.toFixed(1)})`
+                    ).join(', ') + ']';
+                    document.getElementById('points1').value = pointsStr;
+                }
+
+                parsePoints(text) {
+                    const matches = text.matchAll(/\(([^,]+),\s*([^)]+)\)/g);
+                    const points = [];
+                    for (const match of matches) {
+                        points.push({
+                            x: parseFloat(match[1]),
+                            y: parseFloat(match[2])
+                        });
+                    }
+                    return points;
+                }
+
+                toggleProjections() {
+                    this.showProjections = !this.showProjections;
+                    this.updateButtonStates();
+                    this.draw();
+                }
+
+                toggleDistances() {
+                    this.showDistances = !this.showDistances;
+                    this.updateButtonStates();
+                    this.draw();
+                }
+
+                updateButtonStates() {
+                    const projBtn = document.getElementById('projBtn');
+                    const distBtn = document.getElementById('distBtn');
+                    
+                    if (this.showProjections) {
+                        projBtn.classList.add('active');
+                    } else {
+                        projBtn.classList.remove('active');
+                    }
+                    
+                    if (this.showDistances) {
+                        distBtn.classList.add('active');
+                    } else {
+                        distBtn.classList.remove('active');
+                    }
+                }
+
+                calculate() {
+                    const AADot = this.A.x * this.A.x + this.A.y * this.A.y;
+                    
+                    this.projections1 = this.points1.map(p => {
+                        const scalar = (p.x * this.A.x + p.y * this.A.y) / AADot;
+                        return {
+                            x: scalar * this.A.x,
+                            y: scalar * this.A.y
+                        };
+                    });
+                    
+                    this.distances1 = this.points1.map((p, i) => {
+                        const proj = this.projections1[i];
+                        return Math.sqrt((p.x - proj.x) ** 2 + (p.y - proj.y) ** 2);
+                    });
+                    
+                    this.projLengths1 = this.projections1.map(p => 
+                        Math.sqrt(p.x ** 2 + p.y ** 2)
+                    );
+                    
+                    const squareDist1 = this.distances1.reduce((sum, d) => sum + d * d, 0);
+                    this.totalDistances = squareDist1;
+                    
+                    const squareLen1 = this.projLengths1.reduce((sum, l) => sum + l * l, 0);
+                    this.totalLengths = squareLen1;
+                    
+                    document.getElementById('projectionSum').textContent = 
+                        this.totalLengths.toFixed(3);
+                    document.getElementById('distanceSum').textContent = 
+                        this.totalDistances.toFixed(3);
+                    
+                    this.updateVectorDisplay();
+                }
+
+                updateVectorDisplay() {
+                    const vecEl = document.getElementById('vectorDisplay');
+                    vecEl.innerHTML = '';
+                    
+                    const latex = '\\vec{v} = \\left( \\begin{array}{c} ' + 
+                        this.A.x.toFixed(3) + ' \\\\ ' + 
+                        this.A.y.toFixed(3) + 
+                        ' \\end{array} \\right)';
+                    
+                    if (window.katex) {
+                        katex.render(latex, vecEl, {
+                            throwOnError: false,
+                            displayMode: false
+                        });
+                    }
+                }
+
+                draw() {
+                    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                    
+                    this.drawGrid();
+                    
+                    document.getElementById('legend-circle').style.display = 'flex';
+                    document.getElementById('legend-proj1').style.display = this.showProjections ? 'flex' : 'none';
+                    document.getElementById('legend-dist').style.display = this.showDistances ? 'flex' : 'none';
+                    document.getElementById('legend-points').style.display = 'flex';
+                    
+                    // Circle removed - no longer drawing it
+                    
+                    this.drawLine({ x: -5, y: -5 * this.A.y / this.A.x }, 
+                                 { x: 5, y: 5 * this.A.y / this.A.x }, '#0d92f4', 3);
+                    
+                    this.drawVector({ x: 0, y: 0 }, this.A, '#0d92f4', 5);
+                    this.drawX(this.A, '#0d92f4', 10);
+                    
+                    if (this.showProjections) {
+                        this.projections1.forEach((proj, i) => {
+                            this.drawVector({ x: 0, y: 0 }, proj, '#77e4c8', 2);
+                        });
+                    }
+                    
+                    if (this.showDistances) {
+                        this.points1.forEach((p, i) => {
+                            const proj = this.projections1[i];
+                            this.drawSegment(p, proj, '#ff6b9d', 2, true);
+                        });
+                    }
+                    
+                    this.points1.forEach(p => this.drawPoint(p, '#c44569', 6));
+                    
+                    if (this.showProjections) {
+                        this.projections1.forEach(p => this.drawPoint(p, '#77e4c8', 5));
+                    }
+                }
+
+                drawGrid() {
+                    this.ctx.strokeStyle = '#1e3a5f';
+                    this.ctx.lineWidth = 1;
+                    
+                    for (let i = -10; i <= 10; i++) {
+                        const pos = i * this.scale;
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(this.originX + pos, 0);
+                        this.ctx.lineTo(this.originX + pos, this.canvas.height);
+                        this.ctx.stroke();
+                        
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(0, this.originY - pos);
+                        this.ctx.lineTo(this.canvas.width, this.originY - pos);
+                        this.ctx.stroke();
+                    }
+                    
+                    this.ctx.strokeStyle = '#3a5f8f';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(this.originX, 0);
+                    this.ctx.lineTo(this.originX, this.canvas.height);
+                    this.ctx.stroke();
+                    
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(0, this.originY);
+                    this.ctx.lineTo(this.canvas.width, this.originY);
+                    this.ctx.stroke();
+                }
+
+                toScreen(p) {
+                    return {
+                        x: this.originX + p.x * this.scale,
+                        y: this.originY - p.y * this.scale
+                    };
+                }
+
+                drawPoint(p, color, radius, label) {
+                    const screen = this.toScreen(p);
+                    this.ctx.fillStyle = color;
+                    this.ctx.beginPath();
+                    this.ctx.arc(screen.x, screen.y, radius, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    
+                    if (label) {
+                        this.ctx.fillStyle = '#e8e8e8';
+                        this.ctx.font = '14px Arial';
+                        this.ctx.fillText(label, screen.x + 10, screen.y - 10);
+                    }
+                }
+
+                drawX(p, color, size) {
+                    const screen = this.toScreen(p);
+                    this.ctx.strokeStyle = color;
+                    this.ctx.lineWidth = 3;
+                    
+                    const halfSize = size / 2;
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(screen.x - halfSize, screen.y - halfSize);
+                    this.ctx.lineTo(screen.x + halfSize, screen.y + halfSize);
+                    this.ctx.stroke();
+                    
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(screen.x - halfSize, screen.y + halfSize);
+                    this.ctx.lineTo(screen.x + halfSize, screen.y - halfSize);
+                    this.ctx.stroke();
+                }
+
+                drawVector(from, to, color, width) {
+                    const screenFrom = this.toScreen(from);
+                    const screenTo = this.toScreen(to);
+                    
+                    this.ctx.strokeStyle = color;
+                    this.ctx.lineWidth = width;
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(screenFrom.x, screenFrom.y);
+                    this.ctx.lineTo(screenTo.x, screenTo.y);
+                    this.ctx.stroke();
+                    
+                    const angle = Math.atan2(screenTo.y - screenFrom.y, screenTo.x - screenFrom.x);
+                    const arrowSize = 10;
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(screenTo.x, screenTo.y);
+                    this.ctx.lineTo(
+                        screenTo.x - arrowSize * Math.cos(angle - Math.PI / 6),
+                        screenTo.y - arrowSize * Math.sin(angle - Math.PI / 6)
+                    );
+                    this.ctx.moveTo(screenTo.x, screenTo.y);
+                    this.ctx.lineTo(
+                        screenTo.x - arrowSize * Math.cos(angle + Math.PI / 6),
+                        screenTo.y - arrowSize * Math.sin(angle + Math.PI / 6)
+                    );
+                    this.ctx.stroke();
+                }
+
+                drawSegment(p1, p2, color, width, dashed) {
+                    const screen1 = this.toScreen(p1);
+                    const screen2 = this.toScreen(p2);
+                    
+                    this.ctx.strokeStyle = color;
+                    this.ctx.lineWidth = width;
+                    if (dashed) {
+                        this.ctx.setLineDash([5, 5]);
+                    }
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(screen1.x, screen1.y);
+                    this.ctx.lineTo(screen2.x, screen2.y);
+                    this.ctx.stroke();
+                    this.ctx.setLineDash([]);
+                }
+
+                drawCircle(center, radius, color, width) {
+                    const screenCenter = this.toScreen(center);
+                    const screenRadius = radius * this.scale;
+                    
+                    this.ctx.strokeStyle = color;
+                    this.ctx.lineWidth = width;
+                    this.ctx.beginPath();
+                    this.ctx.arc(screenCenter.x, screenCenter.y, screenRadius, 0, Math.PI * 2);
+                    this.ctx.stroke();
+                }
+
+                drawLine(p1, p2, color, width) {
+                    const screen1 = this.toScreen(p1);
+                    const screen2 = this.toScreen(p2);
+                    
+                    this.ctx.strokeStyle = color;
+                    this.ctx.lineWidth = width;
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(screen1.x, screen1.y);
+                    this.ctx.lineTo(screen2.x, screen2.y);
+                    this.ctx.stroke();
+                }
+            }
+
+            window.appInstance = new VectorProjectionApp();
+            
+            // Render all LaTeX once KaTeX loads
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => {
+                    setTimeout(() => {
+                        if (window.katex && window.renderMathInElement) {
+                            renderMathInElement(document.body, {
+                                delimiters: [
+                                    {left: '\\(', right: '\\)', display: false}
+                                ]
+                            });
+                        }
+                    }, 100);
+                });
+            } else {
+                setTimeout(() => {
+                    if (window.katex && window.renderMathInElement) {
+                        renderMathInElement(document.body, {
+                            delimiters: [
+                                {left: '\\(', right: '\\)', display: false}
+                            ]
+                        });
+                    }
+                }, 100);
+            }
+        })();
+    </script>
+</body>
+</html>

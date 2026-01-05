@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Population Density - Modeling with Integrals</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <script src="https://sagecell.sagemath.org/static/embedded_sagecell.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/quiz.js"></script>
+</head>
+<body>
+    <div class="page-container">
+        <header>
+            <a href="../index.html" style="color: #00d9ff; text-decoration: none; font-weight: bold;">&larr; Back to Home</a>
+            <h1>🏙️ Population Density: Modeling with Integrals</h1>
+            <p style="font-size: 1.2em; margin-top: 10px;">Explore how integrals accumulate density functions to find total population</p>
+        </header>
+        
+        <div class="content">
+            <!-- Introduction Section -->
+            <div class="section">
+                <h2>🎯 Introduction</h2>
+                <p>In many real-world scenarios, we deal with <strong>density functions</strong> — functions that describe how something is distributed over space. Integrals let us calculate total quantities from these densities.</p>
+                
+                <div class="key-concepts">
+                    <h4>Key Concept: Density and Integration</h4>
+                    <p>A <strong>density function</strong> \(\rho(x)\) gives the amount "per unit" at location \(x\). When density varies across space, we need integration to accumulate the total quantity.</p>
+                    <p style="margin-top: 15px;"><strong>Your Goal:</strong> Through the explorations below, you'll discover how to calculate total population from a density function in a circular city. Pay attention to how ring area changes with distance!</p>
+                </div>
+            </div>
+            
+            <!-- Interactive Applet -->
+            <div class="section">
+                <h2>🗺️ Population Density Visualization</h2>
+                <p><strong>Instructions:</strong></p>
+                <ol>
+                    <li>The visualization shows a city with population density \(\rho(D) = \frac{40}{20 + D^2}\).</li>
+                    <li>Use "Distance from Center" slider to select a distance \(D\).</li>
+                    <li>Use "Ring Width" to control \(\Delta D\) (the width of the ring).</li>
+                    <li>In "Local Ring" mode, see the population in one ring.</li>
+                    <li>In "Cumulative from Center" mode, see the total population from center to distance \(D\).</li>
+                    <li>Darker blue = higher density; lighter blue = lower density.</li>
+                </ol>
+                
+                <div class="applet-container">
+                    <iframe src="../applets/population-density-viz.html" width="100%" height="850" style="border: none; border-radius: 8px;"></iframe>
+                </div>
+            </div>
+            
+            <!-- Guided Explorations -->
+            <div class="section">
+                <h2>🧪 Guided Explorations</h2>
+                
+                <div class="exploration" id="exp1">
+                    <h4>Exploration 1: Density Function Behavior</h4>
+                    <p><strong>Try this:</strong> Move the distance slider from the center (D = 0) outward. Watch the density value.</p>
+                    <p><strong>Question:</strong> As you move farther from the city center, what happens to the density \(\rho(D)\)?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'exp1', 'a')">
+                            <input type="radio" name="exp1" value="a"> It decreases (becomes less dense farther out).
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp1', 'b')">
+                            <input type="radio" name="exp1" value="b"> It increases.
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp1', 'c')">
+                            <input type="radio" name="exp1" value="c"> It stays constant.
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('exp1', 'a')">Check Answer</button>
+                    <div class="feedback" id="exp1-feedback"></div>
+                </div>
+                
+                <div class="exploration" id="exp2">
+                    <h4>Exploration 2: Ring Area and Circumference</h4>
+                    <p><strong>Observe:</strong> In "Local Ring" mode, watch the population value as you move the distance slider. Notice that the applet shows the circumference of each ring.</p>
+                    <p><strong>Question:</strong> A ring at distance \(D\) with small width \(\Delta D\) is approximately a rectangle when "unrolled". What would be its approximate area?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'exp2', 'a')">
+                            <input type="radio" name="exp2" value="a"> Circumference × Width = \(2\pi D \cdot \Delta D\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp2', 'b')">
+                            <input type="radio" name="exp2" value="b"> \(\pi D^2\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp2', 'c')">
+                            <input type="radio" name="exp2" value="c"> \(D \cdot \Delta D\)
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('exp2', 'a')">Check Answer</button>
+                    <div class="feedback" id="exp2-feedback"></div>
+                </div>
+                
+                <div class="exploration" id="exp3">
+                    <h4>Exploration 3: Cumulative Population</h4>
+                    <p><strong>Try this:</strong> Switch to "Cumulative from Center" mode. Drag the distance slider.</p>
+                    <p><strong>Question:</strong> Does the cumulative population grow without bound as \(D \to \infty\), or does it approach a finite limit?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'exp3', 'a')">
+                            <input type="radio" name="exp3" value="a"> It approaches a finite limit (the city has finite population).
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp3', 'b')">
+                            <input type="radio" name="exp3" value="b"> It grows without bound.
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp3', 'c')">
+                            <input type="radio" name="exp3" value="c"> It oscillates.
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('exp3', 'a')">Check Answer</button>
+                    <div class="feedback" id="exp3-feedback"></div>
+                </div>
+            </div>
+            
+            <!-- Practice Questions -->
+            <div class="section">
+                <h2>📝 Practice Questions</h2>
+                
+                <div class="question" id="q1">
+                    <h4>Question 1: Building the Ring Population Formula</h4>
+                    <p>Consider a ring at distance \(D = 5\) with width \(\Delta D = 1\). The density is \(\rho(5) = 2\) people per square unit.</p>
+                    <p><strong>(a)</strong> What is the approximate area of this thin ring?</p>
+                    <p class="hint">Hint: Think of the ring as an "unrolled rectangle" with length = circumference</p>
+                    <div class="number-input">
+                        <label>Ring Area ≈</label>
+                        <input type="number" id="q1a-input" step="0.1" placeholder="Enter value (use π ≈ 3.14)">
+                        <span> square units</span>
+                    </div>
+                    <button class="check-btn" onclick="checkNumericAnswer('q1a', 31.4, 0.5)">Check Answer</button>
+                    <div class="feedback" id="q1a-feedback"></div>
+                    
+                    <p style="margin-top: 20px;"><strong>(b)</strong> If density is 2 people per square unit and the ring has area 31.4 square units, how much population is in this ring?</p>
+                    <p class="hint">Hint: Population = Density × Area</p>
+                    <div class="number-input">
+                        <label>\(\Delta P\) ≈</label>
+                        <input type="number" id="q1b-input" step="1" placeholder="Enter value">
+                        <span> people</span>
+                    </div>
+                    <button class="check-btn" onclick="checkNumericAnswer('q1b', 62.8, 1)">Check Answer</button>
+                    <div class="feedback" id="q1b-feedback"></div>
+                    
+                    <p style="margin-top: 20px;"><strong>(c)</strong> Write a general formula for population \(\Delta P\) in a ring at distance \(D\) with width \(\Delta D\) and density \(\rho(D)\).</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'q1c', 'a')">
+                            <input type="radio" name="q1c" value="a"> \(\Delta P = \rho(D) \cdot 2\pi D \cdot \Delta D\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q1c', 'b')">
+                            <input type="radio" name="q1c" value="b"> \(\Delta P = \rho(D) \cdot \pi D^2\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q1c', 'c')">
+                            <input type="radio" name="q1c" value="c"> \(\Delta P = \rho(D) \cdot D \cdot \Delta D\)
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('q1c', 'a')">Check Answer</button>
+                    <div class="feedback" id="q1c-feedback"></div>
+                </div>
+                
+                <div class="question" id="q2">
+                    <h4>Question 2: Setting Up an Integral</h4>
+                    <p>Suppose linear density along a rod from \(x = 0\) to \(x = 10\) is \(\lambda(x) = 3x + 2\) grams per cm.</p>
+                    <p><strong>(a)</strong> Which integral gives the total mass of the rod?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'q2a', 'a')">
+                            <input type="radio" name="q2a" value="a"> \(\int_0^{10} (3x + 2) \, dx\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q2a', 'b')">
+                            <input type="radio" name="q2a" value="b"> \(\int_0^{10} x \, dx\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q2a', 'c')">
+                            <input type="radio" name="q2a" value="c"> \((3 \cdot 10 + 2) - (3 \cdot 0 + 2)\)
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('q2a', 'a')">Check Answer</button>
+                    <div class="feedback" id="q2a-feedback"></div>
+                    
+                    <p style="margin-top: 20px;"><strong>(b)</strong> Evaluate the integral. What is the total mass?</p>
+                    <div class="number-input">
+                        <label>Total mass =</label>
+                        <input type="number" id="q2b-input" step="1" placeholder="Enter value">
+                        <span> grams</span>
+                    </div>
+                    <button class="check-btn" onclick="checkNumericAnswer('q2b', 170, 1)">Check Answer</button>
+                    <div class="feedback" id="q2b-feedback"></div>
+                </div>
+                
+                <div class="question" id="q3">
+                    <h4>Question 3: Conceptual Understanding</h4>
+                    <p>Why do we need integration to find total population from a density function?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'q3', 'a')">
+                            <input type="radio" name="q3" value="a"> Because density varies with position, so we sum infinitesimal contributions.
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q3', 'b')">
+                            <input type="radio" name="q3" value="b"> Because we need to find the derivative of population.
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q3', 'c')">
+                            <input type="radio" name="q3" value="c"> Integration is not necessary; we can just multiply density by area.
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('q3', 'a')">Check Answer</button>
+                    <div class="feedback" id="q3-feedback"></div>
+                </div>
+            </div>
+            
+            <!-- Symbolic Computation Section -->
+            <div class="section">
+                <h2>🖥️ Symbolic Computation</h2>
+                <p>Use Python with SymPy to set up and evaluate integrals for density functions.</p>
+                
+                <div class="sage-container">
+                    <h4>Population Integral Calculator</h4>
+                    <p>The code below computes the total population from a radial density function.</p>
+                    
+                    <div class="sagecell-python" id="sagecell1">from sympy import *
+
+D = Symbol('D', positive=True, real=True)
+
+# Define the density function
+rho = 40 / (20 + D**2)
+
+print(f"Density function: ρ(D) = {rho}")
+
+# Population in a thin ring at distance D with width dD
+# dP = ρ(D) · 2πD · dD
+# The circumference at distance D is 2πD
+integrand = 2 * pi * D * rho
+
+print(f"\nIntegrand for population: 2πD · ρ(D) = {integrand}")
+
+# Total population from center (D=0) to radius R
+R = 10  # Integrate from 0 to 10
+
+total_population = integrate(integrand, (D, 0, R))
+
+print(f"\nTotal population from center to R = {R}:")
+print(f"P = ∫₀^{R} 2πD · ρ(D) dD")
+print(f"P = {total_population}")
+print(f"P ≈ {float(total_population):.2f} people")
+
+# Check the limit as R → ∞
+limit_population = limit(integrate(integrand, (D, 0, R)), R, oo)
+print(f"\nAs R → ∞, population approaches:")
+print(f"P_max = {limit_population}")
+print(f"P_max ≈ {float(limit_population):.2f} people")</div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Population Density Walkthrough | For educational purposes</p>
+            <footer style="text-align:center; margin: 40px 0 10px 0; font-size: 0.95em; color: #888;">
+    © 2025 Zackery Reed. All rights reserved.
+</footer>
+        </footer>
+    </div>
+    
+    <script>
+        sagecell.makeSagecell({
+            inputLocation: '.sagecell-python',
+            languages: ['python'],
+            evalButtonText: 'Run Code'
+        });
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.renderMathInElement) {
+                renderMathInElement(document.body, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '\\(', right: '\\)', display: false}
+                    ]
+                });
+            }
+        });
+    </script>
+</body>
+</html>

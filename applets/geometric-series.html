@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geometric Series Visualization</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #0a0e27;
+            color: #eee;
+            display: flex;
+            gap: 20px;
+            min-height: 100vh;
+        }
+        canvas {
+            border: 2px solid #4a5568;
+            background: #16213e;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        #controls {
+            width: 300px;
+            background: #0f3460;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            overflow-y: auto;
+            max-height: 90vh;
+        }
+        h2 {
+            margin-top: 0;
+            color: #e94560;
+            border-bottom: 2px solid #e94560;
+            padding-bottom: 10px;
+        }
+        h3 {
+            color: #4ecca3;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        .control-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #4ecca3;
+            font-size: 14px;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            background: #16213e;
+            border: 1px solid #4a5568;
+            border-radius: 4px;
+            color: #eee;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #4ecca3;
+            color: #0a0e27;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            margin: 5px 0;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: #3db894;
+            transform: translateY(-2px);
+        }
+        button.secondary {
+            background: #e94560;
+            color: #fff;
+        }
+        button.secondary:hover {
+            background: #c93952;
+        }
+        .value-display {
+            color: #4ecca3;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .result-box {
+            background: #16213e;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .formula {
+            font-family: 'Courier New', monospace;
+            background: #0f1925;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 8px 0;
+            text-align: center;
+            color: #4ecca3;
+            font-size: 15px;
+        }
+        .info-box {
+            background: #16213e;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <canvas id="canvas" width="800" height="700"></canvas>
+    </div>
+    
+    <div id="controls">
+        <h2>Geometric Series</h2>
+        
+        <div class="control-group">
+            <h3>Rectangle Dimensions</h3>
+            <label>Width (a): <span class="value-display" id="width-display">2.0</span></label>
+            <input type="number" id="width-input" step="0.1" min="1" max="5" value="2">
+            
+            <label style="margin-top: 10px;">Height (b): <span class="value-display" id="height-display">2.5</span></label>
+            <input type="number" id="height-input" step="0.1" min="1" max="5" value="2.5">
+        </div>
+        
+        <div class="control-group">
+            <h3>Partial Sum Steps</h3>
+            <label>N = <span class="value-display" id="n-display">0</span></label>
+            <button id="next-btn">Next Step (N+1)</button>
+            <button id="prev-btn" class="secondary">Previous Step (N-1)</button>
+            <button id="reset-btn" class="secondary">Reset to N=0</button>
+        </div>
+        
+        <div class="result-box">
+            <h3 style="margin-top: 0;">Partial Sum</h3>
+            <div class="formula" id="sum-formula">Σ = 0.00</div>
+            <div style="font-size: 11px; color: #aaa; margin-top: 5px;">
+                Sum of filled areas = ab(1 - 1/2<sup>N</sup>)
+            </div>
+        </div>
+        
+        <div class="result-box">
+            <h3 style="margin-top: 0;">Current Term</h3>
+            <div class="formula" id="term-formula">a<sub>n</sub> = --</div>
+            <div style="font-size: 11px; color: #aaa; margin-top: 5px;">
+                Current subdivision: ab/2<sup>N</sup>
+            </div>
+        </div>
+        
+        <div class="info-box">
+            <strong>Subdivision Pattern:</strong><br>
+            • Each step fills 1/2 of remaining area<br>
+            • Step 1: Two diagonal quarters (1/2)<br>
+            • Step 2: One quarter (1/2 of remaining)<br>
+            • Pattern repeats in top-right quarter
+        </div>
+    </div>
+
+    <script>
+const c=document.getElementById('canvas'),ctx=c.getContext('2d');
+let a=2,b=2.5,n=0;
+const colors=['#4ecca3','#ff6b6b','#f9d423','#00d2ff','#a8e6cf','#ffd3b6','#ffaaa5','#ff8b94','#c7ceea','#b5ead7','#e2f0cb','#ffdac1'];
+
+function getRects(){
+ const rs=[];
+ for(let s=1;s<=n;s++){
+  const cy=Math.floor((s-1)/2),p=(s-1)%2;
+  let bx=0,by=0,bw=a,bh=b;
+  for(let i=0;i<cy;i++){bx+=bw/2;by+=bh/2;bw/=2;bh/=2;}
+  if(p===0){
+   rs.push({x:bx,y:by+bh/2,w:bw/2,h:bh/2,l:s});
+   rs.push({x:bx+bw/2,y:by,w:bw/2,h:bh/2,l:s});
+  }else{
+   rs.push({x:bx,y:by,w:bw/2,h:bh/2,l:s});
+  }
+ }
+ return rs;
+}
+
+function getZoom(){
+ if(n<1)return null;
+ const cy=Math.floor((n-1)/2);
+ let bx=0,by=0,bw=a,bh=b;
+ for(let i=0;i<cy;i++){bx+=bw/2;by+=bh/2;bw/=2;bh/=2;}
+ return{x:bx,y:by,w:bw,h:bh};
+}
+
+function draw(){
+ ctx.clearRect(0,0,c.width,c.height);
+ const p=50,mw=450,mh=mw*(b/a),mx=p,my=p;
+ ctx.strokeStyle='#4a5568';ctx.lineWidth=3;ctx.strokeRect(mx,my,mw,mh);
+ 
+ const rs=getRects();
+ rs.forEach((r,i)=>{
+  const rx=mx+r.x*(mw/a),ry=my+(b-r.y-r.h)*(mh/b),rw=r.w*(mw/a),rh=r.h*(mh/b);
+  ctx.fillStyle=colors[i%colors.length]+'CC';ctx.fillRect(rx,ry,rw,rh);
+  ctx.strokeStyle=colors[i%colors.length];ctx.lineWidth=1.5;ctx.strokeRect(rx,ry,rw,rh);
+  if(rw>40&&rh>30){
+   ctx.fillStyle='#fff';ctx.font='bold 11px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+   ctx.fillText((r.w*r.h).toFixed(3),rx+rw/2,ry+rh/2);
+  }
+ });
+ 
+ const z=getZoom();
+ if(z&&z.w>0.01){
+  const zx=mx+z.x*(mw/a),zy=my+(b-z.y-z.h)*(mh/b),zw=z.w*(mw/a),zh=z.h*(mh/b);
+  ctx.strokeStyle='#ffe66d';ctx.lineWidth=3;ctx.setLineDash([8,4]);ctx.strokeRect(zx,zy,zw,zh);ctx.setLineDash([]);
+  drawZoom(z);
+ }
+ 
+ ctx.fillStyle='#aaa';ctx.font='14px Arial';ctx.textAlign='center';
+ ctx.fillText(`Width = ${a.toFixed(1)}`,mx+mw/2,my+mh+30);
+ ctx.save();ctx.translate(mx-30,my+mh/2);ctx.rotate(-Math.PI/2);ctx.fillText(`Height = ${b.toFixed(1)}`,0,0);ctx.restore();
+}
+
+function drawZoom(z){
+ const zs=220,zx=c.width-zs-70,zy=80;
+ ctx.fillStyle='#0f1925';ctx.fillRect(zx-5,zy-5,zs+10,zs+10);
+ ctx.strokeStyle='#ffe66d';ctx.lineWidth=3;ctx.strokeRect(zx,zy,zs,zs);
+ ctx.fillStyle='#ffe66d';ctx.font='bold 14px Arial';ctx.textAlign='center';ctx.fillText('ZOOM',zx+zs/2,zy-10);
+ 
+ const sx=zs/z.w,sy=zs/z.h,rs=getRects();
+ rs.forEach((r,i)=>{
+  const rr=r.x+r.w,rt=r.y+r.h;
+  if(rr>z.x&&r.x<z.x+z.w&&rt>z.y&&r.y<z.y+z.h){
+   const vx=Math.max(r.x,z.x),vy=Math.max(r.y,z.y),vr=Math.min(rr,z.x+z.w),vt=Math.min(rt,z.y+z.h);
+   const vw=vr-vx,vh=vt-vy,cx=zx+(vx-z.x)*sx,cy=zy+(z.h-(vt-z.y))*sy,cw=vw*sx,ch=vh*sy;
+   ctx.fillStyle=colors[i%colors.length]+'CC';ctx.fillRect(cx,cy,cw,ch);
+   ctx.strokeStyle=colors[i%colors.length];ctx.lineWidth=1.5;ctx.strokeRect(cx,cy,cw,ch);
+   if(cw>35&&ch>25){
+    ctx.fillStyle='#fff';ctx.font='bold 9px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText((r.w*r.h).toFixed(5),cx+cw/2,cy+ch/2);
+   }
+  }
+ });
+}
+
+function updateDisplays(){
+ document.getElementById('width-display').textContent=a.toFixed(1);
+ document.getElementById('height-display').textContent=b.toFixed(1);
+ document.getElementById('n-display').textContent=n;
+ 
+ if(n===0){
+  document.getElementById('sum-formula').innerHTML='Σ = 0';
+  document.getElementById('term-formula').innerHTML='a<sub>n</sub> = --';
+ }else{
+  const d=Math.pow(2,n),sum=a*b*(1-1/d);
+  let pr=3;if(n>10)pr=6;if(n>20)pr=9;if(n>30)pr=12;
+  document.getElementById('sum-formula').innerHTML=`Σ = ${sum.toFixed(pr)}`;
+  
+  const term=a*b/d;
+  let td=term<0.000001?`${(a*b).toFixed(1)}/${d}<br><span style="font-size:11px">≈ ${term.toExponential(4)}</span>`:`${(a*b).toFixed(1)}/${d}<br><span style="font-size:11px">≈ ${term.toFixed(Math.min(n,12))}</span>`;
+  document.getElementById('term-formula').innerHTML=`a<sub>${n}</sub> = ${td}`;
+ }
+}
+
+document.getElementById('width-input').addEventListener('input',e=>{a=parseFloat(e.target.value)||2;updateDisplays();draw();});
+document.getElementById('height-input').addEventListener('input',e=>{b=parseFloat(e.target.value)||2.5;updateDisplays();draw();});
+document.getElementById('next-btn').addEventListener('click',()=>{if(n<100){n++;updateDisplays();draw();}});
+document.getElementById('prev-btn').addEventListener('click',()=>{if(n>0){n--;updateDisplays();draw();}});
+document.getElementById('reset-btn').addEventListener('click',()=>{n=0;updateDisplays();draw();});
+
+updateDisplays();draw();
+    </script>
+</body>
+</html>

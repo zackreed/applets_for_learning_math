@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Singular Value Decomposition - Interactive Learning</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <script src="https://sagecell.sagemath.org/static/embedded_sagecell.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/quiz.js"></script>
+    <script>
+        // Wait for SageCell to load before initializing
+        window.addEventListener('load', function() {
+            if (typeof sagecell !== 'undefined') {
+                initializeSageCell();
+            } else {
+                // Retry after a delay if sagecell isn't loaded yet
+                setTimeout(function() {
+                    if (typeof sagecell !== 'undefined') {
+                        initializeSageCell();
+                    }
+                }, 1000);
+            }
+        });
+
+        function initializeSageCell() {
+            sagecell.makeSagecell({
+                inputLocation: '#sagecell',
+                evalButtonText: 'Evaluate',
+                code: `# Define your data matrix A
+# Each column is a data point
+A = matrix(RDF, [
+    [1.0, 1.1, 1.0, -2.0, -2.1, 0.9, 0.5, -0.3, 1.5, -1.8],
+    [0.5, 0.6, -1.0, 1.0, 1.1, -1.1, 0.8, 1.2, -0.5, 0.7]
+])
+
+print("Matrix A:")
+print(A)
+print("\\nDimensions:", A.dimensions())
+
+# Compute SVD
+U, Sigma, V = A.SVD()
+
+print("\\n" + "="*50)
+print("SINGULAR VALUE DECOMPOSITION")
+print("="*50)
+
+print("\\nLeft Singular Vectors (U):")
+print(U.n(digits=4))
+
+print("\\nSingular Values (Sigma):")
+print(Sigma.n(digits=4))
+
+print("\\nRight Singular Vectors (V):")
+print(V.n(digits=4))
+
+# Extract singular values
+singular_values = [Sigma[i,i] for i in range(min(Sigma.nrows(), Sigma.ncols()))]
+print("\\nSingular values list:", [sv.n(digits=4) for sv in singular_values])
+
+# Verify reconstruction
+A_reconstructed = U * Sigma * V
+print("\\nReconstruction error:", (A - A_reconstructed).norm().n(digits=6))`,
+                languages: ['sage'],
+                autoeval: false
+            });
+        }
+    </script>
+</head>
+<body>
+    <div class="page-container">
+        <header>
+            <a href="../index.html" style="color: #00d9ff; text-decoration: none; font-weight: bold;">&larr; Back to Home</a>
+            <h1>Singular Value Decomposition (SVD)</h1>
+            <p style="font-size: 1.2em; margin-top: 10px;">Interactive Exploration with Vector Projections</p>
+        </header>
+
+        <div class="section">
+            <h2>Introduction</h2>
+            <p>The Singular Value Decomposition (SVD) is a fundamental matrix factorization that decomposes any matrix \(A\) into three matrices:</p>
+            <p style="text-align: center; font-size: 1.3em; margin: 20px 0;">
+                \(A = U \Sigma V^T\)
+            </p>
+            <p>where:</p>
+            <ul style="margin-left: 30px; margin-top: 10px;">
+                <li>\(U\) contains the left singular vectors (eigenvectors of \(AA^T\))</li>
+                <li>\(\Sigma\) is a diagonal matrix of singular values</li>
+                <li>\(V\) contains the right singular vectors (eigenvectors of \(A^TA\))</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Interactive Vector Projection Applet</h2>
+            <p>Use this applet to visualize how data points project onto a direction vector. The projection lengths and distances are related to the SVD of the data matrix.</p>
+            
+            <div class="applet-container">
+                <iframe src="../applets/vector-projection-applet.html" width="100%" height="800" style="border: none; border-radius: 8px;"></iframe>
+            </div>
+            
+            <div class="instructions">
+                <h3>How to use the applet:</h3>
+                <ol>
+                    <li>Drag the <strong>blue vector</strong> (marked with an X) to change the projection direction</li>
+                    <li>Drag any <strong>data point</strong> (purple circles) to move them</li>
+                    <li>Toggle <strong>Projections</strong> to see/hide the projection vectors</li>
+                    <li>Toggle <strong>Distances</strong> to see/hide the perpendicular distances</li>
+                    <li>Watch how the <strong>Projection Square Sum</strong> and <strong>Distance Square Sum</strong> change</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Computing SVD with SageMath</h2>
+            <p>Use the SageMath cell below to compute the SVD of the data matrix formed by your points. The matrix has points as columns.</p>
+            
+            <div class="instructions">
+                <h3>Instructions:</h3>
+                <ol>
+                    <li>Copy your data points from the applet above</li>
+                    <li>Modify the matrix <code>A</code> in the code below with your points</li>
+                    <li>Click <strong>"Evaluate"</strong> to compute the SVD</li>
+                    <li>Observe the singular values and singular vectors</li>
+                </ol>
+            </div>
+
+            <div class="sage-container">
+                <div id="sagecell"></div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Interactive Quiz</h2>
+            <p>Test your understanding of SVD with these questions. Use the applet and SageMath cell to verify your answers!</p>
+
+            <div class="quiz-section">
+                <div class="question" id="q1">
+                    <div class="question-text">
+                        <strong>Question 1:</strong> For the matrix \(A = \begin{bmatrix} 1 & 0 \\ 0 & 1 \\ 0 & 0 \end{bmatrix}\), what are the singular values?
+                    </div>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'q1', 'a')">
+                            <input type="radio" name="q1" value="a"> \(\sigma_1 = 2, \sigma_2 = 1\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q1', 'b')">
+                            <input type="radio" name="q1" value="b"> \(\sigma_1 = 1, \sigma_2 = 1\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q1', 'c')">
+                            <input type="radio" name="q1" value="c"> \(\sigma_1 = 1, \sigma_2 = 0\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q1', 'd')">
+                            <input type="radio" name="q1" value="d"> \(\sigma_1 = 0, \sigma_2 = 0\)
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('q1', 'b')">Check Answer</button>
+                    <div class="feedback" id="q1-feedback"></div>
+                </div>
+
+                <div class="question" id="q2">
+                    <div class="question-text">
+                        <strong>Question 2:</strong> Which of the following are true about SVD? (Select all that apply)
+                    </div>
+                    <div class="options">
+                        <div class="option" onclick="toggleCheckbox(this, 'q2', 'a')">
+                            <input type="checkbox" name="q2" value="a"> The singular values are always non-negative
+                        </div>
+                        <div class="option" onclick="toggleCheckbox(this, 'q2', 'b')">
+                            <input type="checkbox" name="q2" value="b"> SVD only works for square matrices
+                        </div>
+                        <div class="option" onclick="toggleCheckbox(this, 'q2', 'c')">
+                            <input type="checkbox" name="q2" value="c"> The left singular vectors are orthonormal
+                        </div>
+                        <div class="option" onclick="toggleCheckbox(this, 'q2', 'd')">
+                            <input type="checkbox" name="q2" value="d"> The largest singular value gives the direction of maximum variance
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkMultipleAnswer('q2', ['a', 'c', 'd'])">Check Answer</button>
+                    <div class="feedback" id="q2-feedback"></div>
+                </div>
+
+                <div class="question" id="q3">
+                    <div class="question-text">
+                        <strong>Question 3:</strong> For the matrix \(A = \begin{bmatrix} 3 & 0 \\ 0 & 0 \end{bmatrix}\), what is the largest singular value?
+                    </div>
+                    <div class="number-input">
+                        <label>\(\sigma_1 =\)</label>
+                        <input type="number" id="q3-input" step="0.01" placeholder="Enter value">
+                    </div>
+                    <button class="check-btn" onclick="checkNumericAnswer('q3', 3, 0.01)">Check Answer</button>
+                    <div class="feedback" id="q3-feedback"></div>
+                    <div class="hint">
+                        Hint: Use the SageMath cell above to compute the SVD of this matrix!
+                    </div>
+                </div>
+
+                <div class="question" id="q4">
+                    <div class="question-text">
+                        <strong>Question 4:</strong> In the vector projection applet, when the direction vector aligns with the first principal component, what happens to the projection square sum?
+                    </div>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'q4', 'a')">
+                            <input type="radio" name="q4" value="a"> It is minimized
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q4', 'b')">
+                            <input type="radio" name="q4" value="b"> It is maximized
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q4', 'c')">
+                            <input type="radio" name="q4" value="c"> It stays constant
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q4', 'd')">
+                            <input type="radio" name="q4" value="d"> It becomes zero
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('q4', 'b')">Check Answer</button>
+                    <div class="feedback" id="q4-feedback"></div>
+                </div>
+
+                <div class="question" id="q5">
+                    <div class="question-text">
+                        <strong>Question 5:</strong> Given a \(3 \times 5\) matrix, how many singular values can it have at most?
+                    </div>
+                    <div class="number-input">
+                        <label>Number of singular values:</label>
+                        <input type="number" id="q5-input" step="1" min="0" placeholder="Enter integer">
+                    </div>
+                    <button class="check-btn" onclick="checkNumericAnswer('q5', 3, 0)">Check Answer</button>
+                    <div class="feedback" id="q5-feedback"></div>
+                    <div class="hint">
+                        Hint: The number of singular values equals the minimum of the number of rows and columns.
+                    </div>
+                </div>
+
+                <div class="question" id="q6">
+                    <div class="question-text">
+                        <strong>Question 6:</strong> What does the Distance Square Sum in the applet represent geometrically?
+                    </div>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'q6', 'a')">
+                            <input type="radio" name="q6" value="a"> The total variance captured by the projection
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q6', 'b')">
+                            <input type="radio" name="q6" value="b"> The reconstruction error when projecting onto the line
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q6', 'c')">
+                            <input type="radio" name="q6" value="c"> The angle between the data and the projection
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q6', 'd')">
+                            <input type="radio" name="q6" value="d"> The determinant of the data matrix
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('q6', 'b')">Check Answer</button>
+                    <div class="feedback" id="q6-feedback"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Key Concepts</h2>
+            <h3>Connection to the Applet</h3>
+            <ul style="margin-left: 30px; margin-top: 10px;">
+                <li>The <strong>first singular vector</strong> (direction of \(v_1\)) is the direction that maximizes the projection square sum</li>
+                <li>The <strong>first singular value</strong> \(\sigma_1\) is related to the square root of the maximum projection square sum</li>
+                <li>The <strong>distance square sum</strong> represents reconstruction error and is minimized when projecting onto principal components</li>
+                <li>Rotating the blue vector in the applet is like exploring different projection directions to find the optimal one</li>
+            </ul>
+        </div>
+
+        <footer style="text-align:center; margin: 40px 0 10px 0; font-size: 0.95em; color: #888;">
+            © 2025 Zackery Reed. All rights reserved.
+        </footer>
+    </div>
+</body>
+</html>

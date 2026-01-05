@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chain Rule Visualization</title>
+    <link rel="stylesheet" href="../css/applet-styles.css">
+    <style>
+        body { margin: 0; padding: 10px; font-family: Arial, sans-serif; background: #0a0e27; color: #eee; overflow: hidden; }
+        .container { display: flex; flex-direction: column; gap: 10px; align-items: center; max-height: calc(100vh - 50px); }
+        canvas { border: 2px solid #4a5568; background: #16213e; box-shadow: 0 4px 6px rgba(0,0,0,0.3); cursor: crosshair; }
+        h1 { text-align: center; color: #e94560; margin: 0 0 5px 0; font-size: 18px; }
+    </style>
+</head>
+<body>
+    <h1>Chain Rule Interactive Visualization</h1>
+    <div class="container">
+        <canvas id="canvas1" width="800" height="280"></canvas>
+        <canvas id="canvas2" width="800" height="280"></canvas>
+    </div>
+
+    <script>
+// Canvas 1: y = f(x)
+const c1 = document.getElementById('canvas1');
+const ctx1 = c1.getContext('2d');
+
+// Canvas 2: s = g(z)
+const c2 = document.getElementById('canvas2');
+const ctx2 = c2.getContext('2d');
+
+// State for canvas 1
+let px1 = 0;
+let drag1 = false;
+
+// State for canvas 2
+let px2 = 0;
+let drag2 = false;
+
+// Functions for canvas 1: y = f(x)
+function f(x) {
+    return 1.5 * Math.log(Math.abs(x + 2.5)) + 0.3 * Math.sin(2 * Math.PI * x / 5);
+}
+
+function fPrime(x) {
+    return 1.5 / (x + 2.5) + (0.3 * 2 * Math.PI / 5) * Math.cos(2 * Math.PI * x / 5);
+}
+
+// Functions for canvas 2: s = g(z)
+function g(z) {
+    return -0.5 * z - 0.8 * Math.cos(2 * Math.PI * z / 3);
+}
+
+function gPrime(z) {
+    return -0.5 + (0.8 * 2 * Math.PI / 3) * Math.sin(2 * Math.PI * z / 3);
+}
+
+// Common parameters (matching differential-viz-dynamic.html)
+const pad = 40;
+const w = 480;
+const h = 180;
+const mainW = 480;  // Main graph width
+const mainH = 180;  // Main graph height
+const zoomW = 220;
+const zoomH = 160;
+
+// ============== CANVAS 1 FUNCTIONS ==============
+
+function drawCanvas1() {
+    const xMin = -2, xMax = 4;
+    let yMin = Infinity, yMax = -Infinity;
+    
+    // Calculate y range
+    for (let x = xMin; x <= xMax; x += (xMax - xMin) / 100) {
+        try {
+            const y = f(x);
+            if (!isNaN(y) && isFinite(y)) {
+                yMin = Math.min(yMin, y);
+                yMax = Math.max(yMax, y);
+            }
+        } catch (e) {}
+    }
+    const yRange = yMax - yMin;
+    yMin -= yRange * 0.15;
+    yMax += yRange * 0.15;
+    
+    const legP = {x: c1.width / 2 - 100, y: c1.height - 95};
+    const zoomP = {x: c1.width - zoomW - 40, y: c1.height - zoomH - 25};
+    
+    ctx1.clearRect(0, 0, c1.width, c1.height);
+    
+    // Transform functions
+    function toC(x, y) {
+        return [
+            pad + ((x - xMin) / (xMax - xMin)) * w,
+            pad + h - ((y - yMin) / (yMax - yMin)) * h
+        ];
+    }
+    
+    function toZ(x, y, cx, cy, s) {
+        return [
+            zoomP.x + zoomW * 0.33 + (x - cx) * s,
+            zoomP.y + zoomH * 0.5 - (y - cy) * s
+        ];
+    }
+    
+    // Draw axes
+    ctx1.strokeStyle = '#4a5568';
+    ctx1.lineWidth = 2;
+    const [x1, y1] = toC(xMin, 0);
+    const [x2, y2] = toC(xMax, 0);
+    ctx1.beginPath();
+    ctx1.moveTo(x1, y1);
+    ctx1.lineTo(x2, y2);
+    ctx1.stroke();
+    
+    const [x3, y3] = toC(0, yMin);
+    const [x4, y4] = toC(0, yMax);
+    ctx1.beginPath();
+    ctx1.moveTo(x3, y3);
+    ctx1.lineTo(x4, y4);
+    ctx1.stroke();
+    
+    // Draw grid
+    ctx1.strokeStyle = '#2d3748';
+    ctx1.lineWidth = 1;
+    ctx1.setLineDash([2, 2]);
+    for (let x = Math.ceil(xMin); x <= Math.floor(xMax); x++) {
+        const [c1x, cy1] = toC(x, yMin);
+        const [c2x, cy2] = toC(x, yMax);
+        ctx1.beginPath();
+        ctx1.moveTo(c1x, cy1);
+        ctx1.lineTo(c2x, cy2);
+        ctx1.stroke();
+    }
+    ctx1.setLineDash([]);
+    
+    // Draw function
+    ctx1.strokeStyle = '#4ecca3';
+    ctx1.lineWidth = 3;
+    ctx1.beginPath();
+    let start = false;
+    for (let x = xMin; x <= xMax; x += (xMax - xMin) / 200) {
+        try {
+            const y = f(x);
+            if (!isNaN(y) && isFinite(y)) {
+                const [cx, cy] = toC(x, y);
+                if (!start) {
+                    ctx1.moveTo(cx, cy);
+                    start = true;
+                } else {
+                    ctx1.lineTo(cx, cy);
+                }
+            }
+        } catch (e) {}
+    }
+    ctx1.stroke();
+    
+    // Draw point
+    const py = f(px1);
+    const [ppx, ppy] = toC(px1, py);
+    ctx1.strokeStyle = '#ffe66d';
+    ctx1.lineWidth = 2;
+    ctx1.strokeRect(ppx - 40, ppy - 40, 80, 80);
+    ctx1.fillStyle = '#e94560';
+    ctx1.beginPath();
+    ctx1.arc(ppx, ppy, 10, 0, 2 * Math.PI);
+    ctx1.fill();
+    ctx1.strokeStyle = '#fff';
+    ctx1.lineWidth = 2;
+    ctx1.stroke();
+    
+    // Coordinates
+    ctx1.font = 'italic 16px Georgia';
+    const txt = `(${px1.toFixed(2)}, ${py.toFixed(2)})`;
+    const tw = ctx1.measureText(txt).width;
+    ctx1.fillStyle = '#16213e';
+    ctx1.fillRect(ppx + 17, ppy + 11, tw + 6, 20);
+    let xo = ppx + 20;
+    ctx1.fillStyle = '#eee';
+    ctx1.fillText('(', xo, ppy + 25);
+    xo += ctx1.measureText('(').width;
+    ctx1.fillStyle = '#e94560';
+    ctx1.fillText(px1.toFixed(2), xo, ppy + 25);
+    xo += ctx1.measureText(px1.toFixed(2)).width;
+    ctx1.fillStyle = '#eee';
+    ctx1.fillText(', ', xo, ppy + 25);
+    xo += ctx1.measureText(', ').width;
+    ctx1.fillStyle = '#4ecca3';
+    ctx1.fillText(py.toFixed(2), xo, ppy + 25);
+    xo += ctx1.measureText(py.toFixed(2)).width;
+    ctx1.fillStyle = '#eee';
+    ctx1.fillText(')', xo, ppy + 25);
+    
+    // Draw legend
+    const sl = fPrime(px1);
+    ctx1.fillStyle = 'rgba(15,52,96,0.9)';
+    ctx1.fillRect(legP.x, legP.y, 200, 85);
+    ctx1.strokeStyle = '#4a5568';
+    ctx1.lineWidth = 2;
+    ctx1.strokeRect(legP.x, legP.y, 200, 85);
+    ctx1.font = 'bold 12px Arial';
+    ctx1.fillStyle = '#ffe66d';
+    ctx1.textAlign = 'left';
+    ctx1.fillText('Legend', legP.x + 5, legP.y + 15);
+    ctx1.font = 'italic 16px Georgia';
+    let xp = legP.x + 12;
+    let yp = legP.y + 35;
+    ctx1.fillStyle = '#4ecca3';
+    ctx1.fillText('y = f(x)', xp, yp);
+    
+    yp = legP.y + 55;
+    xp = legP.x + 12;
+    ctx1.fillStyle = '#4ecca3';
+    ctx1.fillText('dy', xp, yp);
+    xp += ctx1.measureText('dy').width;
+    ctx1.fillStyle = '#eee';
+    ctx1.fillText('/', xp, yp);
+    xp += ctx1.measureText('/').width;
+    ctx1.fillStyle = '#ffe66d';
+    ctx1.fillText('dx', xp, yp);
+    xp += ctx1.measureText('dx').width;
+    ctx1.fillStyle = '#eee';
+    ctx1.fillText(' = ', xp, yp);
+    xp += ctx1.measureText(' = ').width;
+    ctx1.fillStyle = '#ff9d76';
+    ctx1.fillText(sl.toFixed(2), xp, yp);
+    
+    yp = legP.y + 73;
+    xp = legP.x + 12;
+    ctx1.fillStyle = '#4ecca3';
+    ctx1.fillText('dy', xp, yp);
+    xp += ctx1.measureText('dy').width;
+    ctx1.fillStyle = '#eee';
+    ctx1.fillText(' = ', xp, yp);
+    xp += ctx1.measureText(' = ').width;
+    ctx1.fillStyle = '#ff9d76';
+    ctx1.fillText(sl.toFixed(2), xp, yp);
+    xp += ctx1.measureText(sl.toFixed(2)).width;
+    ctx1.fillStyle = '#eee';
+    ctx1.fillText(' · ', xp, yp);
+    xp += ctx1.measureText(' · ').width;
+    ctx1.fillStyle = '#ffe66d';
+    ctx1.fillText('dx', xp, yp);
+    
+    // Draw zoom window
+    const cx = px1, cy = py;
+    const dx = 0.15;
+    const dy = sl * dx;
+    const md = Math.max(Math.abs(dx), Math.abs(dy)) * 1.4;
+    const sc = Math.min(zoomW, zoomH) / (2 * md);
+    
+    ctx1.save();
+    ctx1.beginPath();
+    ctx1.rect(zoomP.x, zoomP.y, zoomW, zoomH);
+    ctx1.clip();
+    
+    ctx1.fillStyle = 'rgba(22,33,62,0.95)';
+    ctx1.fillRect(zoomP.x, zoomP.y, zoomW, zoomH);
+    ctx1.strokeStyle = '#ffe66d';
+    ctx1.lineWidth = 3;
+    ctx1.strokeRect(zoomP.x, zoomP.y, zoomW, zoomH);
+    
+    // Function in zoom
+    ctx1.strokeStyle = '#4ecca3';
+    ctx1.lineWidth = 3;
+    ctx1.beginPath();
+    start = false;
+    for (let x = cx - md; x <= cx + md; x += md / 100) {
+        try {
+            const y = f(x);
+            if (!isNaN(y) && isFinite(y)) {
+                const [zx, zy] = toZ(x, y, cx, cy, sc);
+                if (!start) {
+                    ctx1.moveTo(zx, zy);
+                    start = true;
+                } else {
+                    ctx1.lineTo(zx, zy);
+                }
+            }
+        } catch (e) {}
+    }
+    ctx1.stroke();
+    
+    const [zpx, zpy] = toZ(cx, cy, cx, cy, sc);
+    
+    // Tangent
+    const [tx1, ty1] = toZ(cx - md * 0.9, cy + sl * (cx - md * 0.9 - cx), cx, cy, sc);
+    const [tx2, ty2] = toZ(cx + md * 0.9, cy + sl * (cx + md * 0.9 - cx), cx, cy, sc);
+    ctx1.strokeStyle = '#ff9d76';
+    ctx1.lineWidth = 3;
+    ctx1.setLineDash([8, 4]);
+    ctx1.beginPath();
+    ctx1.moveTo(tx1, ty1);
+    ctx1.lineTo(tx2, ty2);
+    ctx1.stroke();
+    ctx1.setLineDash([]);
+    
+    // dx arrow
+    const dxe = cx + dx;
+    const [dx1, dy1] = toZ(cx, cy, cx, cy, sc);
+    const [dx2, dy2] = toZ(dxe, cy, cx, cy, sc);
+    ctx1.strokeStyle = '#ffe66d';
+    ctx1.lineWidth = 4;
+    ctx1.beginPath();
+    ctx1.moveTo(dx1, dy1);
+    ctx1.lineTo(dx2, dy2);
+    ctx1.stroke();
+    
+    const a1 = Math.atan2(dy2 - dy1, dx2 - dx1);
+    const al = 12;
+    ctx1.beginPath();
+    ctx1.moveTo(dx2, dy2);
+    ctx1.lineTo(dx2 - al * Math.cos(a1 - Math.PI / 6), dy2 - al * Math.sin(a1 - Math.PI / 6));
+    ctx1.lineTo(dx2 - al * 0.5 * Math.cos(a1), dy2 - al * 0.5 * Math.sin(a1));
+    ctx1.lineTo(dx2 - al * Math.cos(a1 + Math.PI / 6), dy2 - al * Math.sin(a1 + Math.PI / 6));
+    ctx1.closePath();
+    ctx1.fillStyle = '#ffe66d';
+    ctx1.fill();
+    
+    const [dmx, dmy] = toZ((cx + dxe) / 2, cy, cx, cy, sc);
+    ctx1.font = 'italic 18px Georgia';
+    ctx1.textAlign = 'center';
+    ctx1.fillText('dx', dmx, dmy + 25);
+    
+    // Stacked dx vectors
+    if (Math.abs(sl) > 0.1) {
+        const wp = Math.floor(Math.abs(sl));
+        const fp = Math.abs(sl) - wp;
+        const vsx = dxe + dx * 0.15;
+        let cury = cy;
+        
+        for (let i = 0; i < wp; i++) {
+            const [vx1, vy1] = toZ(vsx, cury, cx, cy, sc);
+            const [vx2, vy2] = toZ(vsx, cury + Math.sign(sl) * dx, cx, cy, sc);
+            ctx1.strokeStyle = '#ff9d76';
+            ctx1.lineWidth = 3;
+            ctx1.beginPath();
+            ctx1.moveTo(vx1, vy1);
+            ctx1.lineTo(vx2, vy2);
+            ctx1.stroke();
+            
+            const va = Math.atan2(vy2 - vy1, vx2 - vx1);
+            const vl = 10;
+            ctx1.beginPath();
+            ctx1.moveTo(vx2, vy2);
+            ctx1.lineTo(vx2 - vl * Math.cos(va - Math.PI / 6), vy2 - vl * Math.sin(va - Math.PI / 6));
+            ctx1.lineTo(vx2 - vl * 0.5 * Math.cos(va), vy2 - vl * 0.5 * Math.sin(va));
+            ctx1.lineTo(vx2 - vl * Math.cos(va + Math.PI / 6), vy2 - vl * Math.sin(va + Math.PI / 6));
+            ctx1.closePath();
+            ctx1.fillStyle = '#ff9d76';
+            ctx1.fill();
+            
+            const [vmx, vmy] = toZ(vsx, cury + Math.sign(sl) * dx / 2, cx, cy, sc);
+            ctx1.fillStyle = '#ffe66d';
+            ctx1.font = 'italic 14px Georgia';
+            ctx1.fillText('dx', vmx + 30, vmy);
+            cury += Math.sign(sl) * dx;
+        }
+        
+        if (fp > 0.05) {
+            const [vx1, vy1] = toZ(vsx, cury, cx, cy, sc);
+            const [vx2, vy2] = toZ(vsx, cury + Math.sign(sl) * fp * dx, cx, cy, sc);
+            ctx1.strokeStyle = '#ff9d76';
+            ctx1.lineWidth = 3;
+            ctx1.beginPath();
+            ctx1.moveTo(vx1, vy1);
+            ctx1.lineTo(vx2, vy2);
+            ctx1.stroke();
+            
+            const va = Math.atan2(vy2 - vy1, vx2 - vx1);
+            const vl = 10;
+            ctx1.beginPath();
+            ctx1.moveTo(vx2, vy2);
+            ctx1.lineTo(vx2 - vl * Math.cos(va - Math.PI / 6), vy2 - vl * Math.sin(va - Math.PI / 6));
+            ctx1.lineTo(vx2 - vl * 0.5 * Math.cos(va), vy2 - vl * 0.5 * Math.sin(va));
+            ctx1.lineTo(vx2 - vl * Math.cos(va + Math.PI / 6), vy2 - vl * Math.sin(va + Math.PI / 6));
+            ctx1.closePath();
+            ctx1.fillStyle = '#ff9d76';
+            ctx1.fill();
+            
+            const [vmx, vmy] = toZ(vsx, cury + Math.sign(sl) * fp * dx / 2, cx, cy, sc);
+            ctx1.font = 'italic 12px Georgia';
+            ctx1.fillStyle = '#ff9d76';
+            ctx1.fillText(fp.toFixed(2), vmx + 30, vmy);
+            ctx1.fillStyle = '#ffe66d';
+            ctx1.fillText(' dx', vmx + 45, vmy);
+        }
+    }
+    
+    ctx1.fillStyle = '#e94560';
+    ctx1.beginPath();
+    ctx1.arc(zpx, zpy, 9, 0, 2 * Math.PI);
+    ctx1.fill();
+    ctx1.strokeStyle = '#fff';
+    ctx1.lineWidth = 2;
+    ctx1.stroke();
+    
+    ctx1.font = 'bold 14px Arial';
+    ctx1.fillStyle = '#ffe66d';
+    ctx1.textAlign = 'center';
+    ctx1.fillText('Zoomed View', zoomP.x + zoomW / 2, zoomP.y + 18);
+    
+    ctx1.restore();
+}
+
+// ============== CANVAS 2 FUNCTIONS ==============
+
+function drawCanvas2() {
+    const zMin = -3, zMax = 3;
+    let sMin = Infinity, sMax = -Infinity;
+    
+    // Calculate s range
+    for (let z = zMin; z <= zMax; z += (zMax - zMin) / 100) {
+        try {
+            const s = g(z);
+            if (!isNaN(s) && isFinite(s)) {
+                sMin = Math.min(sMin, s);
+                sMax = Math.max(sMax, s);
+            }
+        } catch (e) {}
+    }
+    const sRange = sMax - sMin;
+    sMin -= sRange * 0.15;
+    sMax += sRange * 0.15;
+    
+    const legP = {x: 40, y: 15};
+    const zoomP = {x: c2.width - zoomW - 40, y: 15};
+    
+    ctx2.clearRect(0, 0, c2.width, c2.height);
+    
+    // Transform functions
+    function toC(z, s) {
+        return [
+            pad + ((z - zMin) / (zMax - zMin)) * mainW,
+            pad + mainH - ((s - sMin) / (sMax - sMin)) * mainH
+        ];
+    }
+    
+    function toZ(z, s, cz, cs, sc) {
+        return [
+            zoomP.x + zoomW * 0.5 + (z - cz) * sc,
+            zoomP.y + zoomH * 0.5 - (s - cs) * sc
+        ];
+    }
+    
+    // Draw axes
+    ctx2.strokeStyle = '#4a5568';
+    ctx2.lineWidth = 2;
+    const [x1, y1] = toC(zMin, 0);
+    const [x2, y2] = toC(zMax, 0);
+    ctx2.beginPath();
+    ctx2.moveTo(x1, y1);
+    ctx2.lineTo(x2, y2);
+    ctx2.stroke();
+    
+    const [x3, y3] = toC(0, sMin);
+    const [x4, y4] = toC(0, sMax);
+    ctx2.beginPath();
+    ctx2.moveTo(x3, y3);
+    ctx2.lineTo(x4, y4);
+    ctx2.stroke();
+    
+    // Draw grid
+    ctx2.strokeStyle = '#2d3748';
+    ctx2.lineWidth = 1;
+    ctx2.setLineDash([2, 2]);
+    for (let z = Math.ceil(zMin); z <= Math.floor(zMax); z++) {
+        const [c1x, cy1] = toC(z, sMin);
+        const [c2x, cy2] = toC(z, sMax);
+        ctx2.beginPath();
+        ctx2.moveTo(c1x, cy1);
+        ctx2.lineTo(c2x, cy2);
+        ctx2.stroke();
+    }
+    ctx2.setLineDash([]);
+    
+    // Draw function
+    ctx2.strokeStyle = '#4ecca3';
+    ctx2.lineWidth = 3;
+    ctx2.beginPath();
+    let start = false;
+    for (let z = zMin; z <= zMax; z += (zMax - zMin) / 200) {
+        try {
+            const s = g(z);
+            if (!isNaN(s) && isFinite(s)) {
+                const [cx, cy] = toC(z, s);
+                if (!start) {
+                    ctx2.moveTo(cx, cy);
+                    start = true;
+                } else {
+                    ctx2.lineTo(cx, cy);
+                }
+            }
+        } catch (e) {}
+    }
+    ctx2.stroke();
+    
+    // Draw point
+    const ps = g(px2);
+    const [ppx, ppy] = toC(px2, ps);
+    ctx2.strokeStyle = '#ffe66d';
+    ctx2.lineWidth = 2;
+    ctx2.strokeRect(ppx - 40, ppy - 40, 80, 80);
+    ctx2.fillStyle = '#e94560';
+    ctx2.beginPath();
+    ctx2.arc(ppx, ppy, 10, 0, 2 * Math.PI);
+    ctx2.fill();
+    ctx2.strokeStyle = '#fff';
+    ctx2.lineWidth = 2;
+    ctx2.stroke();
+    
+    // Coordinates
+    ctx2.font = 'italic 16px Georgia';
+    const txt = `(${px2.toFixed(2)}, ${ps.toFixed(2)})`;
+    const tw = ctx2.measureText(txt).width;
+    ctx2.fillStyle = '#16213e';
+    ctx2.fillRect(ppx + 17, ppy + 11, tw + 6, 20);
+    let xo = ppx + 20;
+    ctx2.fillStyle = '#eee';
+    ctx2.fillText('(', xo, ppy + 25);
+    xo += ctx2.measureText('(').width;
+    ctx2.fillStyle = '#e94560';
+    ctx2.fillText(px2.toFixed(2), xo, ppy + 25);
+    xo += ctx2.measureText(px2.toFixed(2)).width;
+    ctx2.fillStyle = '#eee';
+    ctx2.fillText(', ', xo, ppy + 25);
+    xo += ctx2.measureText(', ').width;
+    ctx2.fillStyle = '#4ecca3';
+    ctx2.fillText(ps.toFixed(2), xo, ppy + 25);
+    xo += ctx2.measureText(ps.toFixed(2)).width;
+    ctx2.fillStyle = '#eee';
+    ctx2.fillText(')', xo, ppy + 25);
+    
+    // Draw legend
+    const sl = gPrime(px2);
+    ctx2.fillStyle = 'rgba(15,52,96,0.9)';
+    ctx2.fillRect(legP.x, legP.y, 200, 85);
+    ctx2.strokeStyle = '#4a5568';
+    ctx2.lineWidth = 2;
+    ctx2.strokeRect(legP.x, legP.y, 200, 85);
+    ctx2.font = 'bold 12px Arial';
+    ctx2.fillStyle = '#ffe66d';
+    ctx2.textAlign = 'left';
+    ctx2.fillText('Legend', legP.x + 5, legP.y + 15);
+    ctx2.font = 'italic 16px Georgia';
+    let xp = legP.x + 12;
+    let yp = legP.y + 35;
+    ctx2.fillStyle = '#4ecca3';
+    ctx2.fillText('s = g(z)', xp, yp);
+    
+    yp = legP.y + 55;
+    xp = legP.x + 12;
+    ctx2.fillStyle = '#4ecca3';
+    ctx2.fillText('ds', xp, yp);
+    xp += ctx2.measureText('ds').width;
+    ctx2.fillStyle = '#eee';
+    ctx2.fillText('/', xp, yp);
+    xp += ctx2.measureText('/').width;
+    ctx2.fillStyle = '#ffe66d';
+    ctx2.fillText('dz', xp, yp);
+    xp += ctx2.measureText('dz').width;
+    ctx2.fillStyle = '#eee';
+    ctx2.fillText(' = ', xp, yp);
+    xp += ctx2.measureText(' = ').width;
+    ctx2.fillStyle = '#ff9d76';
+    ctx2.fillText(sl.toFixed(2), xp, yp);
+    
+    yp = legP.y + 73;
+    xp = legP.x + 12;
+    ctx2.fillStyle = '#4ecca3';
+    ctx2.fillText('ds', xp, yp);
+    xp += ctx2.measureText('ds').width;
+    ctx2.fillStyle = '#eee';
+    ctx2.fillText(' = ', xp, yp);
+    xp += ctx2.measureText(' = ').width;
+    ctx2.fillStyle = '#ff9d76';
+    ctx2.fillText(sl.toFixed(2), xp, yp);
+    xp += ctx2.measureText(sl.toFixed(2)).width;
+    ctx2.fillStyle = '#eee';
+    ctx2.fillText(' · ', xp, yp);
+    xp += ctx2.measureText(' · ').width;
+    ctx2.fillStyle = '#ffe66d';
+    ctx2.fillText('dz', xp, yp);
+    
+    // Draw zoom window
+    const cz = px2, cs = ps;
+    const dz = 0.15;
+    const ds = sl * dz;
+    const md = Math.max(Math.abs(dz), Math.abs(ds)) * 1.4;
+    const sc = Math.min(zoomW, zoomH) / (2 * md);
+    
+    ctx2.save();
+    ctx2.beginPath();
+    ctx2.rect(zoomP.x, zoomP.y, zoomW, zoomH);
+    ctx2.clip();
+    
+    ctx2.fillStyle = 'rgba(22,33,62,0.95)';
+    ctx2.fillRect(zoomP.x, zoomP.y, zoomW, zoomH);
+    ctx2.strokeStyle = '#ffe66d';
+    ctx2.lineWidth = 3;
+    ctx2.strokeRect(zoomP.x, zoomP.y, zoomW, zoomH);
+    
+    // Function in zoom
+    ctx2.strokeStyle = '#4ecca3';
+    ctx2.lineWidth = 3;
+    ctx2.beginPath();
+    start = false;
+    for (let zz = cz - md; zz <= cz + md; zz += md / 100) {
+        try {
+            const ss = g(zz);
+            if (!isNaN(ss) && isFinite(ss)) {
+                const [zx, zy] = toZ(zz, ss, cz, cs, sc);
+                if (!start) {
+                    ctx2.moveTo(zx, zy);
+                    start = true;
+                } else {
+                    ctx2.lineTo(zx, zy);
+                }
+            }
+        } catch (e) {}
+    }
+    ctx2.stroke();
+    
+    const [zpx, zpy] = toZ(cz, cs, cz, cs, sc);
+    
+    // Tangent
+    const [tz1, ts1] = toZ(cz - md * 0.9, cs + sl * (cz - md * 0.9 - cz), cz, cs, sc);
+    const [tz2, ts2] = toZ(cz + md * 0.9, cs + sl * (cz + md * 0.9 - cz), cz, cs, sc);
+    ctx2.strokeStyle = '#ff9d76';
+    ctx2.lineWidth = 3;
+    ctx2.setLineDash([8, 4]);
+    ctx2.beginPath();
+    ctx2.moveTo(tz1, ts1);
+    ctx2.lineTo(tz2, ts2);
+    ctx2.stroke();
+    ctx2.setLineDash([]);
+    
+    // dz arrow
+    const dze = cz + dz;
+    const [dz1, ds1] = toZ(cz, cs, cz, cs, sc);
+    const [dz2, ds2] = toZ(dze, cs, cz, cs, sc);
+    ctx2.strokeStyle = '#ffe66d';
+    ctx2.lineWidth = 4;
+    ctx2.beginPath();
+    ctx2.moveTo(dz1, ds1);
+    ctx2.lineTo(dz2, ds2);
+    ctx2.stroke();
+    
+    const a2 = Math.atan2(ds2 - ds1, dz2 - dz1);
+    const al2 = 12;
+    ctx2.beginPath();
+    ctx2.moveTo(dz2, ds2);
+    ctx2.lineTo(dz2 - al2 * Math.cos(a2 - Math.PI / 6), ds2 - al2 * Math.sin(a2 - Math.PI / 6));
+    ctx2.lineTo(dz2 - al2 * 0.5 * Math.cos(a2), ds2 - al2 * 0.5 * Math.sin(a2));
+    ctx2.lineTo(dz2 - al2 * Math.cos(a2 + Math.PI / 6), ds2 - al2 * Math.sin(a2 + Math.PI / 6));
+    ctx2.closePath();
+    ctx2.fillStyle = '#ffe66d';
+    ctx2.fill();
+    
+    const [dmx2, dmy2] = toZ((cz + dze) / 2, cs, cz, cs, sc);
+    ctx2.font = 'italic 18px Georgia';
+    ctx2.textAlign = 'center';
+    ctx2.fillText('dz', dmx2, dmy2 + 25);
+    
+    // Stacked dz vectors
+    if (Math.abs(sl) > 0.1) {
+        const wp = Math.floor(Math.abs(sl));
+        const fp = Math.abs(sl) - wp;
+        const vsx = dze + dz * 0.15;
+        let curs = cs;
+        
+        for (let i = 0; i < wp; i++) {
+            const [vz1, vs1] = toZ(vsx, curs, cz, cs, sc);
+            const [vz2, vs2] = toZ(vsx, curs + Math.sign(sl) * dz, cz, cs, sc);
+            ctx2.strokeStyle = '#ff9d76';
+            ctx2.lineWidth = 3;
+            ctx2.beginPath();
+            ctx2.moveTo(vz1, vs1);
+            ctx2.lineTo(vz2, vs2);
+            ctx2.stroke();
+            
+            const va = Math.atan2(vs2 - vs1, vz2 - vz1);
+            const vl = 10;
+            ctx2.beginPath();
+            ctx2.moveTo(vz2, vs2);
+            ctx2.lineTo(vz2 - vl * Math.cos(va - Math.PI / 6), vs2 - vl * Math.sin(va - Math.PI / 6));
+            ctx2.lineTo(vz2 - vl * 0.5 * Math.cos(va), vs2 - vl * 0.5 * Math.sin(va));
+            ctx2.lineTo(vz2 - vl * Math.cos(va + Math.PI / 6), vs2 - vl * Math.sin(va + Math.PI / 6));
+            ctx2.closePath();
+            ctx2.fillStyle = '#ff9d76';
+            ctx2.fill();
+            
+            const [vmx, vmy] = toZ(vsx, curs + Math.sign(sl) * dz / 2, cz, cs, sc);
+            ctx2.fillStyle = '#ffe66d';
+            ctx2.font = 'italic 14px Georgia';
+            ctx2.fillText('dz', vmx + 30, vmy);
+            curs += Math.sign(sl) * dz;
+        }
+        
+        if (fp > 0.05) {
+            const [vz1, vs1] = toZ(vsx, curs, cz, cs, sc);
+            const [vz2, vs2] = toZ(vsx, curs + Math.sign(sl) * fp * dz, cz, cs, sc);
+            ctx2.strokeStyle = '#ff9d76';
+            ctx2.lineWidth = 3;
+            ctx2.beginPath();
+            ctx2.moveTo(vz1, vs1);
+            ctx2.lineTo(vz2, vs2);
+            ctx2.stroke();
+            
+            const va = Math.atan2(vs2 - vs1, vz2 - vz1);
+            const vl = 10;
+            ctx2.beginPath();
+            ctx2.moveTo(vz2, vs2);
+            ctx2.lineTo(vz2 - vl * Math.cos(va - Math.PI / 6), vs2 - vl * Math.sin(va - Math.PI / 6));
+            ctx2.lineTo(vz2 - vl * 0.5 * Math.cos(va), vs2 - vl * 0.5 * Math.sin(va));
+            ctx2.lineTo(vz2 - vl * Math.cos(va + Math.PI / 6), vs2 - vl * Math.sin(va + Math.PI / 6));
+            ctx2.closePath();
+            ctx2.fillStyle = '#ff9d76';
+            ctx2.fill();
+            
+            const [vmx, vmy] = toZ(vsx, curs + Math.sign(sl) * fp * dz / 2, cz, cs, sc);
+            ctx2.font = 'italic 12px Georgia';
+            ctx2.fillStyle = '#ff9d76';
+            ctx2.fillText(fp.toFixed(2), vmx + 30, vmy);
+            ctx2.fillStyle = '#ffe66d';
+            ctx2.fillText(' dz', vmx + 45, vmy);
+        }
+    }
+    
+    ctx2.fillStyle = '#e94560';
+    ctx2.beginPath();
+    ctx2.arc(zpx, zpy, 9, 0, 2 * Math.PI);
+    ctx2.fill();
+    ctx2.strokeStyle = '#fff';
+    ctx2.lineWidth = 2;
+    ctx2.stroke();
+    
+    ctx2.font = 'bold 14px Arial';
+    ctx2.fillStyle = '#ffe66d';
+    ctx2.textAlign = 'center';
+    ctx2.fillText('Zoomed View', zoomP.x + zoomW / 2, zoomP.y + 18);
+    
+    ctx2.restore();
+}
+
+// ============== EVENT HANDLERS ==============
+
+// Canvas 1 mouse events
+c1.addEventListener('mousedown', e => {
+    const r = c1.getBoundingClientRect();
+    const mx = e.clientX - r.left;
+    const my = e.clientY - r.top;
+    
+    const xMin = -2, xMax = 4;
+    let yMin = Infinity, yMax = -Infinity;
+    for (let x = xMin; x <= xMax; x += (xMax - xMin) / 100) {
+        try {
+            const y = f(x);
+            if (!isNaN(y) && isFinite(y)) {
+                yMin = Math.min(yMin, y);
+                yMax = Math.max(yMax, y);
+            }
+        } catch (e) {}
+    }
+    const yRange = yMax - yMin;
+    yMin -= yRange * 0.15;
+    yMax += yRange * 0.15;
+    
+    const py = f(px1);
+    const ppx = pad + ((px1 - xMin) / (xMax - xMin)) * w;
+    const ppy = pad + h - ((py - yMin) / (yMax - yMin)) * h;
+    
+    if (Math.sqrt((mx - ppx) ** 2 + (my - ppy) ** 2) < 15) {
+        drag1 = true;
+    }
+});
+
+c1.addEventListener('mousemove', e => {
+    if (drag1) {
+        const r = c1.getBoundingClientRect();
+        const mx = e.clientX - r.left;
+        
+        const xMin = -2, xMax = 4;
+        const x = xMin + ((mx - pad) / w) * (xMax - xMin);
+        px1 = Math.max(xMin + 0.1, Math.min(xMax - 0.1, x));
+        drawCanvas1();
+    }
+});
+
+c1.addEventListener('mouseup', () => drag1 = false);
+c1.addEventListener('mouseleave', () => drag1 = false);
+
+// Canvas 2 mouse events
+c2.addEventListener('mousedown', e => {
+    const r = c2.getBoundingClientRect();
+    const mx = e.clientX - r.left;
+    const my = e.clientY - r.top;
+    
+    const zMin = -3, zMax = 3;
+    let sMin = Infinity, sMax = -Infinity;
+    for (let z = zMin; z <= zMax; z += (zMax - zMin) / 100) {
+        try {
+            const s = g(z);
+            if (!isNaN(s) && isFinite(s)) {
+                sMin = Math.min(sMin, s);
+                sMax = Math.max(sMax, s);
+            }
+        } catch (e) {}
+    }
+    const sRange = sMax - sMin;
+    sMin -= sRange * 0.15;
+    sMax += sRange * 0.15;
+    
+    const ps = g(px2);
+    const ppx = pad + ((px2 - zMin) / (zMax - zMin)) * mainW;
+    const ppy = pad + mainH - ((ps - sMin) / (sMax - sMin)) * mainH;
+    
+    if (Math.sqrt((mx - ppx) ** 2 + (my - ppy) ** 2) < 15) {
+        drag2 = true;
+    }
+});
+
+c2.addEventListener('mousemove', e => {
+    if (drag2) {
+        const r = c2.getBoundingClientRect();
+        const mx = e.clientX - r.left;
+        
+        const zMin = -3, zMax = 3;
+        const z = zMin + ((mx - pad) / w) * (zMax - zMin);
+        px2 = Math.max(zMin + 0.1, Math.min(zMax - 0.1, z));
+        drawCanvas2();
+    }
+});
+
+c2.addEventListener('mouseup', () => drag2 = false);
+c2.addEventListener('mouseleave', () => drag2 = false);
+
+// Initial draw
+drawCanvas1();
+drawCanvas2();
+    </script>
+</body>
+</html>

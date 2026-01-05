@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geometric Series Visualization</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        #canvas-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        canvas {
+            border: 2px solid #4a5568;
+            background: #16213e;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            display: block;
+            max-width: 100%;
+        }
+        
+        #controls {
+            width: 300px;
+            background: #0f3460;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            overflow-y: auto;
+            max-height: 90vh;
+        }
+        
+        h2 {
+            margin-top: 0;
+            color: #e94560;
+            border-bottom: 2px solid #e94560;
+            padding-bottom: 10px;
+            font-size: 20px;
+        }
+        
+        h3 {
+            color: #4ecca3;
+            font-size: 14px;
+            margin-top: 15px;
+            margin-bottom: 8px;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #aaa;
+            font-size: 13px;
+        }
+        
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            background: #16213e;
+            border: 1px solid #4a5568;
+            border-radius: 4px;
+            color: #e8e8e8;
+            font-size: 14px;
+        }
+        
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #e94560;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            margin-top: 8px;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #c93952;
+        }
+        
+        button.secondary {
+            background: #4ecca3;
+            padding: 8px;
+            font-size: 12px;
+        }
+        
+        button.secondary:hover {
+            background: #3db894;
+        }
+        
+        .value-display {
+            color: #4ecca3;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .result-box {
+            background: #16213e;
+            padding: 12px;
+            border-radius: 4px;
+            margin-top: 8px;
+            font-size: 14px;
+        }
+        
+        .info-box {
+            background: #16213e;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            line-height: 1.5;
+            margin-top: 10px;
+        }
+        
+        .formula {
+            font-family: 'Courier New', monospace;
+            background: #0f1925;
+            padding: 8px;
+            border-radius: 4px;
+            margin: 5px 0;
+            text-align: center;
+            color: #4ecca3;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container">
+        <canvas id="main-canvas" width="800" height="700"></canvas>
+    </div>
+    
+    <div id="controls">
+        <h2>Geometric Series</h2>
+        
+        <div class="control-group">
+            <h3>Rectangle Dimensions</h3>
+            <label>Width (a): <span class="value-display" id="width-display">2.0</span></label>
+            <input type="number" id="width-input" step="0.1" min="1" max="5" value="2">
+            
+            <label style="margin-top: 10px;">Height (b): <span class="value-display" id="height-display">2.5</span></label>
+            <input type="number" id="height-input" step="0.1" min="1" max="5" value="2.5">
+        </div>
+        
+        <div class="control-group">
+            <h3>Partial Sum Steps</h3>
+            <label>N = <span class="value-display" id="n-display">0</span></label>
+            <button id="next-btn">Next Step (N+1)</button>
+            <button id="prev-btn" class="secondary">Previous Step (N-1)</button>
+            <button id="reset-btn" class="secondary">Reset to N=0</button>
+        </div>
+        
+        <div class="result-box">
+            <h3 style="margin-top: 0;">Partial Sum</h3>
+            <div class="formula" id="sum-formula">Σ = 0.00</div>
+            <div style="font-size: 11px; color: #aaa; margin-top: 5px;">
+                Sum of filled areas = ab(1 - 1/2<sup>N</sup>)
+            </div>
+        </div>
+        
+        <div class="result-box">
+            <h3 style="margin-top: 0;">Current Term</h3>
+            <div class="formula" id="term-formula">a<sub>n</sub> = --</div>
+            <div style="font-size: 11px; color: #aaa; margin-top: 5px;">
+                Current subdivision: ab/2<sup>N</sup>
+            </div>
+        </div>
+        
+        <div class="info-box">
+            <strong>Subdivision Pattern:</strong><br>
+            • Each step fills 1/2 of remaining area<br>
+            • Step 1: Two diagonal quarters (1/2)<br>
+            • Step 2: One quarter (1/2 of remaining)<br>
+            • Pattern repeats in top-right quarter
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('main-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // State
+        let a = 2;    // width
+        let b = 2.5;  // height
+        let n = 0;    // subdivision step (0 = empty)
+        
+        // Colors for different subdivision levels
+        const colors = [
+            '#4ecca3', '#ff6b6b', '#f9d423', '#00d2ff', 
+            '#a8e6cf', '#ffd3b6', '#ffaaa5', '#ff8b94',
+            '#c7ceea', '#b5ead7', '#e2f0cb', '#ffdac1'
+        ];
+        
+        // Generate rectangles following the diagonal pattern
+        // Each step fills HALF (1/2) of the remaining area
+        // Pattern: 2 quarters (step 1), 1 quarter (step 2), 2 quarters (step 3), 1 quarter (step 4), etc.
+        function getRectangles() {
+            const rects = [];
+            
+            for (let step = 1; step <= n; step++) {
+                // Which cycle are we in (0-indexed)
+                const cycle = Math.floor((step - 1) / 2);
+                // Which position in the cycle (0 or 1)
+                const posInCycle = (step - 1) % 2;
+                
+                // Calculate the base rectangle for this cycle
+                // After each complete cycle of 2 steps, we zoom into top-right quarter
+                let baseX = 0, baseY = 0, baseW = a, baseH = b;
+                for (let c = 0; c < cycle; c++) {
+                    baseX += baseW / 2;
+                    baseY += baseH / 2;
+                    baseW /= 2;
+                    baseH /= 2;
+                }
+                
+                // Add rectangle(s) based on position in cycle
+                if (posInCycle === 0) {
+                    // Step 1 of cycle: Fill TWO quarters (top-left and bottom-right diagonal)
+                    // This is 1/2 of the current base area
+                    rects.push({
+                        x: baseX,
+                        y: baseY + baseH / 2,
+                        width: baseW / 2,
+                        height: baseH / 2,
+                        level: step
+                    });
+                    rects.push({
+                        x: baseX + baseW / 2,
+                        y: baseY,
+                        width: baseW / 2,
+                        height: baseH / 2,
+                        level: step
+                    });
+                } else if (posInCycle === 1) {
+                    // Step 2 of cycle: Fill ONE quarter (bottom-left)
+                    // This is 1/2 of the REMAINING area (which was 1/2 of base)
+                    // So this is 1/4 of the original base area
+                    rects.push({
+                        x: baseX,
+                        y: baseY,
+                        width: baseW / 2,
+                        height: baseH / 2,
+                        level: step
+                    });
+                }
+            }
+            
+            return rects;
+        }
+        
+        // Get zoom box for current step
+        // Shows the remaining unfilled region
+        // Zoom updates when 2 quarters (1/2 of area) are added
+        function getZoomBox() {
+            if (n < 1) return null;
+            
+            // Zoom updates on odd steps (1, 3, 5, 7...) when 2 quarters appear
+            // Show the cycle that contains the current step
+            let cycleToShow;
+            if (n % 2 === 1) {
+                // Steps 1,3,5,7... - show current cycle being filled
+                cycleToShow = Math.floor((n - 1) / 2);
+            } else {
+                // Steps 2,4,6,8... - continue showing same cycle
+                cycleToShow = Math.floor((n - 1) / 2);
+            }
+            
+            // Calculate the base rectangle for the cycle to show
+            let baseX = 0, baseY = 0, baseW = a, baseH = b;
+            for (let c = 0; c < cycleToShow; c++) {
+                baseX += baseW / 2;
+                baseY += baseH / 2;
+                baseW /= 2;
+                baseH /= 2;
+            }
+            
+            return {
+                x: baseX,
+                y: baseY,
+                width: baseW,
+                height: baseH
+            };
+        }
+        
+        // Draw the main visualization
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const padding = 50;
+            const mainWidth = 450;
+            const mainHeight = mainWidth * (b / a);
+            const mainX = padding;
+            const mainY = padding;
+            
+            // Draw main rectangle outline
+            ctx.strokeStyle = '#4a5568';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(mainX, mainY, mainWidth, mainHeight);
+            
+            // Draw filled rectangles
+            const rects = getRectangles();
+            rects.forEach((rect, idx) => {
+                const rx = mainX + rect.x * (mainWidth / a);
+                const ry = mainY + (b - rect.y - rect.height) * (mainHeight / b);
+                const rw = rect.width * (mainWidth / a);
+                const rh = rect.height * (mainHeight / b);
+                
+                ctx.fillStyle = colors[idx % colors.length] + 'CC';
+                ctx.fillRect(rx, ry, rw, rh);
+                
+                ctx.strokeStyle = colors[idx % colors.length];
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(rx, ry, rw, rh);
+                
+                // Draw dimension labels if rectangle is large enough
+                if (rw > 40 && rh > 30) {
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 11px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    const area = rect.width * rect.height;
+                    ctx.fillText(area.toFixed(3), rx + rw/2, ry + rh/2);
+                }
+            });
+            
+            // Draw zoom box indicator on main rectangle
+            const zoomBox = getZoomBox();
+            if (zoomBox && zoomBox.width > 0.01) {
+                const zx = mainX + zoomBox.x * (mainWidth / a);
+                const zy = mainY + (b - zoomBox.y - zoomBox.height) * (mainHeight / b);
+                const zw = zoomBox.width * (mainWidth / a);
+                const zh = zoomBox.height * (mainHeight / b);
+                
+                ctx.strokeStyle = '#ffe66d';
+                ctx.lineWidth = 3;
+                ctx.setLineDash([8, 4]);
+                ctx.strokeRect(zx, zy, zw, zh);
+                ctx.setLineDash([]);
+                
+                // Draw zoom window in top right
+                drawZoomWindow(zoomBox);
+            }
+            
+            // Labels
+            ctx.fillStyle = '#aaa';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(`Width = ${a.toFixed(1)}`, mainX + mainWidth/2, mainY + mainHeight + 30);
+            ctx.save();
+            ctx.translate(mainX - 30, mainY + mainHeight/2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText(`Height = ${b.toFixed(1)}`, 0, 0);
+            ctx.restore();
+        }
+        
+        // Draw the zoom window showing detail
+        function drawZoomWindow(zoomBox) {
+            const zoomWindowSize = 220;
+            const zoomX = canvas.width - zoomWindowSize - 70;
+            const zoomY = 80;
+            
+            // Draw zoom window background
+            ctx.fillStyle = '#0f1925';
+            ctx.fillRect(zoomX - 5, zoomY - 5, zoomWindowSize + 10, zoomWindowSize + 10);
+            
+            // Draw zoom window border
+            ctx.strokeStyle = '#ffe66d';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(zoomX, zoomY, zoomWindowSize, zoomWindowSize);
+            
+            // Draw label
+            ctx.fillStyle = '#ffe66d';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('ZOOM', zoomX + zoomWindowSize/2, zoomY - 10);
+            
+            // Calculate scale for zoom window
+            const scaleX = zoomWindowSize / zoomBox.width;
+            const scaleY = zoomWindowSize / zoomBox.height;
+            
+            // Get all rectangles
+            const rects = getRectangles();
+            
+            // Draw each rectangle that intersects the zoom box
+            rects.forEach((rect, idx) => {
+                const rectRight = rect.x + rect.width;
+                const rectTop = rect.y + rect.height;
+                
+                // Check if rectangle intersects with zoom box
+                if (rectRight > zoomBox.x && rect.x < zoomBox.x + zoomBox.width &&
+                    rectTop > zoomBox.y && rect.y < zoomBox.y + zoomBox.height) {
+                    
+                    // Calculate visible portion within zoom box
+                    const visibleX = Math.max(rect.x, zoomBox.x);
+                    const visibleY = Math.max(rect.y, zoomBox.y);
+                    const visibleRight = Math.min(rectRight, zoomBox.x + zoomBox.width);
+                    const visibleTop = Math.min(rectTop, zoomBox.y + zoomBox.height);
+                    const visibleWidth = visibleRight - visibleX;
+                    const visibleHeight = visibleTop - visibleY;
+                    
+                    // Map to zoom window coordinates
+                    const zx = zoomX + (visibleX - zoomBox.x) * scaleX;
+                    const zy = zoomY + (zoomBox.height - (visibleTop - zoomBox.y)) * scaleY;
+                    const zw = visibleWidth * scaleX;
+                    const zh = visibleHeight * scaleY;
+                    
+                    ctx.fillStyle = colors[idx % colors.length] + 'CC';
+                    ctx.fillRect(zx, zy, zw, zh);
+                    
+                    ctx.strokeStyle = colors[idx % colors.length];
+                    ctx.lineWidth = 1.5;
+                    ctx.strokeRect(zx, zy, zw, zh);
+                    
+                    // Draw dimension labels in zoom window if space allows
+                    if (zw > 35 && zh > 25) {
+                        ctx.fillStyle = '#fff';
+                        ctx.font = 'bold 9px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        const area = rect.width * rect.height;
+                        ctx.fillText(area.toFixed(5), zx + zw/2, zy + zh/2);
+                    }
+                }
+            });
+        }
+        
+        // Calculate partial sum as a fraction string
+        function calculateSumFraction() {
+            if (n === 0) return { numerator: 0, denominator: 1, decimal: 0 };
+            // Sum = ab(1 - 1/2^n) = ab(2^n - 1)/2^n
+            const denominator = Math.pow(2, n);
+            const numerator = (denominator - 1) * a * b;
+            const decimal = a * b * (1 - 1/denominator);
+            return { numerator, denominator, decimal };
+        }
+        
+        // Calculate current term as a fraction
+        function calculateTermFraction() {
+            if (n === 0) return { numerator: 0, denominator: 1, decimal: 0 };
+            // Term = ab/2^n
+            const denominator = Math.pow(2, n);
+            const numerator = a * b;
+            const decimal = numerator / denominator;
+            return { numerator, denominator, decimal };
+        }
+        
+        // Update displays
+        function updateDisplays() {
+            document.getElementById('width-display').textContent = a.toFixed(1);
+            document.getElementById('height-display').textContent = b.toFixed(1);
+            document.getElementById('n-display').textContent = n;
+            
+            const sumFrac = calculateSumFraction();
+            const termFrac = calculateTermFraction();
+            
+            if (n === 0) {
+                document.getElementById('sum-formula').innerHTML = `Σ = 0`;
+                document.getElementById('term-formula').innerHTML = `a<sub>n</sub> = --`;
+            } else {
+                // Determine precision based on n
+                let precision = 3;
+                if (n > 10) precision = 6;
+                if (n > 20) precision = 9;
+                if (n > 30) precision = 12;
+                
+                // Format sum as decimal only
+                document.getElementById('sum-formula').innerHTML = 
+                    `Σ = ${sumFrac.decimal.toFixed(precision)}`;
+                
+                // Format term
+                let termDisplay;
+                if (termFrac.decimal < 0.000001) {
+                    termDisplay = `${termFrac.numerator.toFixed(1)}/${termFrac.denominator}<br><span style="font-size:11px">≈ ${termFrac.decimal.toExponential(4)}</span>`;
+                } else {
+                    termDisplay = `${termFrac.numerator.toFixed(1)}/${termFrac.denominator}<br><span style="font-size:11px">≈ ${termFrac.decimal.toFixed(Math.min(n, 12))}</span>`;
+                }
+                document.getElementById('term-formula').innerHTML = 
+                    `a<sub>${n}</sub> = ${termDisplay}`;
+            }
+        }
+        
+        // Event listeners
+        document.getElementById('width-input').addEventListener('input', (e) => {
+            a = parseFloat(e.target.value) || 2;
+            updateDisplays();
+            draw();
+        });
+        
+        document.getElementById('height-input').addEventListener('input', (e) => {
+            b = parseFloat(e.target.value) || 2.5;
+            updateDisplays();
+            draw();
+        });
+        
+        document.getElementById('next-btn').addEventListener('click', () => {
+            if (n < 100) {
+                n++;
+                updateDisplays();
+                draw();
+            }
+        });
+        
+        document.getElementById('prev-btn').addEventListener('click', () => {
+            if (n > 0) {
+                n--;
+                updateDisplays();
+                draw();
+            }
+        });
+        
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            n = 0;
+            updateDisplays();
+            draw();
+        });
+        
+        // Initialize
+        updateDisplays();
+        draw();
+    </script>
+</body>
+</html>

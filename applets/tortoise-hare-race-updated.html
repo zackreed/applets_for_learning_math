@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tortoise vs Hare Race</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            display: flex;
+            gap: 20px;
+            min-height: 100vh;
+            max-width: 1050px;
+            width: 1050px;
+            overflow: hidden;
+        }
+        
+        #canvas-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-width: 704px; /* Prevent shrinking below canvas width + borders */
+        }
+        
+        canvas {
+            border: 2px solid #4a5568;
+            background: #16213e;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            display: block;
+            cursor: crosshair;
+            flex-shrink: 0;
+        }
+        
+        canvas:hover {
+            border-color: #4ecca3;
+        }
+        
+        #controls {
+            width: 300px;
+            background: #0f3460;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            overflow-y: auto;
+            max-height: 600px;
+            flex-shrink: 0;
+        }
+        
+        h2 {
+            margin-top: 0;
+            color: #e94560;
+            border-bottom: 2px solid #e94560;
+            padding-bottom: 10px;
+        }
+        
+        h3 {
+            color: #4ecca3;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #aaa;
+            font-size: 14px;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            margin-top: 5px;
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #e94560;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 10px;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #c93952;
+        }
+        
+        button.secondary {
+            background: #4ecca3;
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+        
+        button.secondary:hover {
+            background: #3db894;
+        }
+        
+        .value-display {
+            color: #4ecca3;
+            font-weight: bold;
+        }
+        
+        .result-box {
+            background: #16213e;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .winner {
+            color: #4ecca3;
+            font-size: 24px;
+            display: none;
+        }
+        
+        .info-text {
+            background: #16213e;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #aaa;
+            margin-top: 10px;
+            line-height: 1.5;
+        }
+        
+        .warning {
+            color: #ffe66d;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container">
+        <canvas id="track-canvas" width="700" height="180"></canvas>
+        <canvas id="graph-canvas" width="700" height="350"></canvas>
+    </div>
+    
+    <div id="controls">
+        <h2>Tortoise vs Hare</h2>
+        
+        <div class="control-group">
+            <label>Time: <span class="value-display" id="time-display">0.00</span>s</label>
+            <input type="range" id="time-slider" min="0" max="1" step="0.01" value="0">
+            <button id="action-btn">Race!</button>
+        </div>
+        
+        <div class="control-group">
+            <h3>Average Rates (at current time)</h3>
+            <div class="result-box">
+                <div style="margin-bottom: 10px;">
+                    <label style="display: inline; margin-right: 10px;">Δt =</label>
+                    <input type="number" id="dt-input" step="0.5" min="0.5" max="5" value="0.5" 
+                           style="width: 80px; padding: 5px; background: #0f1925; color: #4ecca3; 
+                                  border: 1px solid #4a5568; border-radius: 4px; font-weight: bold;">
+                    <span style="color: #aaa;">s</span>
+                </div>
+                <div>Hare: ΔD/Δt = <span class="value-display" id="hare-rate">10.0</span> m/s</div>
+                <div>Tortoise: ΔD/Δt = <span class="value-display" id="tortoise-rate">--</span> m/s</div>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <h3>Tortoise Strategy</h3>
+            <button id="preset-slow" class="secondary">Slow Start</button>
+            <button id="preset-fast" class="secondary">Fast Start</button>
+            <button id="preset-steady" class="secondary">Steady</button>
+            <button id="preset-random" class="secondary">Random</button>
+        </div>
+    </div>
+
+    <script>
+        // Canvas setup
+        const trackCanvas = document.getElementById('track-canvas');
+        const graphCanvas = document.getElementById('graph-canvas');
+        const trackCtx = trackCanvas.getContext('2d');
+        const graphCtx = graphCanvas.getContext('2d');
+        
+        console.log('Canvas initialized', trackCanvas, graphCanvas);
+        
+        // State
+        let time = 0;
+        let racing = false;
+        let dt = 0.05; // Internal dt (0-1 scale)
+        const finishLine = 0.75;
+        
+        // Oval track - simple ellipse parametric equation
+        function getOvalPosition(progress) {
+            // Map progress to angle around oval (0 to 2π)
+            const angle = progress * 2 * Math.PI;
+            // Ellipse with semi-major axis a and semi-minor axis b
+            const a = 3.5; // horizontal radius
+            const b = 1.3; // vertical radius (reduced for thinner oval)
+            return [a * Math.cos(angle), b * Math.sin(angle)];
+        }
+        
+        // Tortoise strategy: 11 draggable control points
+        let tortoiseControlPoints = [
+            [0, 0],
+            [0.1, 0.15],
+            [0.2, 0.3],
+            [0.3, 0.4],
+            [0.4, 0.5],
+            [0.5, 0.6],
+            [0.6, 0.7],
+            [0.7, 0.78],
+            [0.8, 0.85],
+            [0.9, 0.92],
+            [1, 1]
+        ];
+        
+        // Dragging state
+        let draggingPoint = null;
+        let hoveredPoint = null;
+        
+        // Binomial coefficient
+        function binomial(n, k) {
+            if (k < 0 || k > n) return 0;
+            if (k === 0 || k === n) return 1;
+            let result = 1;
+            for (let i = 1; i <= k; i++) {
+                result *= (n - i + 1) / i;
+            }
+            return result;
+        }
+        
+        // Bezier curve evaluation
+        function bezier(t, points) {
+            const n = points.length - 1;
+            let x = 0, y = 0;
+            for (let i = 0; i <= n; i++) {
+                const b = binomial(n, i) * Math.pow(t, i) * Math.pow(1 - t, n - i);
+                x += b * points[i][0];
+                y += b * points[i][1];
+            }
+            return [x, y];
+        }
+        
+        // Hare strategy: linear
+        function hareStrategy(t) {
+            return Math.max(0, Math.min(1, t));
+        }
+        
+        // Tortoise strategy: Bezier curve
+        function tortoiseStrategy(t) {
+            t = Math.max(0, Math.min(1, t));
+            return bezier(t, tortoiseControlPoints)[1];
+        }
+        
+        // Graph coordinate conversion
+        const padding = 60;
+        const graphWidth = graphCanvas.width - 2 * padding;
+        const graphHeight = graphCanvas.height - 2 * padding;
+        
+        function toGraphCanvas(t, progress) {
+            return [
+                padding + t * graphWidth,
+                graphCanvas.height - padding - progress * graphHeight
+            ];
+        }
+        
+        function fromGraphCanvas(x, y) {
+            return [
+                (x - padding) / graphWidth,
+                (graphCanvas.height - padding - y) / graphHeight
+            ];
+        }
+        
+        // Mouse events for graph
+        graphCanvas.addEventListener('mousedown',e=>{
+            const r=graphCanvas.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
+            for(let i=0;i<tortoiseControlPoints.length;i++){
+                const [cx,cy]=toGraphCanvas(tortoiseControlPoints[i][0],tortoiseControlPoints[i][1]);
+                if(Math.sqrt((mx-cx)**2+(my-cy)**2)<15)draggingPoint=i;
+            }
+        });
+
+        graphCanvas.addEventListener('mousemove',e=>{
+            if(draggingPoint!==null){
+                const r=graphCanvas.getBoundingClientRect();
+                const [nt,np]=fromGraphCanvas(e.clientX-r.left,e.clientY-r.top);
+                if(draggingPoint!==0 && draggingPoint!==tortoiseControlPoints.length-1){
+                    tortoiseControlPoints[draggingPoint][1] = Math.max(0,Math.min(1,np));
+                    updateDisplays();
+                    drawGraph();
+                    drawTrack();
+                }
+            }
+        });
+
+        graphCanvas.addEventListener('mouseup',()=>draggingPoint=null);
+        graphCanvas.addEventListener('mouseleave',()=>draggingPoint=null);        // Draw track
+        function drawTrack() {
+            trackCtx.clearRect(0, 0, trackCanvas.width, trackCanvas.height);
+            
+            const scale = 60;
+            const offsetX = trackCanvas.width / 2;
+            const offsetY = trackCanvas.height / 2;
+            
+            function toCanvas(x, y) {
+                return [offsetX + x * scale, offsetY - y * scale];
+            }
+            
+            // Draw oval track
+            trackCtx.strokeStyle = '#4a5568';
+            trackCtx.lineWidth = 3;
+            trackCtx.beginPath();
+            for (let t = 0; t <= 1; t += 0.01) {
+                const [x, y] = getOvalPosition(t);
+                const [cx, cy] = toCanvas(x, y);
+                if (t === 0) trackCtx.moveTo(cx, cy);
+                else trackCtx.lineTo(cx, cy);
+            }
+            trackCtx.closePath();
+            trackCtx.stroke();
+            
+            // Draw start line (at progress 0)
+            const startPos = getOvalPosition(0);
+            const [sx, sy] = toCanvas(startPos[0], startPos[1]);
+            trackCtx.strokeStyle = '#4ecca3';
+            trackCtx.lineWidth = 4;
+            trackCtx.beginPath();
+            trackCtx.moveTo(sx - 12, sy - 12);
+            trackCtx.lineTo(sx + 12, sy + 12);
+            trackCtx.moveTo(sx - 12, sy + 12);
+            trackCtx.lineTo(sx + 12, sy - 12);
+            trackCtx.stroke();
+            trackCtx.fillStyle = '#4ecca3';
+            trackCtx.font = 'bold 11px Arial';
+            trackCtx.textAlign = 'center';
+            trackCtx.fillText('START', sx, sy - 18);
+            
+            // Draw finish line (at progress 0.75)
+            const finishPos = getOvalPosition(finishLine);
+            const [fx, fy] = toCanvas(finishPos[0], finishPos[1]);
+            trackCtx.strokeStyle = '#ffe66d';
+            trackCtx.lineWidth = 4;
+            trackCtx.beginPath();
+            trackCtx.moveTo(fx - 12, fy - 12);
+            trackCtx.lineTo(fx + 12, fy + 12);
+            trackCtx.moveTo(fx - 12, fy + 12);
+            trackCtx.lineTo(fx + 12, fy - 12);
+            trackCtx.stroke();
+            trackCtx.fillStyle = '#ffe66d';
+            trackCtx.fillText('FINISH', fx, fy - 18);
+            
+            // Draw winner text in center of oval
+            trackCtx.fillStyle = '#e8e8e8';
+            trackCtx.font = 'bold 18px Arial';
+            trackCtx.textAlign = 'center';
+            trackCtx.textBaseline = 'middle';
+            const centerX = offsetX;
+            const centerY = offsetY;
+            const winnerText = document.getElementById('winner-display').textContent;
+            trackCtx.fillText(winnerText, centerX, centerY);
+            
+            // Draw hare
+            const hareProgress = hareStrategy(time);
+            const harePos = getOvalPosition(hareProgress);
+            const [hx, hy] = toCanvas(harePos[0], harePos[1]);
+            trackCtx.fillStyle = '#ff6b6b';
+            trackCtx.beginPath();
+            trackCtx.arc(hx, hy, 14, 0, 2 * Math.PI);
+            trackCtx.fill();
+            trackCtx.fillStyle = '#fff';
+            trackCtx.font = 'bold 20px Arial';
+            trackCtx.textAlign = 'center';
+            trackCtx.textBaseline = 'middle';
+            trackCtx.fillText('🐰', hx, hy);
+            
+            // Draw tortoise
+            const tortoiseProgress = tortoiseStrategy(time);
+            const tortoisePos = getOvalPosition(tortoiseProgress);
+            const [tx, ty] = toCanvas(tortoisePos[0], tortoisePos[1]);
+            trackCtx.fillStyle = '#4ecdc4';
+            trackCtx.beginPath();
+            trackCtx.arc(tx, ty, 14, 0, 2 * Math.PI);
+            trackCtx.fill();
+            trackCtx.fillStyle = '#fff';
+            trackCtx.fillText('🐢', tx, ty);
+        }
+        
+        // Draw graph
+        function drawGraph() {
+            graphCtx.clearRect(0, 0, graphCanvas.width, graphCanvas.height);
+            
+            // Draw axes
+            graphCtx.strokeStyle = '#4a5568';
+            graphCtx.lineWidth = 2;
+            graphCtx.beginPath();
+            graphCtx.moveTo(padding, padding);
+            graphCtx.lineTo(padding, graphCanvas.height - padding);
+            graphCtx.lineTo(graphCanvas.width - padding, graphCanvas.height - padding);
+            graphCtx.stroke();
+            
+            // Draw grid
+            graphCtx.strokeStyle = '#2d3748';
+            graphCtx.lineWidth = 1;
+            graphCtx.setLineDash([2, 2]);
+            for (let i = 0; i <= 10; i++) {
+                const t = i / 10;
+                const [x, y] = toGraphCanvas(t, t);
+                graphCtx.beginPath();
+                graphCtx.moveTo(x, padding);
+                graphCtx.lineTo(x, graphCanvas.height - padding);
+                graphCtx.stroke();
+                graphCtx.beginPath();
+                graphCtx.moveTo(padding, y);
+                graphCtx.lineTo(graphCanvas.width - padding, y);
+                graphCtx.stroke();
+            }
+            graphCtx.setLineDash([]);
+            
+            // Draw axis labels/markers
+            graphCtx.fillStyle = '#aaa';
+            graphCtx.font = '11px Arial';
+            graphCtx.textAlign = 'center';
+            
+            // Time axis markers (bottom) - scale to 0-10 seconds
+            for (let i = 0; i <= 10; i++) {
+                const t = i / 10;
+                const [x, y] = toGraphCanvas(t, 0);
+                graphCtx.fillText((i).toString(), x, graphCanvas.height - padding + 20);
+            }
+            
+            // Distance axis markers (left) - scale to 0-100 meters
+            graphCtx.textAlign = 'right';
+            for (let i = 0; i <= 10; i++) {
+                const d = i / 10;
+                const [x, y] = toGraphCanvas(0, d);
+                graphCtx.fillText((i * 10).toString(), padding - 10, y + 4);
+            }
+            graphCtx.textAlign = 'center';
+            
+            // Draw finish line
+            const [flx, fly] = toGraphCanvas(finishLine, finishLine);
+            graphCtx.strokeStyle = '#ffe66d';
+            graphCtx.setLineDash([5, 5]);
+            graphCtx.lineWidth = 2;
+            graphCtx.beginPath();
+            graphCtx.moveTo(flx, padding);
+            graphCtx.lineTo(flx, graphCanvas.height - padding);
+            graphCtx.stroke();
+            graphCtx.setLineDash([]);
+            
+            // Draw hare function
+            graphCtx.strokeStyle = '#ff6b6b';
+            graphCtx.lineWidth = 3;
+            graphCtx.beginPath();
+            for (let t = 0; t <= 1; t += 0.01) {
+                const [x, y] = toGraphCanvas(t, hareStrategy(t));
+                if (t === 0) graphCtx.moveTo(x, y);
+                else graphCtx.lineTo(x, y);
+            }
+            graphCtx.stroke();
+            
+            // Draw tortoise function
+            graphCtx.strokeStyle = '#4ecdc4';
+            graphCtx.lineWidth = 3;
+            graphCtx.beginPath();
+            for (let t = 0; t <= 1; t += 0.005) {
+                const progress = tortoiseStrategy(t);
+                const [x, y] = toGraphCanvas(t, progress);
+                if (t === 0) graphCtx.moveTo(x, y);
+                else graphCtx.lineTo(x, y);
+            }
+            graphCtx.stroke();
+            
+            // Draw control points
+            for (let i = 0; i < tortoiseControlPoints.length; i++) {
+                const [cx, cy] = toGraphCanvas(
+                    tortoiseControlPoints[i][0],
+                    tortoiseControlPoints[i][1]
+                );
+                
+                if (i === 0 || i === tortoiseControlPoints.length - 1) {
+                    graphCtx.fillStyle = '#6c757d';
+                } else {
+                    graphCtx.fillStyle = hoveredPoint === i ? '#ffe66d' : '#4ecdc4';
+                }
+                
+                graphCtx.beginPath();
+                graphCtx.arc(cx, cy, 7, 0, 2 * Math.PI);
+                graphCtx.fill();
+                graphCtx.strokeStyle = '#fff';
+                graphCtx.lineWidth = 2;
+                graphCtx.stroke();
+            }
+            
+            // Draw current positions
+            const hareProgress = hareStrategy(time);
+            const tortoiseProgress = tortoiseStrategy(time);
+            
+            const [hgx, hgy] = toGraphCanvas(time, hareProgress);
+            graphCtx.fillStyle = '#ff6b6b';
+            graphCtx.beginPath();
+            graphCtx.arc(hgx, hgy, 8, 0, 2 * Math.PI);
+            graphCtx.fill();
+            
+            const [tgx, tgy] = toGraphCanvas(time, tortoiseProgress);
+            graphCtx.fillStyle = '#4ecdc4';
+            graphCtx.beginPath();
+            graphCtx.arc(tgx, tgy, 8, 0, 2 * Math.PI);
+            graphCtx.fill();
+            
+            // Draw dt arrows (horizontal and vertical lines showing average rate of change)
+            if (time < 1 - dt) {
+                const futureTime = Math.min(1, time + dt);
+                const hareF = hareStrategy(futureTime);
+                const tortoiseF = tortoiseStrategy(futureTime);
+                
+                // Hare dt arrows (horizontal Δt, then vertical Δy)
+                const [hfx, hfy] = toGraphCanvas(futureTime, hareProgress);
+                graphCtx.strokeStyle = '#ff6b6b';
+                graphCtx.lineWidth = 2;
+                graphCtx.setLineDash([5, 3]);
+                graphCtx.beginPath();
+                graphCtx.moveTo(hgx, hgy);
+                graphCtx.lineTo(hfx, hfy);
+                graphCtx.stroke();
+                
+                const [hfy2, hfy2y] = toGraphCanvas(futureTime, hareF);
+                graphCtx.beginPath();
+                graphCtx.moveTo(hfx, hfy);
+                graphCtx.lineTo(hfy2, hfy2y);
+                graphCtx.stroke();
+                graphCtx.setLineDash([]);
+                
+                // Tortoise dt arrows (horizontal Δt, then vertical Δy)
+                const [tfx, tfy] = toGraphCanvas(futureTime, tortoiseProgress);
+                graphCtx.strokeStyle = '#4ecdc4';
+                graphCtx.lineWidth = 2;
+                graphCtx.setLineDash([5, 3]);
+                graphCtx.beginPath();
+                graphCtx.moveTo(tgx, tgy);
+                graphCtx.lineTo(tfx, tfy);
+                graphCtx.stroke();
+                
+                const [tfy2, tfy2y] = toGraphCanvas(futureTime, tortoiseF);
+                graphCtx.beginPath();
+                graphCtx.moveTo(tfx, tfy);
+                graphCtx.lineTo(tfy2, tfy2y);
+                graphCtx.stroke();
+                graphCtx.setLineDash([]);
+            }
+            
+            // Labels
+            graphCtx.fillStyle = '#aaa';
+            graphCtx.font = '14px Arial';
+            graphCtx.textAlign = 'center';
+            graphCtx.fillText('Time (seconds)', graphCanvas.width / 2, graphCanvas.height - 20);
+            graphCtx.save();
+            graphCtx.translate(20, graphCanvas.height / 2);
+            graphCtx.rotate(-Math.PI / 2);
+            graphCtx.fillText('Distance (meters)', 0, 0);
+            graphCtx.restore();
+        }
+        
+        // Update displays
+        function updateDisplays() {
+            // Display time in real seconds (0-10s scale)
+            document.getElementById('time-display').textContent = (time * 10).toFixed(2);
+            
+            const hareProgress = hareStrategy(time);
+            const tortoiseProgress = tortoiseStrategy(time);
+            
+            const futureTime = Math.min(1, time + dt);
+            
+            // Calculate rates in real units: meters per second
+            // Distance scale: 0-1 maps to 0-100m, so multiply by 100
+            // Time scale: 0-1 maps to 0-10s, so multiply by 10
+            const hareRate = ((hareStrategy(futureTime) - hareProgress) * 100) / (dt * 10);
+            const tortoiseRate = ((tortoiseStrategy(futureTime) - tortoiseProgress) * 100) / (dt * 10);
+            
+            document.getElementById('hare-rate').textContent = hareRate.toFixed(1);
+            document.getElementById('tortoise-rate').textContent = tortoiseRate.toFixed(1);
+            
+            const hareAtFinish = hareStrategy(finishLine);
+            const tortoiseAtFinish = tortoiseStrategy(finishLine);
+            
+            // Find which time each racer crosses finish line
+            let hareFinishTime = finishLine; // hare is linear
+            let tortoiseFinishTime = null;
+            
+            // Binary search to find when tortoise crosses finish
+            for (let t = 0; t <= 1; t += 0.001) {
+                if (tortoiseStrategy(t) >= finishLine) {
+                    tortoiseFinishTime = t;
+                    break;
+                }
+            }
+            
+            const error = 0.01;
+            let winner = 'Design your strategy!';
+            if (tortoiseFinishTime === null) {
+                winner = '🐰 Hare Wins!';
+            } else if (Math.abs(tortoiseFinishTime - hareFinishTime) < error) {
+                winner = "It's a tie! 🏁";
+            } else if (tortoiseFinishTime < hareFinishTime) {
+                winner = '🐢 Tortoise Wins!';
+            } else {
+                winner = '🐰 Hare Wins!';
+            }
+            
+            // Store winner for track display (hidden div used for data transfer)
+            const winnerDiv = document.getElementById('winner-display');
+            if (!winnerDiv) {
+                // Create hidden div if it doesn't exist
+                const div = document.createElement('div');
+                div.id = 'winner-display';
+                div.style.display = 'none';
+                document.body.appendChild(div);
+            }
+            document.getElementById('winner-display').textContent = winner;
+        }
+        
+                // Animation loop
+        function animate() {
+            if (racing) {
+                time += 0.005;
+                if (time >= 1) {
+                    time = 1;
+                    racing = false;
+                    document.getElementById('action-btn').textContent = 'Race!';
+                }
+                document.getElementById('time-slider').value = time;
+                updateDisplays();
+                drawTrack();
+                drawGraph();
+            }
+            requestAnimationFrame(animate);
+        }
+        
+        // Mouse events for graph
+        graphCanvas.addEventListener('mousedown',e=>{
+            const r=graphCanvas.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
+            for(let i=0;i<tortoiseControlPoints.length;i++){
+                const [cx,cy]=toGraphCanvas(tortoiseControlPoints[i][0],tortoiseControlPoints[i][1]);
+                if(Math.sqrt((mx-cx)**2+(my-cy)**2)<15)draggingPoint=i;
+            }
+        });
+
+        graphCanvas.addEventListener('mousemove',e=>{
+            if(draggingPoint!==null){
+                const r=graphCanvas.getBoundingClientRect();
+                const [nt,np]=fromGraphCanvas(e.clientX-r.left,e.clientY-r.top);
+                if(draggingPoint!==0 && draggingPoint!==tortoiseControlPoints.length-1){
+                    tortoiseControlPoints[draggingPoint][1] = Math.max(0,Math.min(1,np));
+                    updateDisplays();
+                    drawGraph();
+                    drawTrack();
+                }
+            }
+        });
+
+        graphCanvas.addEventListener('mouseup',()=>draggingPoint=null);
+        graphCanvas.addEventListener('mouseleave',()=>draggingPoint=null);
+        
+        // Event listeners
+        document.getElementById('time-slider').addEventListener('input', (e) => {
+            if (!racing) {
+                time = parseFloat(e.target.value);
+                updateDisplays();
+                drawTrack();
+                drawGraph();
+            }
+        });
+        
+        document.getElementById('action-btn').addEventListener('click', () => {
+            // Always restart from 0
+            time = 0;
+            racing = true;
+            document.getElementById('time-slider').value = 0;
+            updateDisplays();
+            drawTrack();
+            drawGraph();
+        });
+        
+        document.getElementById('dt-input').addEventListener('input', (e) => {
+            const displayValue = parseFloat(e.target.value);
+            if (displayValue > 0 && displayValue <= 5) {
+                // Convert display value (0-10s scale) to internal value (0-1 scale)
+                dt = displayValue / 10;
+                updateDisplays();
+                drawGraph();
+                drawTrack();
+            }
+        });
+        
+        // Preset buttons
+        document.getElementById('preset-slow').addEventListener('click', () => {
+            tortoiseControlPoints = [
+                [0, 0], [0.1, 0.05], [0.2, 0.12], [0.3, 0.22], [0.4, 0.35],
+                [0.5, 0.5], [0.6, 0.65], [0.7, 0.78], [0.8, 0.88], [0.9, 0.94], [1, 1]
+            ];
+            updateDisplays();
+            drawGraph();
+            drawTrack();
+        });
+        
+        document.getElementById('preset-fast').addEventListener('click', () => {
+            tortoiseControlPoints = [
+                [0, 0], [0.1, 0.25], [0.2, 0.45], [0.3, 0.6], [0.4, 0.7],
+                [0.5, 0.78], [0.6, 0.84], [0.7, 0.88], [0.8, 0.92], [0.9, 0.96], [1, 1]
+            ];
+            updateDisplays();
+            drawGraph();
+            drawTrack();
+        });
+        
+        document.getElementById('preset-steady').addEventListener('click', () => {
+            tortoiseControlPoints = [
+                [0, 0], [0.1, 0.1], [0.2, 0.2], [0.3, 0.3], [0.4, 0.4],
+                [0.5, 0.5], [0.6, 0.6], [0.7, 0.7], [0.8, 0.8], [0.9, 0.9], [1, 1]
+            ];
+            updateDisplays();
+            drawGraph();
+            drawTrack();
+        });
+        
+        document.getElementById('preset-random').addEventListener('click', () => {
+            tortoiseControlPoints = [[0, 0]];
+            for (let i = 1; i < 10; i++) {
+                tortoiseControlPoints.push([i * 0.1, Math.random()]);
+            }
+            tortoiseControlPoints.push([1, 1]);
+            tortoiseControlPoints.sort((a, b) => a[0] - b[0]);
+            updateDisplays();
+            drawGraph();
+            drawTrack();
+        });
+        
+
+        
+        // Event listeners
+        document.getElementById('time-slider').addEventListener('input', (e) => {
+            if (!racing) {
+                time = parseFloat(e.target.value);
+                updateDisplays();
+                drawTrack();
+                drawGraph();
+            }
+        });
+        
+        document.getElementById('action-btn').addEventListener('click', () => {
+            if (!pointsLocked) {
+                // Lock points and start race
+                pointsLocked = true;
+                time = 0;
+                document.getElementById('time-slider').value = 0;
+                racing = true;
+                document.getElementById('action-btn').textContent = 'Pause';
+                updateDisplays();
+            } else if (racing) {
+                // Pause race
+                racing = false;
+                document.getElementById('action-btn').textContent = 'Resume';
+            } else {
+                // Check if at end or in middle
+                if (time >= 1) {
+                    // Unlock points for new design
+                    pointsLocked = false;
+                    time = 0;
+                    racing = false;
+                    document.getElementById('time-slider').value = 0;
+                    document.getElementById('action-btn').textContent = 'Lock Points & Race!';
+                    updateDisplays();
+                    drawTrack();
+                    drawGraph();
+                } else {
+                    // Resume race
+                    racing = true;
+                    document.getElementById('action-btn').textContent = 'Pause';
+                }
+            }
+        });
+        
+        document.getElementById('dt-input').addEventListener('input', (e) => {
+            const displayValue = parseFloat(e.target.value);
+            if (displayValue > 0 && displayValue <= 5) {
+                // Convert display value (0-10s scale) to internal value (0-1 scale)
+                dt = displayValue / 10;
+                updateDisplays();
+                drawGraph();
+                drawTrack();
+            }
+        });
+        
+        // Preset buttons
+        document.getElementById('preset-slow').addEventListener('click', () => {
+            if (!pointsLocked) {
+                tortoiseControlPoints = [
+                    [0, 0], [0.1, 0.05], [0.2, 0.12], [0.3, 0.22], [0.4, 0.35],
+                    [0.5, 0.5], [0.6, 0.65], [0.7, 0.78], [0.8, 0.88], [0.9, 0.94], [1, 1]
+                ];
+                updateDisplays();
+                drawGraph();
+                drawTrack();
+            }
+        });
+        
+        document.getElementById('preset-fast').addEventListener('click', () => {
+            if (!pointsLocked) {
+                tortoiseControlPoints = [
+                    [0, 0], [0.1, 0.25], [0.2, 0.45], [0.3, 0.6], [0.4, 0.7],
+                    [0.5, 0.78], [0.6, 0.84], [0.7, 0.88], [0.8, 0.92], [0.9, 0.96], [1, 1]
+                ];
+                updateDisplays();
+                drawGraph();
+                drawTrack();
+            }
+        });
+        
+        document.getElementById('preset-steady').addEventListener('click', () => {
+            if (!pointsLocked) {
+                tortoiseControlPoints = [
+                    [0, 0], [0.1, 0.1], [0.2, 0.2], [0.3, 0.3], [0.4, 0.4],
+                    [0.5, 0.5], [0.6, 0.6], [0.7, 0.7], [0.8, 0.8], [0.9, 0.9], [1, 1]
+                ];
+                updateDisplays();
+                drawGraph();
+                drawTrack();
+            }
+        });
+        
+        document.getElementById('preset-random').addEventListener('click', () => {
+            if (!pointsLocked) {
+                tortoiseControlPoints = [[0, 0]];
+                for (let i = 1; i < 10; i++) {
+                    tortoiseControlPoints.push([i * 0.1, Math.random()]);
+                }
+                tortoiseControlPoints.push([1, 1]);
+                tortoiseControlPoints.sort((a, b) => a[0] - b[0]);
+                updateDisplays();
+                drawGraph();
+                drawTrack();
+            }
+        });
+        
+        // Initialize
+        console.log('Initializing...');
+        updateDisplays();
+        drawTrack();
+        drawGraph();
+        animate();
+        console.log('Initialization complete');
+    </script>
+</body>
+</html>

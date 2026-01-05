@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Population Density Visualization</title>
+    <link rel="stylesheet" href="../css/applet-styles.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        #canvas-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        canvas {
+            border: 2px solid #4a5568;
+            background: #e8f4f8;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            display: block;
+        }
+        
+        #controls {
+            width: 340px;
+            background: #0f3460;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            overflow-y: auto;
+            max-height: 90vh;
+        }
+        
+        h2 {
+            margin-top: 0;
+            color: #e94560;
+            border-bottom: 2px solid #e94560;
+            padding-bottom: 10px;
+            font-size: 20px;
+        }
+        
+        h3 {
+            color: #4ecca3;
+            font-size: 14px;
+            margin-top: 15px;
+            margin-bottom: 8px;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #aaa;
+            font-size: 13px;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            margin: 10px 0;
+        }
+        
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            background: #16213e;
+            border: 1px solid #4a5568;
+            border-radius: 4px;
+            color: #e8e8e8;
+            font-size: 14px;
+        }
+        
+        .value-display {
+            color: #4ecca3;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .result-box {
+            background: #16213e;
+            padding: 12px;
+            border-radius: 4px;
+            margin-top: 8px;
+            font-size: 14px;
+        }
+        
+        .info-box {
+            background: #16213e;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            line-height: 1.5;
+            margin-top: 10px;
+        }
+        
+        .formula {
+            font-family: 'Courier New', monospace;
+            background: #0f1925;
+            padding: 8px;
+            border-radius: 4px;
+            margin: 5px 0;
+            text-align: center;
+            color: #4ecca3;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container">
+        <canvas id="main-canvas" width="800" height="800"></canvas>
+    </div>
+    
+    <div id="controls">
+        <h2>Population Density</h2>
+        
+        <div class="control-group">
+            <h3>Visualization Mode</h3>
+            <button id="mode-local" class="mode-btn active">Local Ring</button>
+            <button id="mode-cumulative" class="mode-btn">Cumulative from Center</button>
+        </div>
+        
+        <div class="result-box">
+            <h3 style="margin-top: 0;">Density Function</h3>
+            <div class="formula">ρ(D) = 40/(20 + D²)</div>
+            <div style="font-size: 11px; color: #aaa; margin-top: 5px;">
+                Density at distance D from center
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <h3>Distance from Center</h3>
+            <label>D = <span class="value-display" id="d-display">5.58</span></label>
+            <input type="range" id="d-slider" min="0" max="18" step="0.01" value="5.58">
+        </div>
+        
+        <div class="control-group">
+            <h3>Ring Width</h3>
+            <label>ΔD = <span class="value-display" id="delta-display">0.75</span></label>
+            <input type="range" id="delta-slider" min="0.1" max="2" step="0.05" value="0.75">
+        </div>
+        
+        <div class="result-box">
+            <h3 style="margin-top: 0;" id="result-title">Current Ring</h3>
+            <div class="formula" id="density-formula">ρ = --</div>
+            <div class="formula" id="population-formula">P = --</div>
+            <div style="font-size: 11px; color: #aaa; margin-top: 5px;" id="result-description">
+                Population in ring at distance D
+            </div>
+        </div>
+        
+        <div class="info-box">
+            <strong>Color Legend:</strong><br>
+            • Dark blue = Very dense population<br>
+            • Light blue = Sparse population
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('main-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // State
+        let b = 40;
+        let c = 20;
+        let D = 5.58;
+        let deltaD = 0.75;
+        const maxRadius = 18;
+        let mode = 'local'; // 'local' or 'cumulative'
+        
+        // Generate fixed random building positions (seeded randomness)
+        const buildingPositions = [];
+        
+        function seedRandom(seed) {
+            let x = Math.sin(seed++) * 10000;
+            return x - Math.floor(x);
+        }
+        
+        function generateBuildings() {
+            buildingPositions.length = 0;
+            
+            const numRings = Math.ceil(maxRadius / 0.5); // Fixed ring spacing
+            
+            for (let i = 0; i <= numRings; i++) {
+                const ringR = i * 0.5;
+                if (ringR > maxRadius) continue;
+                
+                const density = rho(ringR);
+                const maxDensity = rho(0);
+                const normalized = density / maxDensity;
+                
+                // More buildings in denser areas
+                const numBuildings = Math.floor(8 + normalized * 20);
+                
+                for (let j = 0; j < numBuildings; j++) {
+                    const seed = i * 1000 + j;
+                    const angle = seedRandom(seed) * Math.PI * 2;
+                    const radiusOffset = (seedRandom(seed + 1) - 0.5) * 0.4;
+                    const r = ringR + radiusOffset;
+                    
+                    if (r >= 0 && r <= maxRadius) {
+                        buildingPositions.push({
+                            r: r,
+                            angle: angle,
+                            size: 6 + normalized * 4,
+                            opacity: 0.7 + normalized * 0.3
+                        });
+                    }
+                }
+            }
+            
+            // Add buildings around center tower
+            for (let i = 0; i < 16; i++) {
+                const seed = 10000 + i;
+                const angle = (i / 16) * Math.PI * 2 + seedRandom(seed) * 0.3;
+                const r = 0.8 + (seedRandom(seed + 1) - 0.5) * 0.2;
+                buildingPositions.push({
+                    r: r,
+                    angle: angle,
+                    size: 10 + seedRandom(seed + 2) * 4,
+                    opacity: 0.9
+                });
+            }
+        }
+        
+        // Density function
+        function rho(d) {
+            return b / (c + d * d);
+        }
+        
+        // Get color based on density (darker = more dense)
+        function getColorForDensity(density, maxDensity) {
+            const normalized = density / maxDensity;
+            // Map to blue scale: much darker blue for higher density
+            const lightness = 95 - (normalized * 75); // 95% (very light) to 20% (very dark)
+            const saturation = 50 + (normalized * 45); // 50% to 95%
+            return `hsl(210, ${saturation}%, ${lightness}%)`;
+        }
+        
+        // Draw building icon
+        function drawBuilding(x, y, size, darkness) {
+            ctx.fillStyle = `rgba(60, 60, 60, ${darkness})`;
+            
+            // Simple building shape
+            ctx.fillRect(x - size/2, y - size, size, size);
+            
+            // Windows
+            ctx.fillStyle = `rgba(255, 255, 200, ${darkness * 0.6})`;
+            const windowSize = size / 4;
+            for (let i = 0; i < 2; i++) {
+                for (let j = 0; j < 2; j++) {
+                    ctx.fillRect(
+                        x - size/2 + windowSize/2 + i * size/2,
+                        y - size + windowSize/2 + j * size/2,
+                        windowSize * 0.6,
+                        windowSize * 0.6
+                    );
+                }
+            }
+        }
+        
+        // Draw skyscraper in center
+        function drawSkyscraper(x, y, size) {
+            ctx.fillStyle = '#2c3e50';
+            
+            // Main building
+            ctx.fillRect(x - size/2, y - size * 2, size, size * 2);
+            
+            // Windows
+            ctx.fillStyle = '#f39c12';
+            const windowSize = size / 5;
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 6; j++) {
+                    ctx.fillRect(
+                        x - size/2 + windowSize/2 + i * size/3,
+                        y - size * 2 + windowSize/2 + j * size/3,
+                        windowSize * 0.7,
+                        windowSize * 0.7
+                    );
+                }
+            }
+            
+            // Antenna
+            ctx.strokeStyle = '#34495e';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(x, y - size * 2);
+            ctx.lineTo(x, y - size * 2.5);
+            ctx.stroke();
+        }
+        
+        // Draw the visualization
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const scale = (canvas.width * 0.85) / (2 * maxRadius);
+            
+            // Calculate max density for color scaling
+            const maxDensity = rho(0);
+            
+            // Draw all rings from outside to inside
+            const numRings = Math.ceil(maxRadius / deltaD);
+            
+            for (let i = numRings; i >= 0; i--) {
+                const innerR = i * deltaD;
+                const outerR = (i + 1) * deltaD;
+                
+                if (innerR > maxRadius) continue;
+                
+                const midR = (innerR + outerR) / 2;
+                const density = rho(midR);
+                const color = getColorForDensity(density, maxDensity);
+                
+                // Determine if this ring should be highlighted
+                let isHighlighted = false;
+                if (mode === 'local') {
+                    // Highlight the current ring
+                    isHighlighted = (D >= innerR && D < outerR);
+                } else {
+                    // In cumulative mode, highlight all rings from center to D
+                    isHighlighted = (outerR <= D + deltaD);
+                }
+                
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, outerR * scale, 0, Math.PI * 2);
+                ctx.arc(centerX, centerY, innerR * scale, 0, Math.PI * 2, true);
+                ctx.fill();
+                
+                // Draw border
+                ctx.strokeStyle = isHighlighted ? '#e94560' : 'rgba(0, 0, 0, 0.2)';
+                ctx.lineWidth = isHighlighted ? 3 : 1;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, outerR * scale, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                if (innerR > 0) {
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, innerR * scale, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            }
+            
+            // Draw all buildings from fixed positions
+            buildingPositions.forEach(building => {
+                const bx = centerX + building.r * scale * Math.cos(building.angle);
+                const by = centerY + building.r * scale * Math.sin(building.angle);
+                drawBuilding(bx, by, building.size, building.opacity);
+            });
+            
+            // Draw center city (skyscraper)
+            drawSkyscraper(centerX, centerY + 30, 40);
+            
+            // Draw current position indicator
+            const currentRadius = D * scale;
+            ctx.strokeStyle = '#e94560';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([8, 4]);
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, currentRadius, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Draw labels
+            ctx.fillStyle = '#2c3e50';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('City Center', centerX, centerY + 70);
+            
+            // Draw distance marker
+            ctx.fillStyle = '#e94560';
+            ctx.font = 'bold 14px Arial';
+            const markerX = centerX + currentRadius * Math.cos(Math.PI / 4);
+            const markerY = centerY + currentRadius * Math.sin(Math.PI / 4);
+            ctx.fillText(`D = ${D.toFixed(2)}`, markerX + 20, markerY - 10);
+            
+            // Draw scale
+            ctx.fillStyle = '#2c3e50';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText('0', centerX + 5, centerY + 5);
+            ctx.fillText(`${maxRadius}`, centerX + maxRadius * scale - 20, centerY + 5);
+        }
+        
+        // Update displays
+        function updateDisplays() {
+            document.getElementById('d-display').textContent = D.toFixed(2);
+            document.getElementById('delta-display').textContent = deltaD.toFixed(2);
+            
+            if (mode === 'local') {
+                // Local mode - show single ring
+                document.getElementById('result-title').textContent = 'Current Ring';
+                document.getElementById('result-description').textContent = 
+                    'Population in ring at distance D';
+                
+                const density = rho(D);
+                const innerR = D;
+                const outerR = D + deltaD;
+                const ringArea = Math.PI * (outerR * outerR - innerR * innerR);
+                const population = density * ringArea;
+                
+                document.getElementById('density-formula').textContent = 
+                    `ρ = ${density.toFixed(4)}`;
+                document.getElementById('population-formula').textContent = 
+                    `P = ${population.toFixed(2)}`;
+            } else {
+                // Cumulative mode - sum all rings from 0 to D
+                document.getElementById('result-title').textContent = 'Cumulative from Center';
+                document.getElementById('result-description').textContent = 
+                    'Total population from center to distance D';
+                
+                let totalPopulation = 0;
+                const numRings = Math.ceil(D / deltaD);
+                
+                for (let i = 0; i < numRings; i++) {
+                    const innerR = i * deltaD;
+                    const outerR = Math.min((i + 1) * deltaD, D + deltaD);
+                    const midR = (innerR + outerR) / 2;
+                    const density = rho(midR);
+                    const ringArea = Math.PI * (outerR * outerR - innerR * innerR);
+                    totalPopulation += density * ringArea;
+                }
+                
+                document.getElementById('density-formula').textContent = 
+                    `Rings summed: ${numRings}`;
+                document.getElementById('population-formula').textContent = 
+                    `Total P = ${totalPopulation.toFixed(2)}`;
+            }
+        }
+        
+        // Event listeners
+        document.getElementById('mode-local').addEventListener('click', () => {
+            mode = 'local';
+            document.getElementById('mode-local').classList.add('active');
+            document.getElementById('mode-cumulative').classList.remove('active');
+            updateDisplays();
+            draw();
+        });
+        
+        document.getElementById('mode-cumulative').addEventListener('click', () => {
+            mode = 'cumulative';
+            document.getElementById('mode-cumulative').classList.add('active');
+            document.getElementById('mode-local').classList.remove('active');
+            updateDisplays();
+            draw();
+        });
+        
+        document.getElementById('d-slider').addEventListener('input', (e) => {
+            D = parseFloat(e.target.value);
+            updateDisplays();
+            draw();
+        });
+        
+        document.getElementById('delta-slider').addEventListener('input', (e) => {
+            deltaD = parseFloat(e.target.value);
+            updateDisplays();
+            draw();
+        });
+        
+        // Initialize
+        generateBuildings();
+        updateDisplays();
+        draw();
+    </script>
+</body>
+</html>

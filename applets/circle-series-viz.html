@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Circle Sector Series Visualization</title>
+    <link rel="stylesheet" href="../css/applet-styles.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        #canvas-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        canvas {
+            border: 2px solid #4a5568;
+            background: #16213e;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            display: block;
+            max-width: 100%;
+        }
+        
+        #controls {
+            width: 300px;
+            background: #0f3460;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            overflow-y: auto;
+            max-height: 90vh;
+        }
+        
+        h2 {
+            margin-top: 0;
+            color: #e94560;
+            border-bottom: 2px solid #e94560;
+            padding-bottom: 10px;
+            font-size: 20px;
+        }
+        
+        h3 {
+            color: #4ecca3;
+            font-size: 14px;
+            margin-top: 15px;
+            margin-bottom: 8px;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #aaa;
+            font-size: 13px;
+        }
+        
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            background: #16213e;
+            border: 1px solid #4a5568;
+            border-radius: 4px;
+            color: #e8e8e8;
+            font-size: 14px;
+        }
+        
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #e94560;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            margin-top: 8px;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #c93952;
+        }
+        
+        button.secondary {
+            background: #4ecca3;
+            padding: 8px;
+            font-size: 12px;
+        }
+        
+        button.secondary:hover {
+            background: #3db894;
+        }
+        
+        .value-display {
+            color: #4ecca3;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .result-box {
+            background: #16213e;
+            padding: 12px;
+            border-radius: 4px;
+            margin-top: 8px;
+            font-size: 14px;
+        }
+        
+        .info-box {
+            background: #16213e;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            line-height: 1.5;
+            margin-top: 10px;
+        }
+        
+        .formula {
+            font-family: 'Courier New', monospace;
+            background: #0f1925;
+            padding: 8px;
+            border-radius: 4px;
+            margin: 5px 0;
+            text-align: center;
+            color: #4ecca3;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container">
+        <canvas id="main-canvas" width="800" height="800"></canvas>
+    </div>
+    
+    <div id="controls">
+        <h2>Circle Sector Series</h2>
+        
+        <div class="control-group">
+            <h3>Circle Radius</h3>
+            <label>r = <span class="value-display" id="radius-display">6</span></label>
+            <input type="number" id="radius-input" step="1" min="1" max="20" value="6">
+        </div>
+        
+        <div class="control-group">
+            <h3>Denominator</h3>
+            <label>Base = <span class="value-display" id="base-display">3</span></label>
+            <input type="number" id="base-input" step="1" min="2" max="10" value="3">
+            <div style="font-size: 11px; color: #aaa; margin-top: 5px;">
+                New area added = πr²/base<sup>N</sup>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <h3>Partial Sum Steps</h3>
+            <label>N = <span class="value-display" id="n-display">0</span></label>
+            <button id="next-btn">Next Step (N+1)</button>
+            <button id="prev-btn" class="secondary">Previous Step (N-1)</button>
+            <button id="reset-btn" class="secondary">Reset to N=0</button>
+        </div>
+        
+        <div class="result-box">
+            <h3 style="margin-top: 0;">Partial Sum</h3>
+            <div class="formula" id="sum-formula">Σ = 0</div>
+            <div style="font-size: 11px; color: #aaa; margin-top: 5px;">
+                Sum of all sector areas
+            </div>
+        </div>
+        
+        <div class="result-box">
+            <h3 style="margin-top: 0;">Current Term</h3>
+            <div class="formula" id="term-formula">a<sub>n</sub> = --</div>
+            <div style="font-size: 11px; color: #aaa; margin-top: 5px;">
+                Current sector area
+            </div>
+        </div>
+        
+        <div class="info-box">
+            <strong>Subdivision Pattern:</strong><br>
+            • Start at 0 radians (right horizontal)<br>
+            • New area added = πr²/base<sup>N</sup><br>
+            • Try different bases to see patterns!<br>
+            • Base 2: halves each time<br>
+            • Base 3: thirds each time
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('main-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // State
+        let r = 6;  // radius (value for calculations)
+        let n = 0;    // subdivision step (0 = empty)
+        let base = 3; // base for the series (3^N)
+        const displayRadius = 300; // Fixed display radius on canvas
+        
+        // Colors for different subdivision levels
+        const colors = [
+            '#4ecca3', '#ff6b6b', '#f9d423', '#00d2ff', 
+            '#a8e6cf', '#ffd3b6', '#ffaaa5', '#ff8b94',
+            '#c7ceea', '#b5ead7', '#e2f0cb', '#ffdac1',
+            '#b4a7d6', '#ffa07a', '#98d8c8', '#f7dc6f'
+        ];
+        
+        // Generate sectors for the circle
+        // Each sector has angle = 2π/base^n radians
+        // Sector area = (1/2)r²θ
+        function getSectors() {
+            const sectors = [];
+            let currentAngle = 0; // Start at 0 radians (right horizontal)
+            
+            for (let step = 1; step <= n; step++) {
+                const sectorAngle = (2 * Math.PI) / Math.pow(base, step); // radians
+                const sectorArea = 0.5 * r * r * sectorAngle;
+                
+                sectors.push({
+                    startAngle: currentAngle,
+                    endAngle: currentAngle + sectorAngle,
+                    angleSize: sectorAngle,
+                    area: sectorArea,
+                    level: step
+                });
+                
+                currentAngle += sectorAngle;
+            }
+            
+            return sectors;
+        }
+        
+        // Draw the main visualization
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            // Draw outer circle outline (always same size on screen)
+            ctx.strokeStyle = '#4a5568';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, displayRadius, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Draw filled sectors
+            const sectors = getSectors();
+            sectors.forEach((sector, idx) => {
+                // Draw filled sector
+                ctx.fillStyle = colors[idx % colors.length] + 'DD';
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, displayRadius, sector.startAngle, sector.endAngle);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Draw sector edges
+                ctx.strokeStyle = colors[idx % colors.length];
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(
+                    centerX + displayRadius * Math.cos(sector.startAngle),
+                    centerY + displayRadius * Math.sin(sector.startAngle)
+                );
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(
+                    centerX + displayRadius * Math.cos(sector.endAngle),
+                    centerY + displayRadius * Math.sin(sector.endAngle)
+                );
+                ctx.stroke();
+                
+                // Draw area label if sector is large enough
+                const angleDegrees = sector.angleSize * (180 / Math.PI);
+                if (angleDegrees > 5) {
+                    const midAngle = (sector.startAngle + sector.endAngle) / 2;
+                    const labelRadius = displayRadius * 0.6;
+                    const labelX = centerX + labelRadius * Math.cos(midAngle);
+                    const labelY = centerY + labelRadius * Math.sin(midAngle);
+                    
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    
+                    // Show area value
+                    let areaText;
+                    if (sector.area < 0.01) {
+                        areaText = sector.area.toFixed(6);
+                    } else if (sector.area < 1) {
+                        areaText = sector.area.toFixed(4);
+                    } else if (sector.area < 10) {
+                        areaText = sector.area.toFixed(3);
+                    } else {
+                        areaText = sector.area.toFixed(2);
+                    }
+                    ctx.fillText(areaText, labelX, labelY);
+                }
+            });
+            
+            // Draw center point
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw radius label
+            if (n === 0) {
+                ctx.strokeStyle = '#aaa';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(centerX + displayRadius, centerY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                
+                ctx.fillStyle = '#aaa';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(`r = ${r}`, centerX + displayRadius/2, centerY - 10);
+            }
+        }
+        
+        // Calculate total area sum
+        function calculateSum() {
+            if (n === 0) return 0;
+            
+            let sum = 0;
+            for (let step = 1; step <= n; step++) {
+                const sectorAngle = (2 * Math.PI) / Math.pow(base, step);
+                const sectorArea = 0.5 * r * r * sectorAngle;
+                sum += sectorArea;
+            }
+            
+            return sum;
+        }
+        
+        // Calculate current term area
+        function calculateTerm() {
+            if (n === 0) return 0;
+            
+            const sectorAngle = (2 * Math.PI) / Math.pow(base, n);
+            return 0.5 * r * r * sectorAngle;
+        }
+        
+        // Update displays
+        function updateDisplays() {
+            document.getElementById('radius-display').textContent = r;
+            document.getElementById('base-display').textContent = base;
+            document.getElementById('n-display').textContent = n;
+            
+            const sum = calculateSum();
+            const term = calculateTerm();
+            
+            if (n === 0) {
+                document.getElementById('sum-formula').innerHTML = `Σ = 0`;
+                document.getElementById('term-formula').innerHTML = `a<sub>n</sub> = --`;
+            } else {
+                // Determine precision based on n
+                let precision = 3;
+                if (n > 3) precision = 5;
+                if (n > 6) precision = 7;
+                if (n > 10) precision = 9;
+                
+                document.getElementById('sum-formula').innerHTML = 
+                    `Σ = ${sum.toFixed(precision)}`;
+                
+                let termDisplay;
+                if (term < 0.0001) {
+                    termDisplay = term.toExponential(4);
+                } else {
+                    termDisplay = term.toFixed(Math.min(n + 3, 10));
+                }
+                document.getElementById('term-formula').innerHTML = 
+                    `a<sub>${n}</sub> = ${termDisplay}`;
+            }
+        }
+        
+        // Event listeners
+        document.getElementById('radius-input').addEventListener('input', (e) => {
+            r = parseFloat(e.target.value) || 6;
+            updateDisplays();
+            draw();
+        });
+        
+        document.getElementById('base-input').addEventListener('input', (e) => {
+            base = Math.floor(parseFloat(e.target.value)) || 3;
+            base = Math.max(2, Math.min(10, base)); // Clamp between 2 and 10
+            // Reset n when base changes to avoid confusion
+            n = 0;
+            updateDisplays();
+            draw();
+        });
+        
+        document.getElementById('next-btn').addEventListener('click', () => {
+            if (n < 50) {
+                n++;
+                updateDisplays();
+                draw();
+            }
+        });
+        
+        document.getElementById('prev-btn').addEventListener('click', () => {
+            if (n > 0) {
+                n--;
+                updateDisplays();
+                draw();
+            }
+        });
+        
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            n = 0;
+            updateDisplays();
+            draw();
+        });
+        
+        // Initialize
+        updateDisplays();
+        draw();
+    </script>
+</body>
+</html>

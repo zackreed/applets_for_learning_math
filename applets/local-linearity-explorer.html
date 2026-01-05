@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Linearity Explorer</title>
+    <link rel="stylesheet" href="../css/applet-styles.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        #canvas-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        canvas {
+            border: 2px solid #4a5568;
+            background: #16213e;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            display: block;
+            cursor: crosshair;
+        }
+        
+        #controls {
+            width: 320px;
+            background: #0f3460;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            overflow-y: auto;
+            max-height: 90vh;
+        }
+        
+        h2 {
+            margin-top: 0;
+            color: #e94560;
+            border-bottom: 2px solid #e94560;
+            padding-bottom: 10px;
+            font-size: 20px;
+        }
+        
+        h3 {
+            color: #4ecca3;
+            font-size: 14px;
+            margin-top: 15px;
+            margin-bottom: 8px;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #aaa;
+            font-size: 13px;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            margin: 10px 0;
+        }
+        
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #4ecca3;
+            color: #1a1a2e;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            margin-top: 8px;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #3db894;
+        }
+        
+        button.active {
+            background: #e94560;
+            color: white;
+        }
+        
+        .value-display {
+            color: #4ecca3;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .result-box {
+            background: #16213e;
+            padding: 12px;
+            border-radius: 4px;
+            margin-top: 8px;
+            font-size: 14px;
+        }
+        
+        .info-box {
+            background: #16213e;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            line-height: 1.5;
+            margin-top: 10px;
+        }
+        
+        .formula {
+            font-family: 'Courier New', monospace;
+            background: #0f1925;
+            padding: 8px;
+            border-radius: 4px;
+            margin: 5px 0;
+            text-align: center;
+            color: #4ecca3;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container">
+        <canvas id="main-canvas" width="750" height="600"></canvas>
+    </div>
+    
+    <div id="controls">
+        <h2>Local Linearity</h2>
+        
+        <div class="control-group">
+            <h3>Function</h3>
+            <button id="func-quad" class="active">f(x) = x²</button>
+            <button id="func-sin">f(x) = sin(x)</button>
+            <button id="func-exp">f(x) = eˣ</button>
+            <button id="func-cube">f(x) = x³</button>
+        </div>
+        
+        <div class="control-group">
+            <h3>Point Location</h3>
+            <div style="font-size: 11px; color: #aaa; margin-top: 5px;">
+                Click and drag the point on the graph
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <h3>Zoom Window Width</h3>
+            <label>Δx = <span class="value-display" id="zoom-display">1.00</span></label>
+            <input type="range" id="zoom-slider" min="-3" max="0" step="0.01" value="0">
+        </div>
+        
+        <div class="result-box">
+            <h3 style="margin-top: 0;">Rate of Change</h3>
+            <div class="formula" id="rate-formula">Δy/Δx = --</div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('main-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // State
+        let currentFunction = 'quad';
+        let pointX = 1;
+        let h = 1; // h = Δx (the horizontal distance)
+        let isDragging = false;
+        
+        // Function definitions with derivatives
+        const functions = {
+            quad: {
+                name: 'f(x) = x²',
+                f: x => x * x,
+                fprime: x => 2 * x,
+                xMin: -3, xMax: 3,
+                yMin: -1, yMax: 9
+            },
+            sin: {
+                name: 'f(x) = sin(x)',
+                f: x => Math.sin(x),
+                fprime: x => Math.cos(x),
+                xMin: -2 * Math.PI, xMax: 2 * Math.PI,
+                yMin: -1.5, yMax: 2.5
+            },
+            exp: {
+                name: 'f(x) = eˣ',
+                f: x => Math.exp(x),
+                fprime: x => Math.exp(x),
+                xMin: -2, xMax: 2,
+                yMin: -0.5, yMax: 8
+            },
+            cube: {
+                name: 'f(x) = x³',
+                f: x => x * x * x,
+                fprime: x => 3 * x * x,
+                xMin: -2, xMax: 2,
+                yMin: -8, yMax: 8
+            }
+        };
+        
+        // Convert canvas coordinates to math coordinates
+        function canvasToMath(cx, cy, bounds) {
+            const padding = 40;
+            const width = canvas.width - 2 * padding;
+            const height = canvas.height - 2 * padding;
+            
+            const x = bounds.xMin + (cx - padding) / width * (bounds.xMax - bounds.xMin);
+            const y = bounds.yMax - (cy - padding) / height * (bounds.yMax - bounds.yMin);
+            
+            return { x, y };
+        }
+        
+        // Convert math coordinates to canvas coordinates
+        function mathToCanvas(x, y, bounds) {
+            const padding = 40;
+            const width = canvas.width - 2 * padding;
+            const height = canvas.height - 2 * padding;
+            
+            const cx = padding + (x - bounds.xMin) / (bounds.xMax - bounds.xMin) * width;
+            const cy = padding + (bounds.yMax - y) / (bounds.yMax - bounds.yMin) * height;
+            
+            return { cx, cy };
+        }
+        
+        // Draw axes and grid
+        function drawAxes(bounds) {
+            const padding = 40;
+            const width = canvas.width - 2 * padding;
+            const height = canvas.height - 2 * padding;
+            
+            // Grid
+            ctx.strokeStyle = '#2a3f5f';
+            ctx.lineWidth = 1;
+            
+            for (let i = 0; i <= 10; i++) {
+                const x = padding + (i / 10) * width;
+                const y = padding + (i / 10) * height;
+                
+                ctx.beginPath();
+                ctx.moveTo(x, padding);
+                ctx.lineTo(x, padding + height);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(padding, y);
+                ctx.lineTo(padding + width, y);
+                ctx.stroke();
+            }
+            
+            // Axes
+            const origin = mathToCanvas(0, 0, bounds);
+            
+            ctx.strokeStyle = '#4a5568';
+            ctx.lineWidth = 2;
+            
+            // X-axis
+            if (origin.cy >= padding && origin.cy <= padding + height) {
+                ctx.beginPath();
+                ctx.moveTo(padding, origin.cy);
+                ctx.lineTo(padding + width, origin.cy);
+                ctx.stroke();
+            }
+            
+            // Y-axis
+            if (origin.cx >= padding && origin.cx <= padding + width) {
+                ctx.beginPath();
+                ctx.moveTo(origin.cx, padding);
+                ctx.lineTo(origin.cx, padding + height);
+                ctx.stroke();
+            }
+        }
+        
+        // Draw the function curve
+        function drawFunction(bounds) {
+            const func = functions[currentFunction];
+            const padding = 40;
+            
+            ctx.strokeStyle = '#4ecca3';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            
+            let started = false;
+            for (let cx = padding; cx <= canvas.width - padding; cx++) {
+                const { x } = canvasToMath(cx, 0, bounds);
+                const y = func.f(x);
+                const { cy } = mathToCanvas(x, y, bounds);
+                
+                if (!started) {
+                    ctx.moveTo(cx, cy);
+                    started = true;
+                } else {
+                    ctx.lineTo(cx, cy);
+                }
+            }
+            
+            ctx.stroke();
+        }
+        
+        // Draw arrow
+        function drawArrow(x1, y1, x2, y2, color) {
+            const headlen = 8;
+            const angle = Math.atan2(y2 - y1, x2 - x1);
+            
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = 2;
+            
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(x2, y2);
+            ctx.lineTo(x2 - headlen * Math.cos(angle - Math.PI / 6), 
+                       y2 - headlen * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(x2 - headlen * Math.cos(angle + Math.PI / 6), 
+                       y2 - headlen * Math.sin(angle + Math.PI / 6));
+            ctx.closePath();
+            ctx.fill();
+        }
+        
+        // Draw the zoom window
+        function drawZoomWindow() {
+            const func = functions[currentFunction];
+            
+            // Calculate zoom window position based on function
+            const zoomSize = 240;
+            let zoomX, zoomY;
+            
+            if (currentFunction === 'quad') {
+                // Up and center-right for x²
+                zoomX = canvas.width / 2 + 50;
+                zoomY = 60;
+            } else if (currentFunction === 'sin') {
+                // Bottom left for sine
+                zoomX = 40;
+                zoomY = canvas.height - zoomSize - 40;
+            } else if (currentFunction === 'exp') {
+                // Top left for exponential
+                zoomX = 40;
+                zoomY = 40;
+            } else {
+                // Top left for cube
+                zoomX = 40;
+                zoomY = 80;
+            }
+            
+            // Calculate zoom bounds to show full Δx and Δy
+            const centerY = func.f(pointX);
+            const x2Bound = pointX + h;
+            const y2Bound = func.f(x2Bound);
+            const deltaY = y2Bound - centerY;
+            
+            // Make sure both Δx and Δy are fully visible with padding
+            const leftExtent = h * 0.15;  // Small space on left
+            const rightExtent = h * 1.2; // Space for full Δx plus padding
+            
+            // Vertical extent needs to show full Δy plus padding
+            const verticalPadding = Math.max(Math.abs(deltaY) * 0.3, h * 0.2);
+            const minY = Math.min(centerY, y2Bound) - verticalPadding;
+            const maxY = Math.max(centerY, y2Bound) + verticalPadding;
+            
+            const zoomBounds = {
+                xMin: pointX - leftExtent,
+                xMax: pointX + rightExtent,
+                yMin: minY,
+                yMax: maxY
+            };
+            
+            // Save context
+            ctx.save();
+            
+            // Clip to zoom window area
+            ctx.beginPath();
+            ctx.rect(zoomX, zoomY, zoomSize, zoomSize);
+            ctx.clip();
+            
+            // Draw zoom window background
+            ctx.fillStyle = '#0f1925';
+            ctx.fillRect(zoomX, zoomY, zoomSize, zoomSize);
+            
+            // Translate coordinate system for zoom window
+            const origMathToCanvas = mathToCanvas;
+            const zoomMathToCanvas = (x, y) => {
+                const relX = (x - zoomBounds.xMin) / (zoomBounds.xMax - zoomBounds.xMin);
+                const relY = (zoomBounds.yMax - y) / (zoomBounds.yMax - zoomBounds.yMin);
+                return {
+                    cx: zoomX + relX * zoomSize,
+                    cy: zoomY + relY * zoomSize
+                };
+            };
+            
+            // Draw grid in zoom
+            ctx.strokeStyle = '#1a2332';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 10; i++) {
+                const x = zoomX + (i / 10) * zoomSize;
+                const y = zoomY + (i / 10) * zoomSize;
+                
+                ctx.beginPath();
+                ctx.moveTo(x, zoomY);
+                ctx.lineTo(x, zoomY + zoomSize);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(zoomX, y);
+                ctx.lineTo(zoomX + zoomSize, y);
+                ctx.stroke();
+            }
+            
+            // Draw axes in zoom
+            const zoomOriginX = zoomMathToCanvas(pointX, 0);
+            const zoomOriginY = zoomMathToCanvas(0, centerY);
+            
+            ctx.strokeStyle = '#3a4558';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(zoomX, zoomOriginX.cy);
+            ctx.lineTo(zoomX + zoomSize, zoomOriginX.cy);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(zoomOriginY.cx, zoomY);
+            ctx.lineTo(zoomOriginY.cx, zoomY + zoomSize);
+            ctx.stroke();
+            
+            // Draw function in zoom
+            ctx.strokeStyle = '#4ecca3';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            let started = false;
+            for (let i = 0; i <= 200; i++) {
+                const x = zoomBounds.xMin + (i / 200) * (zoomBounds.xMax - zoomBounds.xMin);
+                const y = func.f(x);
+                const { cx, cy } = zoomMathToCanvas(x, y);
+                
+                if (!started) {
+                    ctx.moveTo(cx, cy);
+                    started = true;
+                } else {
+                    ctx.lineTo(cx, cy);
+                }
+            }
+            ctx.stroke();
+            
+            // Calculate points for rate of change
+            const x1 = pointX;
+            const x2 = pointX + h; // Δx = h exactly
+            const y1 = func.f(x1);
+            const y2 = func.f(x2);
+            
+            const p1 = zoomMathToCanvas(x1, y1);
+            const p2 = zoomMathToCanvas(x2, y2);
+            const pCorner = zoomMathToCanvas(x2, y1);
+            
+            // Draw Δx arrow
+            drawArrow(p1.cx, p1.cy, pCorner.cx, pCorner.cy, '#ff6b6b');
+            
+            // Draw Δy arrow
+            drawArrow(pCorner.cx, pCorner.cy, p2.cx, p2.cy, '#f9d423');
+            
+            // Draw secant line extended
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            const slope = dy / dx;
+            const extendX1 = zoomBounds.xMin;
+            const extendX2 = zoomBounds.xMax;
+            const extendY1 = y1 + slope * (extendX1 - x1);
+            const extendY2 = y1 + slope * (extendX2 - x1);
+            
+            const e1 = zoomMathToCanvas(extendX1, extendY1);
+            const e2 = zoomMathToCanvas(extendX2, extendY2);
+            
+            ctx.strokeStyle = '#ff6b6b';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 3]);
+            ctx.beginPath();
+            ctx.moveTo(e1.cx, e1.cy);
+            ctx.lineTo(e2.cx, e2.cy);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Draw points
+            ctx.fillStyle = '#e94560';
+            ctx.beginPath();
+            ctx.arc(p1.cx, p1.cy, 5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#ff6b6b';
+            ctx.beginPath();
+            ctx.arc(p2.cx, p2.cy, 5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw labels
+            ctx.fillStyle = '#ff6b6b';
+            ctx.font = 'bold 13px Arial';
+            ctx.textAlign = 'center';
+            const midXCanvas = (p1.cx + pCorner.cx) / 2;
+            ctx.fillText('Δx', midXCanvas, p1.cy + 18);
+            
+            ctx.fillStyle = '#f9d423';
+            const midYCanvas = (pCorner.cy + p2.cy) / 2;
+            ctx.fillText('Δy', pCorner.cx + 22, midYCanvas);
+            
+            ctx.restore();
+            
+            // Draw zoom window border
+            ctx.strokeStyle = '#ffe66d';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(zoomX, zoomY, zoomSize, zoomSize);
+            
+            // Draw label above zoom window
+            ctx.fillStyle = '#ffe66d';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('ZOOM WINDOW', zoomX + zoomSize / 2, zoomY - 10);
+        }
+        
+        // Draw the main graph
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const func = functions[currentFunction];
+            const bounds = {
+                xMin: func.xMin,
+                xMax: func.xMax,
+                yMin: func.yMin,
+                yMax: func.yMax
+            };
+            
+            drawAxes(bounds);
+            drawFunction(bounds);
+            
+            // Draw the point
+            const pointY = func.f(pointX);
+            const { cx, cy } = mathToCanvas(pointX, pointY, bounds);
+            
+            ctx.fillStyle = '#e94560';
+            ctx.beginPath();
+            ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Draw box around point showing zoom window extent
+            const y1 = func.f(pointX);
+            
+            // Make a square box centered on the point, size based on h
+            const boxSize = h * 1.5; // Visual proxy size
+            
+            const topLeft = mathToCanvas(pointX - boxSize/2, y1 + boxSize/2, bounds);
+            const bottomRight = mathToCanvas(pointX + boxSize/2, y1 - boxSize/2, bounds);
+            
+            ctx.strokeStyle = '#ffe66d';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.strokeRect(
+                topLeft.cx, 
+                topLeft.cy, 
+                bottomRight.cx - topLeft.cx, 
+                bottomRight.cy - topLeft.cy
+            );
+            ctx.setLineDash([]);
+            
+            // Draw label at the point
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 13px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText(`(${pointX.toFixed(3)}, ${pointY.toFixed(3)})`, cx + 12, cy - 8);
+            
+            // Draw zoom window
+            drawZoomWindow();
+        }
+        
+        // Update displays
+        function updateDisplays() {
+            const func = functions[currentFunction];
+            const pointY = func.f(pointX);
+            
+            document.getElementById('zoom-display').textContent = h.toFixed(4);
+            
+            // Calculate average rate of change where Δx = h exactly
+            const x1 = pointX;
+            const x2 = pointX + h;
+            const y1 = func.f(x1);
+            const y2 = func.f(x2);
+            const aroc = (y2 - y1) / (x2 - x1);
+            
+            document.getElementById('rate-formula').textContent = 
+                `Δy/Δx = ${aroc.toFixed(6)}`;
+        }
+        
+        // Mouse handlers with proper coordinate handling
+        function getMousePos(evt) {
+            const rect = canvas.getBoundingClientRect();
+            const style = window.getComputedStyle(canvas);
+            const borderLeft = parseFloat(style.borderLeftWidth) || 0;
+            const borderTop = parseFloat(style.borderTopWidth) || 0;
+            
+            const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+            const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+            
+            return {
+                x: evt.clientX - rect.left - borderLeft + scrollX,
+                y: evt.clientY - rect.top - borderTop + scrollY
+            };
+        }
+        
+        canvas.addEventListener('mousedown', (e) => {
+            const pos = getMousePos(e);
+            
+            const func = functions[currentFunction];
+            const bounds = {
+                xMin: func.xMin,
+                xMax: func.xMax,
+                yMin: func.yMin,
+                yMax: func.yMax
+            };
+            
+            const pointY = func.f(pointX);
+            const pointCanvas = mathToCanvas(pointX, pointY, bounds);
+            
+            const dist = Math.sqrt(
+                (pos.x - pointCanvas.cx) ** 2 + 
+                (pos.y - pointCanvas.cy) ** 2
+            );
+            
+            if (dist < 15) {
+                isDragging = true;
+            }
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const pos = getMousePos(e);
+                
+                const func = functions[currentFunction];
+                const bounds = {
+                    xMin: func.xMin,
+                    xMax: func.xMax,
+                    yMin: func.yMin,
+                    yMax: func.yMax
+                };
+                
+                const { x } = canvasToMath(pos.x, 0, bounds);
+                pointX = Math.max(func.xMin, Math.min(func.xMax, x));
+                
+                draw();
+                updateDisplays();
+            }
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+        
+        canvas.addEventListener('mouseleave', () => {
+            isDragging = false;
+        });
+        
+        // Control handlers
+        document.getElementById('func-quad').addEventListener('click', () => {
+            currentFunction = 'quad';
+            pointX = 1;
+            setActiveButton('func-quad');
+            draw();
+            updateDisplays();
+        });
+        
+        document.getElementById('func-sin').addEventListener('click', () => {
+            currentFunction = 'sin';
+            pointX = Math.PI / 2;
+            setActiveButton('func-sin');
+            draw();
+            updateDisplays();
+        });
+        
+        document.getElementById('func-exp').addEventListener('click', () => {
+            currentFunction = 'exp';
+            pointX = 0;
+            setActiveButton('func-exp');
+            draw();
+            updateDisplays();
+        });
+        
+        document.getElementById('func-cube').addEventListener('click', () => {
+            currentFunction = 'cube';
+            pointX = 1;
+            setActiveButton('func-cube');
+            draw();
+            updateDisplays();
+        });
+        
+        function setActiveButton(id) {
+            document.querySelectorAll('#controls button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(id).classList.add('active');
+        }
+        
+        document.getElementById('zoom-slider').addEventListener('input', (e) => {
+            const sliderValue = parseFloat(e.target.value);
+            // Use exponential scale: 10^sliderValue
+            h = Math.pow(10, sliderValue);
+            draw();
+            updateDisplays();
+        });
+        
+        // Initialize
+        draw();
+        updateDisplays();
+    </script>
+</body>
+</html>

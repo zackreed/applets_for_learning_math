@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geometric Series - Convergence</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/quiz.js"></script>
+</head>
+<body>
+    <div class="page-container">
+        <header>
+            <a href="../index.html" style="color: #00d9ff; text-decoration: none; font-weight: bold;">&larr; Back to Home</a>
+            <h1>📐 Geometric Series: Convergence</h1>
+            <p style="font-size: 1.2em; margin-top: 10px;">Explore how infinite sums can have finite values through visual subdivisions!</p>
+        </header>
+        
+        <div class="content">
+            <!-- Introduction Section -->
+            <div class="section">
+                <h2>🎯 Introduction</h2>
+                <p>A <strong>geometric series</strong> is a sum where each term is a fixed fraction of the previous term. In this visualization, we repeatedly subdivide a rectangle, filling half of the remaining area at each step. This demonstrates how an infinite series can converge to a finite value.</p>
+                
+                <div class="key-concepts">
+                    <h4>Key Concept: Monotonic Bounded Sequences</h4>
+                    <p>A sequence is <strong>monotonic increasing</strong> if each term is greater than or equal to the previous term. If the sequence is also <strong>bounded above</strong> (never exceeds some maximum value), then it must converge to a limit.</p>
+                    <p style="text-align: center; font-size: 1.2em; margin: 15px 0;">
+                        \(\text{If } a_1 \leq a_2 \leq a_3 \leq \cdots \leq M\text{, then } \lim_{n \to \infty} a_n \text{ exists}\)
+                    </p>
+                    <p>In our geometric series, the partial sums keep growing but never exceed the total area \(ab\) of the rectangle!</p>
+                </div>
+            </div>
+            
+            <!-- Interactive Applet -->
+            <div class="section">
+                <h2>🔲 Rectangle Subdivision</h2>
+                <p><strong>Instructions:</strong></p>
+                <ol>
+                    <li>Adjust the rectangle dimensions (width \(a\) and height \(b\)).</li>
+                    <li>Click "Next Step" to fill more of the rectangle.</li>
+                    <li>Watch the partial sum approach the total area \(ab\).</li>
+                    <li>Observe that each step fills exactly half of the remaining unfilled area.</li>
+                </ol>
+                
+                <div class="applet-container">
+                    <iframe src="../applets/geometric-series.html" width="1150" height="750" style="border: none; border-radius: 8px; max-width: 100%; overflow: hidden;"></iframe>
+                </div>
+            </div>
+            
+            <!-- Guided Explorations -->
+            <div class="section">
+                <h2>🧪 Guided Explorations</h2>
+                
+                <div class="exploration" id="exp1">
+                    <h4>Exploration 1: Monotonic Increasing</h4>
+                    <p><strong>Try this:</strong> Start at N=0 and click "Next Step" several times. Watch the partial sum value.</p>
+                    <p><strong>Question:</strong> What happens to the partial sum as you add more terms?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'exp1', 'a')">
+                            <input type="radio" name="exp1" value="a"> It increases with every step.
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp1', 'b')">
+                            <input type="radio" name="exp1" value="b"> It sometimes increases, sometimes decreases.
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp1', 'c')">
+                            <input type="radio" name="exp1" value="c"> It stays constant.
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('exp1', 'a')">Check Answer</button>
+                    <div class="feedback" id="exp1-feedback"></div>
+                </div>
+                
+                <div class="exploration" id="exp2">
+                    <h4>Exploration 2: Bounded Above</h4>
+                    <p><strong>Observe:</strong> The total area of the rectangle is \(a \times b\). For default values (a=2, b=2.5), this is 5.0.</p>
+                    <p><strong>Question:</strong> No matter how many steps you take, will the partial sum ever exceed the total area?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'exp2', 'a')">
+                            <input type="radio" name="exp2" value="a"> No, the sum is always less than the total area.
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp2', 'b')">
+                            <input type="radio" name="exp2" value="b"> Yes, eventually it will exceed the total area.
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp2', 'c')">
+                            <input type="radio" name="exp2" value="c"> It depends on the dimensions chosen.
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('exp2', 'a')">Check Answer</button>
+                    <div class="feedback" id="exp2-feedback"></div>
+                </div>
+                
+                <div class="exploration" id="exp3">
+                    <h4>Exploration 3: Convergence</h4>
+                    <p><strong>Try this:</strong> Keep clicking "Next Step" until N=20 or more. Watch how the partial sum changes.</p>
+                    <p><strong>Question:</strong> As N gets larger, what value does the partial sum approach?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'exp3', 'a')">
+                            <input type="radio" name="exp3" value="a"> It approaches \(ab\) (the total area).
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp3', 'b')">
+                            <input type="radio" name="exp3" value="b"> It approaches infinity.
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp3', 'c')">
+                            <input type="radio" name="exp3" value="c"> It approaches \(ab/2\) (half the area).
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('exp3', 'a')">Check Answer</button>
+                    <div class="feedback" id="exp3-feedback"></div>
+                </div>
+                
+                <div class="exploration" id="exp4">
+                    <h4>Exploration 4: Rate of Convergence</h4>
+                    <p><strong>Observe:</strong> Look at the "Current Term" value as N increases.</p>
+                    <p><strong>Question:</strong> What happens to the size of each new subdivision as N increases?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'exp4', 'a')">
+                            <input type="radio" name="exp4" value="a"> Each new term gets smaller and approaches zero.
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp4', 'b')">
+                            <input type="radio" name="exp4" value="b"> Each new term stays the same size.
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp4', 'c')">
+                            <input type="radio" name="exp4" value="c"> Each new term gets larger.
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('exp4', 'a')">Check Answer</button>
+                    <div class="feedback" id="exp4-feedback"></div>
+                </div>
+            </div>
+            
+            <!-- Practice Questions -->
+            <div class="section">
+                <h2>📝 Practice Questions</h2>
+                
+                <div class="question" id="q1">
+                    <h4>Question 1: Calculating the Sum</h4>
+                    <p>The formula for the partial sum after N steps is: \(S_N = ab\left(1 - \frac{1}{2^N}\right)\)</p>
+                    <p><strong>(a)</strong> If \(a = 3\) and \(b = 4\), what is the total area of the rectangle?</p>
+                    <div class="number-input">
+                        <label>Total Area =</label>
+                        <input type="number" id="q1a-input" step="0.1" placeholder="Enter value">
+                    </div>
+                    <button class="check-btn" onclick="checkNumericAnswer('q1a', 12, 0.1)">Check Answer</button>
+                    <div class="feedback" id="q1a-feedback"></div>
+                </div>
+                
+                <div class="question" id="q2">
+                    <h4>Question 2: Understanding Convergence</h4>
+                    <p>For a rectangle with area \(ab = 10\), the partial sum formula is \(S_N = 10\left(1 - \frac{1}{2^N}\right)\).</p>
+                    <p><strong>(a)</strong> What is \(S_5\) (the partial sum after 5 steps)?</p>
+                    <div class="hint">Hint: \(2^5 = 32\), so \(S_5 = 10(1 - 1/32) = 10(31/32)\)</div>
+                    <div class="number-input">
+                        <label>\(S_5\) =</label>
+                        <input type="number" id="q2a-input" step="0.01" placeholder="Enter value">
+                    </div>
+                    <button class="check-btn" onclick="checkNumericAnswer('q2a', 9.6875, 0.01)">Check Answer</button>
+                    <div class="feedback" id="q2a-feedback"></div>
+                </div>
+                
+                <div class="question" id="q3">
+                    <h4>Question 3: The Limit</h4>
+                    <p>Consider what happens as \(N \to \infty\) in the formula \(S_N = ab\left(1 - \frac{1}{2^N}\right)\).</p>
+                    <p><strong>Question:</strong> What is \(\lim_{N \to \infty} S_N\)?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'q3', 'a')">
+                            <input type="radio" name="q3" value="a"> \(ab\) (the total area)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q3', 'b')">
+                            <input type="radio" name="q3" value="b"> \(\infty\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q3', 'c')">
+                            <input type="radio" name="q3" value="c"> \(ab/2\)
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('q3', 'a')">Check Answer</button>
+                    <div class="feedback" id="q3-feedback"></div>
+                    <div class="hint">As \(N \to \infty\), \(\frac{1}{2^N} \to 0\), so \(1 - \frac{1}{2^N} \to 1\).</div>
+                </div>
+            </div>
+            
+            <!-- Connection to Calculus -->
+            <div class="section">
+                <h2>🔗 Connection to Calculus</h2>
+                <p>This geometric series visualization demonstrates the <strong>Monotone Convergence Theorem</strong>:</p>
+                
+                <div class="key-concepts">
+                    <h4>Monotone Convergence Theorem</h4>
+                    <p>If a sequence \(\{a_n\}\) is monotonic (always increasing or always decreasing) and bounded, then it converges to a limit.</p>
+                    
+                    <p style="margin-top: 15px;"><strong>In our example:</strong></p>
+                    <ul style="margin-left: 25px; margin-top: 10px;">
+                        <li><strong>Monotonic:</strong> \(S_1 \leq S_2 \leq S_3 \leq \cdots\) (each partial sum is larger than the previous)</li>
+                        <li><strong>Bounded:</strong> \(S_N \leq ab\) for all \(N\) (partial sums never exceed total area)</li>
+                        <li><strong>Converges:</strong> \(\lim_{N \to \infty} S_N = ab\)</li>
+                    </ul>
+                    
+                    <p style="margin-top: 15px;">The general formula for a geometric series with first term \(a\) and ratio \(r\) (where \(|r| < 1\)) is:</p>
+                    <p style="text-align: center; font-size: 1.3em; margin: 15px 0;">
+                        \(\sum_{n=0}^{\infty} ar^n = \frac{a}{1-r}\)
+                    </p>
+                    <p>In our rectangle, we're computing \(\sum_{n=1}^{N} \frac{ab}{2^n} = ab\sum_{n=1}^{N} \left(\frac{1}{2}\right)^n\), which approaches \(ab\) as \(N \to \infty\).</p>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Geometric Series Walkthrough | Built with Claude | For educational purposes</p>
+        </footer>
+        <footer style="text-align:center; margin: 40px 0 10px 0; font-size: 0.95em; color: #888;">
+            © 2025 Zackery Reed. All rights reserved.
+        </footer>
+    </div>
+    
+    <script>
+        // Render LaTeX
+        document.addEventListener("DOMContentLoaded", function() {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: "$$", right: "$$", display: true},
+                    {left: "\\[", right: "\\]", display: true},
+                    {left: "$", right: "$", display: false},
+                    {left: "\\(", right: "\\)", display: false}
+                ]
+            });
+        });
+    </script>
+</body>
+</html>

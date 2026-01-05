@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Linearity - Limits of Average Rates</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <script src="https://sagecell.sagemath.org/static/embedded_sagecell.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/quiz.js"></script>
+</head>
+<body>
+    <div class="page-container">
+        <header>
+            <a href="../index.html" style="color: #00d9ff; text-decoration: none; font-weight: bold;">&larr; Back to Home</a>
+            <h1>📐 Local Linearity: From Average to Instantaneous</h1>
+            <p style="font-size: 1.2em; margin-top: 10px;">Explore how functions become linear when zoomed in, and understand derivatives as limits</p>
+        </header>
+        
+        <div class="content">
+            <!-- Introduction Section -->
+            <div class="section">
+                <h2>🎯 Introduction</h2>
+                <p><strong>Local linearity</strong> is the remarkable property that smooth functions look like straight lines when you zoom in close enough. This is the geometric foundation of calculus!</p>
+                
+                <div class="key-concepts">
+                    <h4>Key Concept: Derivative as a Limit</h4>
+                    <p>The derivative is the limit of average rates of change as the interval shrinks to zero:</p>
+                    <p style="text-align: center; font-size: 1.3em; margin: 15px 0;">
+                        \(f'(a) = \lim_{h \to 0} \frac{f(a + h) - f(a)}{h}\)
+                    </p>
+                    <p>As \(h\) (or \(\Delta x\)) gets smaller, the secant line approaches the tangent line, and the average rate becomes the instantaneous rate.</p>
+                    <p style="margin-top: 15px;"><strong>Local Linearity:</strong> Near any point, a smooth function is approximately linear, with slope equal to the derivative at that point.</p>
+                </div>
+            </div>
+            
+            <!-- Interactive Applet -->
+            <div class="section">
+                <h2>🔍 Local Linearity Explorer</h2>
+                <p><strong>Instructions:</strong></p>
+                <ol>
+                    <li>Choose a function from the controls panel.</li>
+                    <li>Drag the point on the graph to change location.</li>
+                    <li>Use the "Zoom Window Width" slider to decrease \(\Delta x\) (zoom in).</li>
+                    <li>Watch how the secant line (connecting two points) approaches the tangent line as \(\Delta x \to 0\).</li>
+                    <li>Observe how the curve appears more and more like a straight line when zoomed in.</li>
+                </ol>
+                
+                <div class="applet-container">
+                    <iframe src="../applets/local-linearity-explorer.html" width="100%" height="650" style="border: none; border-radius: 8px;"></iframe>
+                </div>
+            </div>
+            
+            <!-- Guided Explorations -->
+            <div class="section">
+                <h2>🧪 Guided Explorations</h2>
+                
+                <div class="exploration" id="exp1">
+                    <h4>Exploration 1: Secant vs Tangent</h4>
+                    <p><strong>Try this:</strong> Set the function to \(f(x) = x^2\) and drag the point to \(x = 1\). Start with a large \(\Delta x\) (slider to the right).</p>
+                    <p><strong>Question:</strong> As you decrease \(\Delta x\) (move slider left), what happens to the secant line?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'exp1', 'a')">
+                            <input type="radio" name="exp1" value="a"> It approaches the tangent line (the line that just touches the curve).
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp1', 'b')">
+                            <input type="radio" name="exp1" value="b"> It becomes horizontal.
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp1', 'c')">
+                            <input type="radio" name="exp1" value="c"> It becomes steeper and steeper without bound.
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('exp1', 'a')">Check Answer</button>
+                    <div class="feedback" id="exp1-feedback"></div>
+                </div>
+                
+                <div class="exploration" id="exp2">
+                    <h4>Exploration 2: Local Linearity</h4>
+                    <p><strong>Observe:</strong> Zoom in very close (make \(\Delta x\) very small, around 0.01).</p>
+                    <p><strong>Question:</strong> When zoomed in close enough, does the function curve look like a straight line?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'exp2', 'a')">
+                            <input type="radio" name="exp2" value="a"> Yes, it becomes nearly indistinguishable from a straight line.
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp2', 'b')">
+                            <input type="radio" name="exp2" value="b"> No, the curvature is always visible.
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp2', 'c')">
+                            <input type="radio" name="exp2" value="c"> It depends on the function.
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('exp2', 'a')">Check Answer</button>
+                    <div class="feedback" id="exp2-feedback"></div>
+                </div>
+                
+                <div class="exploration" id="exp3">
+                    <h4>Exploration 3: Rate of Change Convergence</h4>
+                    <p><strong>Watch:</strong> The "Rate of Change" box shows \(\frac{\Delta y}{\Delta x}\) (the slope of the secant line).</p>
+                    <p><strong>Question:</strong> As \(\Delta x \to 0\), this average rate approaches what value?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'exp3', 'a')">
+                            <input type="radio" name="exp3" value="a"> The derivative \(f'(x)\) at that point (instantaneous rate).
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp3', 'b')">
+                            <input type="radio" name="exp3" value="b"> Zero.
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp3', 'c')">
+                            <input type="radio" name="exp3" value="c"> Infinity.
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('exp3', 'a')">Check Answer</button>
+                    <div class="feedback" id="exp3-feedback"></div>
+                </div>
+            </div>
+            
+            <!-- Practice Questions -->
+            <div class="section">
+                <h2>📝 Practice Questions</h2>
+                
+                <div class="question" id="q1">
+                    <h4>Question 1: Understanding the Limit Definition</h4>
+                    <p>For \(f(x) = x^2\) at \(x = 3\), we want to find \(f'(3)\) using the limit definition:</p>
+                    <p style="text-align: center; margin: 10px 0;">
+                        \(f'(3) = \lim_{h \to 0} \frac{f(3 + h) - f(3)}{h}\)
+                    </p>
+                    <p><strong>(a)</strong> What is \(f(3)\)?</p>
+                    <div class="number-input">
+                        <label>\(f(3)\) =</label>
+                        <input type="number" id="q1a-input" step="1" placeholder="Enter value">
+                    </div>
+                    <button class="check-btn" onclick="checkNumericAnswer('q1a', 9, 0.1)">Check Answer</button>
+                    <div class="feedback" id="q1a-feedback"></div>
+                    
+                    <p style="margin-top: 20px;"><strong>(b)</strong> What is \(f(3 + h)\)?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'q1b', 'a')">
+                            <input type="radio" name="q1b" value="a"> \((3 + h)^2 = 9 + 6h + h^2\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q1b', 'b')">
+                            <input type="radio" name="q1b" value="b"> \(9 + h\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q1b', 'c')">
+                            <input type="radio" name="q1b" value="c"> \(3^2 + h^2\)
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('q1b', 'a')">Check Answer</button>
+                    <div class="feedback" id="q1b-feedback"></div>
+                    
+                    <p style="margin-top: 20px;"><strong>(c)</strong> Simplify the difference quotient and take the limit. What is \(f'(3)\)?</p>
+                    <div class="number-input">
+                        <label>\(f'(3)\) =</label>
+                        <input type="number" id="q1c-input" step="1" placeholder="Enter value">
+                    </div>
+                    <button class="check-btn" onclick="checkNumericAnswer('q1c', 6, 0.1)">Check Answer</button>
+                    <div class="feedback" id="q1c-feedback"></div>
+                </div>
+                
+                <div class="question" id="q2">
+                    <h4>Question 2: Approximation Using Tangent Line</h4>
+                    <p>Near \(x = 2\), the function \(f(x) = x^2\) can be approximated by its tangent line. We know \(f(2) = 4\) and \(f'(2) = 4\).</p>
+                    <p>The tangent line equation is: \(y = f(2) + f'(2)(x - 2)\)</p>
+                    <p><strong>(a)</strong> Using the tangent line, approximate \(f(2.1)\).</p>
+                    <div class="number-input">
+                        <label>Approximation =</label>
+                        <input type="number" id="q2a-input" step="0.01" placeholder="Enter value">
+                    </div>
+                    <button class="check-btn" onclick="checkNumericAnswer('q2a', 4.4, 0.01)">Check Answer</button>
+                    <div class="feedback" id="q2a-feedback"></div>
+                    
+                    <p style="margin-top: 20px;"><strong>(b)</strong> Calculate the actual value \(f(2.1) = (2.1)^2\).</p>
+                    <div class="number-input">
+                        <label>Actual value =</label>
+                        <input type="number" id="q2b-input" step="0.01" placeholder="Enter value">
+                    </div>
+                    <button class="check-btn" onclick="checkNumericAnswer('q2b', 4.41, 0.01)">Check Answer</button>
+                    <div class="feedback" id="q2b-feedback"></div>
+                    
+                    <p style="margin-top: 20px;"><strong>(c)</strong> How close was the approximation?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'q2c', 'a')">
+                            <input type="radio" name="q2c" value="a"> Very close (within 0.01).
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q2c', 'b')">
+                            <input type="radio" name="q2c" value="b"> Not close at all.
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('q2c', 'a')">Check Answer</button>
+                    <div class="feedback" id="q2c-feedback"></div>
+                </div>
+            </div>
+            
+            <!-- Symbolic Computation Section -->
+            <div class="section">
+                <h2>🖥️ Symbolic Computation</h2>
+                <p>Use Python with SymPy to compute derivatives using the limit definition.</p>
+                
+                <div class="sage-container">
+                    <h4>Derivative from Limit Definition</h4>
+                    <p>The code below computes the derivative using the limit of the difference quotient.</p>
+                    
+                    <div class="sagecell-python" id="sagecell1">from sympy import *
+
+x, h = symbols('x h')
+
+# Define the function
+f = x**2
+
+# Compute the difference quotient
+f_at_x_plus_h = f.subs(x, x + h)
+f_at_x = f
+
+difference_quotient = (f_at_x_plus_h - f_at_x) / h
+
+print(f"Function: f(x) = {f}")
+print(f"\nf(x + h) = {f_at_x_plus_h}")
+print(f"f(x) = {f_at_x}")
+print(f"\nDifference Quotient:")
+print(f"[f(x + h) - f(x)] / h = {difference_quotient}")
+
+# Simplify
+simplified = simplify(difference_quotient)
+print(f"\nSimplified: {simplified}")
+
+# Take the limit as h → 0
+derivative = limit(difference_quotient, h, 0)
+print(f"\nDerivative (limit as h → 0):")
+print(f"f'(x) = {derivative}")
+
+# Verify with direct differentiation
+direct_derivative = diff(f, x)
+print(f"\nDirect differentiation: f'(x) = {direct_derivative}")</div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Local Linearity Walkthrough | For educational purposes</p>
+            <footer style="text-align:center; margin: 40px 0 10px 0; font-size: 0.95em; color: #888;">
+    © 2025 Zackery Reed. All rights reserved.
+</footer>
+        </footer>
+    </div>
+    
+    <script>
+        sagecell.makeSagecell({
+            inputLocation: '.sagecell-python',
+            languages: ['python'],
+            evalButtonText: 'Run Code'
+        });
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.renderMathInElement) {
+                renderMathInElement(document.body, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '\\(', right: '\\)', display: false}
+                    ]
+                });
+            }
+        });
+    </script>
+</body>
+</html>
