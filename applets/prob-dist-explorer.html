@@ -608,13 +608,17 @@
                     ctx.beginPath();
                     ctx.arc(meanX, plotY - 30, 8, 0, 2 * Math.PI);
                     ctx.fill();
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
                 }
                 
-                // Draggable std deviation markers (arrow with dots)
+                // Draggable std deviation markers (arrow with dots) - always draw these
                 const leftX = toCanvasX(mean - std);
                 const rightX = toCanvasX(mean + std);
                 const arrowY = plotY - 50;
                 
+                // Draw arrow line
                 ctx.strokeStyle = '#4ecca3';
                 ctx.lineWidth = 2;
                 ctx.beginPath();
