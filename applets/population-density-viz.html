@@ -182,6 +182,7 @@
         let deltaD = 0.75;
         const maxRadius = 18;
         let mode = 'local'; // 'local' or 'cumulative'
+        let dragging = null; // Track what's being dragged
         
         // Generate fixed random building positions (seeded randomness)
         const buildingPositions = [];
@@ -368,7 +369,7 @@
             // Draw center city (skyscraper)
             drawSkyscraper(centerX, centerY + 30, 40);
             
-            // Draw current position indicator
+            // Draw current position indicator with draggable dot
             const currentRadius = D * scale;
             ctx.strokeStyle = '#e94560';
             ctx.lineWidth = 3;
@@ -377,6 +378,19 @@
             ctx.arc(centerX, centerY, currentRadius, 0, Math.PI * 2);
             ctx.stroke();
             ctx.setLineDash([]);
+            
+            // Draw draggable dot on the circle (at 45 degrees for easy access)
+            const dotAngle = Math.PI / 4;
+            const dotX = centerX + currentRadius * Math.cos(dotAngle);
+            const dotY = centerY + currentRadius * Math.sin(dotAngle);
+            
+            ctx.fillStyle = '#e94560';
+            ctx.beginPath();
+            ctx.arc(dotX, dotY, 8, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
             
             // Draw labels
             ctx.fillStyle = '#2c3e50';
@@ -472,6 +486,80 @@
             deltaD = parseFloat(e.target.value);
             updateDisplays();
             draw();
+        });
+        
+        // Canvas mouse interaction
+        function getCanvasCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+        }
+        
+        function distanceFromCenter(x, y) {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const scale = Math.min(canvas.width, canvas.height) / (2 * maxRadius);
+            
+            const dx = x - centerX;
+            const dy = y - centerY;
+            const pixelDist = Math.sqrt(dx * dx + dy * dy);
+            return pixelDist / scale;
+        }
+        
+        canvas.addEventListener('mousedown', (e) => {
+            const coords = getCanvasCoords(e);
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const scale = Math.min(canvas.width, canvas.height) / (2 * maxRadius);
+            
+            // Check if clicking on the D indicator dot
+            const currentRadius = D * scale;
+            const dotAngle = Math.PI / 4;
+            const dotX = centerX + currentRadius * Math.cos(dotAngle);
+            const dotY = centerY + currentRadius * Math.sin(dotAngle);
+            
+            const dist = Math.sqrt((coords.x - dotX) ** 2 + (coords.y - dotY) ** 2);
+            if (dist < 12) {
+                dragging = 'D';
+                canvas.style.cursor = 'grabbing';
+            }
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            const coords = getCanvasCoords(e);
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const scale = Math.min(canvas.width, canvas.height) / (2 * maxRadius);
+            
+            if (dragging === 'D') {
+                // Update D based on distance from center
+                const newD = distanceFromCenter(coords.x, coords.y);
+                D = Math.max(0.1, Math.min(maxRadius, newD));
+                document.getElementById('d-slider').value = D;
+                updateDisplays();
+                draw();
+            } else {
+                // Check if hovering over the dot
+                const currentRadius = D * scale;
+                const dotAngle = Math.PI / 4;
+                const dotX = centerX + currentRadius * Math.cos(dotAngle);
+                const dotY = centerY + currentRadius * Math.sin(dotAngle);
+                
+                const dist = Math.sqrt((coords.x - dotX) ** 2 + (coords.y - dotY) ** 2);
+                canvas.style.cursor = dist < 12 ? 'grab' : 'default';
+            }
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            dragging = null;
+            canvas.style.cursor = 'default';
+        });
+        
+        canvas.addEventListener('mouseleave', () => {
+            dragging = null;
+            canvas.style.cursor = 'default';
         });
         
         // Initialize

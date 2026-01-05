@@ -610,7 +610,41 @@
                     ctx.fill();
                 }
                 
-                // Std deviation markers
+                // Draggable std deviation markers (arrow with dots)
+                const leftX = toCanvasX(mean - std);
+                const rightX = toCanvasX(mean + std);
+                const arrowY = plotY - 50;
+                
+                ctx.strokeStyle = '#4ecca3';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(leftX, arrowY);
+                ctx.lineTo(rightX, arrowY);
+                ctx.stroke();
+                
+                // Arrow heads
+                ctx.fillStyle = '#4ecca3';
+                ctx.beginPath();
+                ctx.moveTo(leftX, arrowY);
+                ctx.lineTo(leftX + 8, arrowY - 5);
+                ctx.lineTo(leftX + 8, arrowY + 5);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(rightX, arrowY);
+                ctx.lineTo(rightX - 8, arrowY - 5);
+                ctx.lineTo(rightX - 8, arrowY + 5);
+                ctx.fill();
+                
+                // Draggable dots at std positions
+                ctx.fillStyle = '#4ecca3';
+                ctx.beginPath();
+                ctx.arc(leftX, arrowY, 6, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(rightX, arrowY, 6, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // Std deviation reference lines
                 for (let i = 1; i <= 3; i++) {
                     const leftX = toCanvasX(mean - i * std);
                     const rightX = toCanvasX(mean + i * std);
@@ -925,13 +959,15 @@
 
             if (currentDist === 'normal') {
                 const meanX = toCanvasX(p.mu);
-                if (near(meanX, plotY - 30, mx, my)) {
+                const meanY = plotY - 30;
+                const leftX = toCanvasX(p.mu - p.sigma);
+                const rightX = toCanvasX(p.mu + p.sigma);
+                const stdY = plotY - 50;
+
+                if (near(meanX, meanY, mx, my)) {
                     dragging = 'mean';
                     return;
-                }
-                const stdX = toCanvasX(p.mu + p.sigma);
-                const topY = plotY - plotHeight;
-                if (near(stdX, topY, mx, my, 15)) {
+                } else if (near(leftX, stdY, mx, my) || near(rightX, stdY, mx, my)) {
                     dragging = 'std';
                     return;
                 }
