@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Probability Distribution Explorer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        #canvas-container { flex: 1; }
+        canvas {
+            border: 2px solid #4a5568;
+            background: #16213e;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            cursor: crosshair;
+            display: block;
+            width: 100%;
+            height: 100%;
+            max-height: none;
+            position: relative;
+            z-index: 0;
+        }
+        #canvas-container { position: relative; z-index: 0; height: calc(100vh - 40px); }
+        #controls { position: relative; z-index: 20; pointer-events: auto; height: calc(100vh - 40px); overflow: visible; }
+        #controls * { pointer-events: auto; }
+        #controls {
+            width: 270px;
+            background: #0f3460;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            overflow-y: auto;
+            max-height: calc(100vh - 40px);
+        }
+        h2 {
+            color: #e94560;
+            border-bottom: 2px solid #e94560;
+            padding-bottom: 6px;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        h3 { color: #4ecca3; font-size: 13px; margin: 8px 0 6px; }
+        .dist-btn {
+            width: 100%;
+            padding: 8px;
+            margin: 4px 0;
+            background: #4ecca3;
+            color: #1a1a2e;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .dist-btn:hover { background: #3db894; transform: translateY(-1px); }
+        .dist-btn.active { background: #e94560; color: white; }
+        .param-group {
+            background: #16213e;
+            padding: 8px;
+            border-radius: 4px;
+            margin: 6px 0;
+        }
+        .param-label { color: #aaa; font-size: 12px; margin-bottom: 5px; }
+        .param-value { color: #4ecca3; font-weight: bold; font-size: 16px; }
+        .range-control {
+            background: #16213e;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .range-input { width: 100%; margin: 5px 0; }
+        .range-input input {
+            width: 60px;
+            padding: 4px;
+            background: #0f3460;
+            border: 1px solid #4a5568;
+            border-radius: 3px;
+            color: #4ecca3;
+            font-size: 12px;
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #16213e;
+            outline: none;
+            margin: 8px 0;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #4ecca3;
+            cursor: pointer;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #4ecca3;
+            cursor: pointer;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container">
+        <canvas id="main-canvas" width="800" height="600"></canvas>
+    </div>
+    
+    <div id="controls">
+        <h2>Distribution Explorer</h2>
+        
+        <h3>Select Distribution</h3>
+        <button type="button" class="dist-btn active" data-dist="normal">Normal (Gaussian)</button>
+        <button type="button" class="dist-btn" data-dist="exponential">Exponential</button>
+        <button type="button" class="dist-btn" data-dist="uniform">Uniform</button>
+        <button type="button" class="dist-btn" data-dist="gamma">Gamma</button>
+        <button type="button" class="dist-btn" data-dist="cauchy">Cauchy</button>
+        <button type="button" class="dist-btn" data-dist="laplace">Laplace</button>
+        
+        <h3>X Range</h3>
+        <div class="range-control">
+            <div class="range-input">
+                <label style="color: #aaa; font-size: 11px;">Min: </label>
+                <input type="number" id="x-min" step="0.5" value="-5">
+            </div>
+            <div class="range-input">
+                <label style="color: #aaa; font-size: 11px;">Max: </label>
+                <input type="number" id="x-max" step="0.5" value="5">
+            </div>
+        </div>
+        
+        <h3>Parameters</h3>
+        <div id="param-container"></div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('main-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        function ensureCanvasSize() {
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            const cssWidth = Math.max(200, rect.width || canvas.clientWidth || 400);
+            const cssHeight = Math.max(200, rect.height || canvas.clientHeight || 300);
+            const targetWidth = Math.floor(cssWidth * dpr);
+            const targetHeight = Math.floor(cssHeight * dpr);
+            if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
+                canvas.width = targetWidth;
+                canvas.height = targetHeight;
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            }
+        }
+
+        function getPlotMetrics(padding = 80) {
+            ensureCanvasSize();
+            const dpr = window.devicePixelRatio || 1;
+            const cssWidth = canvas.width / dpr;
+            const cssHeight = canvas.height / dpr;
+            const plotWidth = Math.max(50, cssWidth - 2 * padding);
+            const plotHeight = Math.max(50, cssHeight - 2 * padding);
+            const plotX = padding;
+            const plotY = cssHeight - padding;
+            return { padding, plotX, plotY, plotWidth, plotHeight, cssWidth, cssHeight };
+        }
+
+        function samplePDFPoints(xMin, xMax, samples = 500, yCap) {
+            const pts = new Array(samples + 1);
+            let rawMax = 1e-6;
+            for (let i = 0; i <= samples; i++) {
+                const x = xMin + (i / samples) * (xMax - xMin);
+                const yRaw = getPDF(x);
+                rawMax = Math.max(rawMax, yRaw);
+                const y = (typeof yCap === 'number') ? Math.min(yRaw, yCap) : yRaw;
+                pts[i] = { x, y, yRaw };
+            }
+            let yMax;
+            if (typeof yCap === 'number') {
+                yMax = yCap;
+            } else {
+                yMax = rawMax * 1.08;
+            }
+            return { points: pts, yMax };
+        }
+
+        let currentDist = 'normal';
+        let dragging = null;
+        let xRangeOverride = null;
+        
+        const params = {
+            normal: { mu: 0, sigma: 1 },
+            exponential: { lambda: 1 },
+            uniform: { a: -2, b: 2 },
+            gamma: { alpha: 2, beta: 1 },
+            cauchy: { x0: 0, gamma: 1 },
+            laplace: { mu: 0, b: 1 }
+        };
+        
+        const paramLabels = {
+            normal: { mu: 'μ', sigma: 'σ' },
+            exponential: { lambda: 'λ' },
+            uniform: { a: 'a', b: 'b' },
+            gamma: { alpha: 'α', beta: 'β' },
+            cauchy: { x0: 'x₀', gamma: 'γ' },
+            laplace: { mu: 'μ', b: 'b' }
+        };
+        
+        const defaultXRanges = {
+            normal: [-5, 5],
+            exponential: [0, 8],
+            uniform: [-5, 5],
+            gamma: [0, 15],
+            cauchy: [-10, 10],
+            laplace: [-8, 8]
+        };
+
+        const fixedYMax = {
+            normal: 0.5,
+            exponential: 1.2,
+            uniform: 1.2,
+            gamma: 0.8,
+            cauchy: 0.6,
+            laplace: 0.6
+        };
+        
+        function normalPDF(x, mean, std) {
+            return (1 / (std * Math.sqrt(2 * Math.PI))) * Math.exp(-0.5 * Math.pow((x - mean) / std, 2));
+        }
+        
+        function exponentialPDF(x, lambda) {
+            return x < 0 ? 0 : lambda * Math.exp(-lambda * x);
+        }
+        
+        function uniformPDF(x, min, max) {
+            return (x >= min && x <= max) ? 1 / (max - min) : 0;
+        }
+        
+        function gammaPDF(x, k, theta) {
+            if (x <= 0) return 0;
+            return (Math.pow(x, k - 1) * Math.exp(-x / theta)) / (Math.pow(theta, k) * gamma(k));
+        }
+        
+        function gamma(z) {
+            if (z < 0.5) return Math.PI / (Math.sin(Math.PI * z) * gamma(1 - z));
+            z -= 1;
+            let x = 0.99999999999980993;
+            const coef = [676.5203681218851, -1259.1392167224028, 771.32342877765313,
+                         -176.61502916214059, 12.507343278686905, -0.13857109526572012,
+                         9.9843695780195716e-6, 1.5056327351493116e-7];
+            for (let i = 0; i < 8; i++) {
+                x += coef[i] / (z + i + 1);
+            }
+            const t = z + 7.5;
+            return Math.sqrt(2 * Math.PI) * Math.pow(t, z + 0.5) * Math.exp(-t) * x;
+        }
+        
+        function cauchyPDF(x, x0, gam) {
+            return 1 / (Math.PI * gam * (1 + Math.pow((x - x0) / gam, 2)));
+        }
+        
+        function laplacePDF(x, mu, b) {
+            return (1 / (2 * b)) * Math.exp(-Math.abs(x - mu) / b);
+        }
+        
+        function getPDF(x) {
+            const p = params[currentDist];
+            switch(currentDist) {
+                case 'normal':
+                    return normalPDF(x, p.mu, p.sigma);
+                case 'exponential':
+                    return exponentialPDF(x, p.lambda);
+                case 'uniform':
+                    return uniformPDF(x, p.a, p.b);
+                case 'gamma':
+                    return gammaPDF(x, p.alpha, 1/p.beta);
+                case 'cauchy':
+                    return cauchyPDF(x, p.x0, p.gamma);
+                case 'laplace':
+                    return laplacePDF(x, p.mu, p.b);
+                default:
+                    return 0;
+            }
+        }
+        
+        function getXRange() {
+            if (xRangeOverride) return xRangeOverride;
+            return defaultXRanges[currentDist] || [-5, 5];
+        }
+        
+        function getMeanAndStd() {
+            const p = params[currentDist];
+            let mean, variance;
+            
+            switch(currentDist) {
+                case 'normal':
+                    mean = p.mu;
+                    variance = p.sigma * p.sigma;
+                    break;
+                case 'exponential':
+                    mean = 1 / p.lambda;
+                    variance = 1 / (p.lambda * p.lambda);
+                    break;
+                case 'uniform':
+                    mean = (p.a + p.b) / 2;
+                    variance = Math.pow(p.b - p.a, 2) / 12;
+                    break;
+                case 'gamma':
+                    mean = p.alpha / p.beta;
+                    variance = p.alpha / (p.beta * p.beta);
+                    break;
+                case 'laplace':
+                    mean = p.mu;
+                    variance = 2 * p.b * p.b;
+                    break;
+                case 'cauchy':
+                    mean = undefined;
+                    variance = undefined;
+                    break;
+            }
+            
+            return { mean, std: variance !== undefined ? Math.sqrt(variance) : undefined };
+        }
+        
+        function draw() {
+            try {
+                const [xMin, xMax] = getXRange();
+                const yMin = 0;
+                const metrics = getPlotMetrics();
+                const { plotX, plotY, plotWidth, plotHeight, cssWidth: cssW, cssHeight: cssH } = metrics;
+
+                ctx.fillStyle = '#16213e';
+                ctx.fillRect(0, 0, cssW, cssH);
+
+                const yCap = fixedYMax[currentDist];
+                const { points, yMax } = samplePDFPoints(xMin, xMax, 500, yCap);
+
+                const xScale = plotWidth / (xMax - xMin);
+                const yScale = plotHeight / (yMax - yMin);
+
+                const toCanvasX = (x) => plotX + (x - xMin) * xScale;
+                const toCanvasY = (y) => plotY - (y - yMin) * yScale;
+
+                // Fill under curve
+                const { mean: distMean, std: distStd } = getMeanAndStd();
+                
+                if (currentDist === 'normal') {
+                    const p = params.normal;
+                    const mean = p.mu;
+                    const std = p.sigma;
+                    
+                    const colors = [
+                        { range: [mean - 3*std, mean - 2*std], color: 'rgba(231, 76, 60, 0.15)' },
+                        { range: [mean - 2*std, mean - std], color: 'rgba(241, 196, 15, 0.15)' },
+                        { range: [mean - std, mean + std], color: 'rgba(46, 204, 113, 0.2)' },
+                        { range: [mean + std, mean + 2*std], color: 'rgba(241, 196, 15, 0.15)' },
+                        { range: [mean + 2*std, mean + 3*std], color: 'rgba(231, 76, 60, 0.15)' }
+                    ];
+                    
+                    colors.forEach(({range, color}) => {
+                        ctx.fillStyle = color;
+                        ctx.beginPath();
+                        ctx.moveTo(toCanvasX(Math.max(range[0], xMin)), plotY);
+                        for (let pt of points) {
+                            if (pt.x >= range[0] && pt.x <= range[1]) {
+                                ctx.lineTo(toCanvasX(pt.x), toCanvasY(pt.y));
+                            }
+                        }
+                        ctx.lineTo(toCanvasX(Math.min(range[1], xMax)), plotY);
+                        ctx.closePath();
+                        ctx.fill();
+                    });
+                } else if (distMean !== undefined && distStd !== undefined) {
+                    const leftStd = distMean - distStd;
+                    const rightStd = distMean + distStd;
+                    
+                    ctx.fillStyle = 'rgba(46, 204, 113, 0.15)';
+                    ctx.beginPath();
+                    ctx.moveTo(toCanvasX(Math.max(leftStd, xMin)), plotY);
+                    for (let pt of points) {
+                        if (pt.x >= leftStd && pt.x <= rightStd) {
+                            ctx.lineTo(toCanvasX(pt.x), toCanvasY(pt.y));
+                        }
+                    }
+                    ctx.lineTo(toCanvasX(Math.min(rightStd, xMax)), plotY);
+                    ctx.closePath();
+                    ctx.fill();
+                    
+                    ctx.fillStyle = 'rgba(78, 204, 163, 0.08)';
+                    ctx.beginPath();
+                    ctx.moveTo(toCanvasX(points[0].x), plotY);
+                    for (let pt of points) {
+                        const cy = toCanvasY(pt.y);
+                        if (cy >= plotY - plotHeight && cy <= plotY) {
+                            ctx.lineTo(toCanvasX(pt.x), cy);
+                        }
+                    }
+                    ctx.lineTo(toCanvasX(points[points.length - 1].x), plotY);
+                    ctx.closePath();
+                    ctx.fill();
+                } else {
+                    ctx.fillStyle = 'rgba(78, 204, 163, 0.15)';
+                    ctx.beginPath();
+                    ctx.moveTo(toCanvasX(points[0].x), plotY);
+                    for (let pt of points) {
+                        const cy = toCanvasY(pt.y);
+                        if (cy >= plotY - plotHeight && cy <= plotY) {
+                            ctx.lineTo(toCanvasX(pt.x), cy);
+                        }
+                    }
+                    ctx.lineTo(toCanvasX(points[points.length - 1].x), plotY);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                
+                // Draw PDF curve
+                ctx.strokeStyle = '#4ecca3';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                let started = false;
+                for (let pt of points) {
+                    const cy = toCanvasY(pt.y);
+                    const cx = toCanvasX(pt.x);
+                    if (!started) {
+                        ctx.moveTo(cx, cy);
+                        started = true;
+                    } else {
+                        ctx.lineTo(cx, cy);
+                    }
+                }
+                ctx.stroke();
+                
+                // Draw axes
+                ctx.strokeStyle = '#4a5568';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(plotX, plotY);
+                ctx.lineTo(plotX + plotWidth, plotY);
+                ctx.moveTo(plotX, plotY);
+                ctx.lineTo(plotX, plotY - plotHeight);
+                ctx.stroke();
+                
+                // X-axis labels
+                ctx.fillStyle = '#aaa';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                for (let i = 0; i <= 10; i++) {
+                    const x = xMin + (i / 10) * (xMax - xMin);
+                    const cx = toCanvasX(x);
+                    ctx.fillText(x.toFixed(1), cx, plotY + 20);
+                    ctx.beginPath();
+                    ctx.moveTo(cx, plotY);
+                    ctx.lineTo(cx, plotY + 5);
+                    ctx.strokeStyle = '#4a5568';
+                    ctx.stroke();
+                }
+                
+                // Y-axis labels
+                ctx.textAlign = 'right';
+                for (let i = 0; i <= 10; i++) {
+                    const y = (i / 10) * yMax;
+                    const cy = toCanvasY(y);
+                    ctx.fillText(y.toFixed(1), plotX - 10, cy + 4);
+                    ctx.beginPath();
+                    ctx.moveTo(plotX - 5, cy);
+                    ctx.lineTo(plotX, cy);
+                    ctx.strokeStyle = '#4a5568';
+                    ctx.stroke();
+                }
+                
+                // Axis titles
+                ctx.fillStyle = '#eee';
+                ctx.font = 'bold 16px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('x', plotX + plotWidth / 2, metrics.cssHeight - 20);
+                
+                ctx.save();
+                ctx.translate(20, plotY - plotHeight / 2);
+                ctx.rotate(-Math.PI / 2);
+                ctx.fillText('Probability Density', 0, 0);
+                ctx.restore();
+                
+                drawControls(metrics, toCanvasX, toCanvasY, xMin, xMax);
+                drawOverlay(metrics);
+                
+            } catch (err) {
+                console.error('Error in draw():', err);
+            }
+        }
+        
+        function drawOverlay(metrics) {
+            const rows = [];
+            const dist = currentDist;
+            if (dist === 'normal') {
+                const p = params.normal;
+                rows.push(['Mean (μ)', p.mu.toFixed(3)]);
+                rows.push(['Std Dev (σ)', p.sigma.toFixed(3)]);
+                rows.push(['', '±1σ:68%  ±2σ:95%  ±3σ:99.7%']);
+            } else if (dist === 'exponential') {
+                const p = params.exponential;
+                const mean = 1 / p.lambda;
+                const std = 1 / p.lambda;
+                rows.push(['λ', p.lambda.toFixed(3)]);
+                rows.push(['Mean (μ)', mean.toFixed(3)]);
+                rows.push(['Std Dev (σ)', std.toFixed(3)]);
+            } else if (dist === 'uniform') {
+                const p = params.uniform;
+                const mean = (p.a + p.b) / 2;
+                const std = Math.sqrt((Math.pow(p.b - p.a, 2)) / 12);
+                rows.push(['a / b', `${p.a.toFixed(3)} / ${p.b.toFixed(3)}`]);
+                rows.push(['Mean (μ)', mean.toFixed(3)]);
+                rows.push(['Std Dev (σ)', std.toFixed(3)]);
+            } else if (dist === 'gamma') {
+                const p = params.gamma;
+                const mean = p.alpha / p.beta;
+                const std = Math.sqrt(p.alpha) / p.beta;
+                rows.push(['α / β', `${p.alpha.toFixed(3)} / ${p.beta.toFixed(3)}`]);
+                rows.push(['Mean (μ)', mean.toFixed(3)]);
+                rows.push(['Std Dev (σ)', std.toFixed(3)]);
+            } else if (dist === 'cauchy') {
+                const p = params.cauchy;
+                rows.push(['x₀ / γ', `${p.x0.toFixed(3)} / ${p.gamma.toFixed(3)}`]);
+                rows.push(['', 'Median/Mode = x₀']);
+                rows.push(['', 'Mean & Variance: undefined']);
+            } else if (dist === 'laplace') {
+                const p = params.laplace;
+                const mean = p.mu;
+                const std = Math.sqrt(2) * p.b;
+                rows.push(['μ / b', `${mean.toFixed(3)} / ${p.b.toFixed(3)}`]);
+                rows.push(['Std Dev (σ)', std.toFixed(3)]);
+            }
+
+            const boxW = 300;
+            const padding = 12;
+            const lineH = 18;
+            const boxH = 22 + rows.length * lineH;
+            const px = metrics.cssWidth - boxW - 10;
+            const py = 8;
+            
+            ctx.fillStyle = 'rgba(0,0,0,0.45)';
+            ctx.fillRect(px, py, boxW, boxH);
+            ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(px, py, boxW, boxH);
+
+            ctx.fillStyle = '#e94560';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText(dist.toUpperCase(), px + padding, py + 16);
+
+            const labelColor = 'rgba(200,200,200,0.95)';
+            const valueColor = '#4ecca3';
+            ctx.font = '13px Arial';
+            for (let i = 0; i < rows.length; i++) {
+                const [label, val] = rows[i];
+                const y = py + 16 + (i + 1) * lineH;
+                if (label) {
+                    ctx.fillStyle = labelColor;
+                    ctx.textAlign = 'left';
+                    ctx.fillText(label, px + padding, y);
+                    ctx.fillStyle = valueColor;
+                    ctx.textAlign = 'right';
+                    ctx.fillText(val, px + boxW - padding, y);
+                } else {
+                    ctx.fillStyle = labelColor;
+                    ctx.textAlign = 'center';
+                    ctx.fillText(val, px + boxW / 2, y);
+                }
+            }
+        }
+        
+        function drawControls(metrics, toCanvasX, toCanvasY, xMin, xMax) {
+            const plotY = metrics.plotY;
+            const plotX = metrics.plotX;
+            const plotWidth = metrics.plotWidth;
+            const plotHeight = metrics.plotHeight;
+            const topY = plotY - plotHeight;
+            const p = params[currentDist];
+            
+            if (currentDist === 'normal') {
+                const mean = p.mu;
+                const std = p.sigma;
+                
+                // Mean line
+                const meanX = toCanvasX(mean);
+                if (meanX >= plotX && meanX <= plotX + plotWidth) {
+                    ctx.strokeStyle = '#e94560';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 5]);
+                    ctx.beginPath();
+                    ctx.moveTo(meanX, topY);
+                    ctx.lineTo(meanX, plotY);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    
+                    ctx.fillStyle = '#e94560';
+                    ctx.beginPath();
+                    ctx.arc(meanX, topY + 15, 8, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
+                
+                // Std deviation markers
+                for (let i = 1; i <= 3; i++) {
+                    const leftX = toCanvasX(mean - i * std);
+                    const rightX = toCanvasX(mean + i * std);
+                    const colors = ['#46b894', '#f1c40f', '#e74c3c'];
+                    const color = colors[i - 1];
+                    
+                    if (leftX >= plotX && leftX <= plotX + plotWidth) {
+                        ctx.strokeStyle = color;
+                        ctx.lineWidth = 1.5;
+                        ctx.setLineDash([3, 3]);
+                        ctx.beginPath();
+                        ctx.moveTo(leftX, topY);
+                        ctx.lineTo(leftX, plotY);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                    }
+                    
+                    if (rightX >= plotX && rightX <= plotX + plotWidth) {
+                        ctx.strokeStyle = color;
+                        ctx.lineWidth = 1.5;
+                        ctx.setLineDash([3, 3]);
+                        ctx.beginPath();
+                        ctx.moveTo(rightX, topY);
+                        ctx.lineTo(rightX, plotY);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                    }
+                }
+            } else if (currentDist === 'exponential') {
+                const mean = 1 / p.lambda;
+                const meanX = toCanvasX(mean);
+                if (meanX >= plotX && meanX <= plotX + plotWidth) {
+                    ctx.strokeStyle = '#e94560';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 5]);
+                    ctx.beginPath();
+                    ctx.moveTo(meanX, topY);
+                    ctx.lineTo(meanX, plotY);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            } else if (currentDist === 'uniform') {
+                const aX = toCanvasX(p.a);
+                const bX = toCanvasX(p.b);
+                
+                if (aX >= plotX && aX <= plotX + plotWidth) {
+                    ctx.strokeStyle = '#4ecca3';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(aX, topY);
+                    ctx.lineTo(aX, plotY);
+                    ctx.stroke();
+                    
+                    ctx.fillStyle = '#4ecca3';
+                    ctx.beginPath();
+                    ctx.arc(aX, topY + 15, 8, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
+                
+                if (bX >= plotX && bX <= plotX + plotWidth) {
+                    ctx.strokeStyle = '#4ecca3';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(bX, topY);
+                    ctx.lineTo(bX, plotY);
+                    ctx.stroke();
+                    
+                    ctx.fillStyle = '#4ecca3';
+                    ctx.beginPath();
+                    ctx.arc(bX, topY + 15, 8, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
+            } else if (currentDist === 'cauchy') {
+                const x0X = toCanvasX(p.x0);
+                if (x0X >= plotX && x0X <= plotX + plotWidth) {
+                    ctx.strokeStyle = '#e94560';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 5]);
+                    ctx.beginPath();
+                    ctx.moveTo(x0X, topY);
+                    ctx.lineTo(x0X, plotY);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            } else if (currentDist === 'laplace') {
+                const muX = toCanvasX(p.mu);
+                if (muX >= plotX && muX <= plotX + plotWidth) {
+                    ctx.strokeStyle = '#e94560';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 5]);
+                    ctx.beginPath();
+                    ctx.moveTo(muX, topY);
+                    ctx.lineTo(muX, plotY);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    
+                    ctx.fillStyle = '#e94560';
+                    ctx.beginPath();
+                    ctx.arc(muX, topY + 15, 8, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
+            }
+            
+            const { mean, std } = getMeanAndStd();
+            if (mean !== undefined && std !== undefined && currentDist !== 'normal') {
+                const meanX = toCanvasX(mean);
+                if (meanX >= plotX && meanX <= plotX + plotWidth) {
+                    ctx.strokeStyle = '#e94560';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 5]);
+                    ctx.beginPath();
+                    ctx.moveTo(meanX, topY);
+                    ctx.lineTo(meanX, plotY);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+                
+                const leftStd = toCanvasX(mean - std);
+                const rightStd = toCanvasX(mean + std);
+                
+                if (leftStd >= plotX && leftStd <= plotX + plotWidth) {
+                    ctx.strokeStyle = '#46b894';
+                    ctx.lineWidth = 1.5;
+                    ctx.setLineDash([3, 3]);
+                    ctx.beginPath();
+                    ctx.moveTo(leftStd, topY);
+                    ctx.lineTo(leftStd, plotY);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+                
+                if (rightStd >= plotX && rightStd <= plotX + plotWidth) {
+                    ctx.strokeStyle = '#46b894';
+                    ctx.lineWidth = 1.5;
+                    ctx.setLineDash([3, 3]);
+                    ctx.beginPath();
+                    ctx.moveTo(rightStd, topY);
+                    ctx.lineTo(rightStd, plotY);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            }
+        }
+        
+        function updateParamDisplay() {
+            const container = document.getElementById('param-container');
+            container.innerHTML = '';
+            
+            const p = params[currentDist];
+            const labels = paramLabels[currentDist];
+            
+            if (!p || !labels) {
+                container.innerHTML = '<p style="color: #aaa; font-size: 12px;">No parameters available</p>';
+                return;
+            }
+
+            if (currentDist === 'gamma') {
+                container.innerHTML = `
+                    <div class="param-group">
+                        <div class="param-label">α (shape): <span class="param-value">${p.alpha.toFixed(2)}</span></div>
+                        <input type="range" id="gamma-alpha" min="0.5" max="10" step="0.1" value="${p.alpha}">
+                    </div>
+                    <div class="param-group">
+                        <div class="param-label">β (rate): <span class="param-value">${p.beta.toFixed(2)}</span></div>
+                        <input type="range" id="gamma-beta" min="0.1" max="3" step="0.1" value="${p.beta}">
+                    </div>
+                    <div style="margin-top: 10px; padding: 8px; background: rgba(78,204,163,0.1); border-radius: 4px; font-size: 11px; color: #aaa;">
+                        Mean = α / β<br>
+                        Std = √α / β
+                    </div>
+                `;
+                
+                document.getElementById('gamma-alpha').addEventListener('input', (e) => {
+                    params.gamma.alpha = parseFloat(e.target.value);
+                    updateParamDisplay();
+                    draw();
+                });
+                
+                document.getElementById('gamma-beta').addEventListener('input', (e) => {
+                    params.gamma.beta = parseFloat(e.target.value);
+                    updateParamDisplay();
+                    draw();
+                });
+                return;
+            }
+
+            if (currentDist === 'cauchy') {
+                container.innerHTML = `
+                    <div class="param-group">
+                        <div class="param-label">x₀ (location): <span class="param-value">${p.x0.toFixed(2)}</span></div>
+                        <input type="range" id="cauchy-x0" min="-8" max="8" step="0.1" value="${p.x0}">
+                    </div>
+                    <div class="param-group">
+                        <div class="param-label">γ (scale): <span class="param-value">${p.gamma.toFixed(2)}</span></div>
+                        <input type="range" id="cauchy-gamma" min="0.1" max="3" step="0.1" value="${p.gamma}">
+                    </div>
+                    <div style="margin-top: 10px; padding: 8px; background: rgba(78,204,163,0.1); border-radius: 4px; font-size: 11px; color: #aaa;">
+                        Median = x₀<br>
+                        Mean & Variance: undefined
+                    </div>
+                `;
+                
+                document.getElementById('cauchy-x0').addEventListener('input', (e) => {
+                    params.cauchy.x0 = parseFloat(e.target.value);
+                    updateParamDisplay();
+                    draw();
+                });
+                
+                document.getElementById('cauchy-gamma').addEventListener('input', (e) => {
+                    params.cauchy.gamma = parseFloat(e.target.value);
+                    updateParamDisplay();
+                    draw();
+                });
+                return;
+            }
+
+            if (currentDist === 'normal') {
+                container.innerHTML = `
+                    <div class="param-group">
+                        <div class="param-label">μ (drag on plot)</div>
+                        <div class="param-value">${p.mu.toFixed(3)}</div>
+                    </div>
+                    <div class="param-group">
+                        <div class="param-label">σ (drag on plot)</div>
+                        <div class="param-value">${p.sigma.toFixed(3)}</div>
+                    </div>
+                `;
+                return;
+            }
+
+            if (currentDist === 'uniform') {
+                container.innerHTML = `
+                    <div class="param-group">
+                        <div class="param-label">a (drag on plot)</div>
+                        <div class="param-value">${p.a.toFixed(3)}</div>
+                    </div>
+                    <div class="param-group">
+                        <div class="param-label">b (drag on plot)</div>
+                        <div class="param-value">${p.b.toFixed(3)}</div>
+                    </div>
+                `;
+                return;
+            }
+
+            if (currentDist === 'exponential') {
+                container.innerHTML = `
+                    <div class="param-group">
+                        <div class="param-label">λ (rate): <span class="param-value">${p.lambda.toFixed(2)}</span></div>
+                        <input type="range" id="exp-lambda" min="0.1" max="3" step="0.1" value="${p.lambda}">
+                    </div>
+                    <div style="margin-top: 10px; padding: 8px; background: rgba(78,204,163,0.1); border-radius: 4px; font-size: 11px; color: #aaa;">
+                        Mean = 1 / λ<br>
+                        Std = 1 / λ
+                    </div>
+                `;
+                
+                document.getElementById('exp-lambda').addEventListener('input', (e) => {
+                    params.exponential.lambda = parseFloat(e.target.value);
+                    updateParamDisplay();
+                    draw();
+                });
+                return;
+            }
+
+            if (currentDist === 'laplace') {
+                container.innerHTML = `
+                    <div class="param-group">
+                        <div class="param-label">μ (drag on plot)</div>
+                        <div class="param-value">${p.mu.toFixed(3)}</div>
+                    </div>
+                    <div class="param-group">
+                        <div class="param-label">b (scale): <span class="param-value">${p.b.toFixed(2)}</span></div>
+                        <input type="range" id="laplace-b" min="0.1" max="3" step="0.1" value="${p.b}">
+                    </div>
+                    <div style="margin-top: 10px; padding: 8px; background: rgba(78,204,163,0.1); border-radius: 4px; font-size: 11px; color: #aaa;">
+                        Std = √2 · b
+                    </div>
+                `;
+                
+                document.getElementById('laplace-b').addEventListener('input', (e) => {
+                    params.laplace.b = parseFloat(e.target.value);
+                    updateParamDisplay();
+                    draw();
+                });
+                return;
+            }
+        }
+        
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+            const my = e.clientY - rect.top;
+
+            const [xMin, xMax] = getXRange();
+            const metrics = getPlotMetrics();
+            const plotX = metrics.plotX;
+            const plotY = metrics.plotY;
+            const plotWidth = metrics.plotWidth;
+            const plotHeight = metrics.plotHeight;
+
+            const { points, yMax } = samplePDFPoints(xMin, xMax, 500, fixedYMax[currentDist]);
+            const xScale = plotWidth / (xMax - xMin);
+            const yScale = plotHeight / (yMax - 0);
+            const toCanvasX = (x) => plotX + (x - xMin) * xScale;
+            const toCanvasY = (y) => plotY - (y - 0) * yScale;
+
+            const p = params[currentDist];
+
+            function near(cx, cy, mx, my, r = 12) {
+                return Math.sqrt((cx - mx) ** 2 + (cy - my) ** 2) < r;
+            }
+
+            if (currentDist === 'normal') {
+                const meanX = toCanvasX(p.mu);
+                const topY = plotY - plotHeight;
+                if (near(meanX, topY + 15, mx, my)) {
+                    dragging = 'mean';
+                    return;
+                }
+                const stdX = toCanvasX(p.mu + p.sigma);
+                if (near(stdX, topY, mx, my, 15)) {
+                    dragging = 'std';
+                    return;
+                }
+            }
+            else if (currentDist === 'uniform') {
+                const aX = toCanvasX(p.a);
+                const bX = toCanvasX(p.b);
+                const topY = plotY - plotHeight;
+                if (near(aX, topY + 15, mx, my)) {
+                    dragging = 'uniform-min';
+                    return;
+                }
+                if (near(bX, topY + 15, mx, my)) {
+                    dragging = 'uniform-max';
+                    return;
+                }
+            }
+            else if (currentDist === 'laplace') {
+                const muX = toCanvasX(p.mu);
+                const topY = plotY - plotHeight;
+                if (near(muX, topY + 15, mx, my)) {
+                    dragging = 'laplace-loc';
+                    return;
+                }
+            }
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+
+            const [xMin, xMax] = getXRange();
+            const metrics = getPlotMetrics();
+            const plotX = metrics.plotX;
+            const plotWidth = metrics.plotWidth;
+
+            const { points, yMax } = samplePDFPoints(xMin, xMax);
+            const xScale = plotWidth / (xMax - xMin);
+            const toDataX = (cx) => xMin + (cx - plotX) / xScale;
+
+            const p = params[currentDist];
+
+            if (dragging === 'mean') {
+                params.normal.mu = toDataX(mx);
+            }
+            else if (dragging === 'std') {
+                const newStd = Math.abs(toDataX(mx) - params.normal.mu);
+                params.normal.sigma = Math.max(0.1, newStd);
+            }
+            else if (dragging === 'uniform-min') {
+                params.uniform.a = Math.min(toDataX(mx), params.uniform.b - 0.1);
+            }
+            else if (dragging === 'uniform-max') {
+                params.uniform.b = Math.max(toDataX(mx), params.uniform.a + 0.1);
+            }
+            else if (dragging === 'laplace-loc') {
+                params.laplace.mu = toDataX(mx);
+            }
+
+            if (dragging) {
+                updateParamDisplay();
+                draw();
+            }
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            dragging = null;
+        });
+        
+        canvas.addEventListener('mouseleave', () => {
+            dragging = null;
+        });
+        
+        document.querySelectorAll('.dist-btn[data-dist]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.dist-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentDist = btn.dataset.dist;
+                xRangeOverride = null;
+                updateXRangeInputs();
+                updateParamDisplay();
+                draw();
+            });
+        });
+        
+        function updateXRangeInputs() {
+            const [xMin, xMax] = getXRange();
+            document.getElementById('x-min').value = xMin;
+            document.getElementById('x-max').value = xMax;
+        }
+        
+        document.getElementById('x-min').addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            if (!isNaN(val)) {
+                const [_, xMax] = getXRange();
+                xRangeOverride = [val, xMax];
+                draw();
+            }
+        });
+        
+        document.getElementById('x-max').addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            if (!isNaN(val)) {
+                const [xMin, _] = getXRange();
+                xRangeOverride = [xMin, val];
+                draw();
+            }
+        });
+        
+        setTimeout(() => {
+            ensureCanvasSize();
+            updateXRangeInputs();
+            updateParamDisplay();
+            draw();
+        }, 50);
+
+        window.addEventListener('resize', () => {
+            ensureCanvasSize();
+            updateXRangeInputs();
+            draw();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Probability Distribution Explorer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        #canvas-container { flex: 1; }
+        canvas {
+            border: 2px solid #4a5568;
+            background: #16213e;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            cursor: crosshair;
+            display: block;
+            width: 100%;
+            height: 100%;
+            max-height: none;
+            position: relative;
+            z-index: 0;
+        }
+        #canvas-container { position: relative; z-index: 0; height: calc(100vh - 40px); }
+        #controls { position: relative; z-index: 20; pointer-events: auto; height: calc(100vh - 40px); overflow: visible; }
+        #controls * { pointer-events: auto; }
+        #controls {
+            width: 270px;
+            background: #0f3460;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            overflow-y: hidden;
+            max-height: calc(100vh - 40px);
+        }
+        h2 {
+            color: #e94560;
+            border-bottom: 2px solid #e94560;
+            padding-bottom: 6px;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        h3 { color: #4ecca3; font-size: 13px; margin: 8px 0 6px; }
+        .dist-btn {
+            width: 100%;
+            padding: 8px;
+            margin: 4px 0;
+            background: #4ecca3;
+            color: #1a1a2e;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .dist-btn:hover { background: #3db894; transform: translateY(-1px); }
+        .dist-btn.active { background: #e94560; color: white; }
+        .param-group {
+            background: #16213e;
+            padding: 8px;
+            border-radius: 4px;
+            margin: 6px 0;
+        }
+        .param-label { color: #aaa; font-size: 12px; margin-bottom: 5px; }
+        .param-value { color: #4ecca3; font-weight: bold; font-size: 16px; }
+        .range-control {
+            background: #16213e;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .range-input { width: 100%; margin: 5px 0; }
+        .range-input input {
+            width: 60px;
+            padding: 4px;
+            background: #0f3460;
+            border: 1px solid #4a5568;
+            border-radius: 3px;
+            color: #4ecca3;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container">
+        <canvas id="main-canvas" width="800" height="600"></canvas>
+    </div>
+    
+    <div id="controls">
+        <h2>Distribution Explorer</h2>
+        
+        <h3>X Range</h3>
+        <div class="range-control">
+            <div class="range-input">
+                <label style="color: #aaa; font-size: 11px;">Min: </label>
+                <input type="number" id="x-min" step="0.5" value="-5">
+            </div>
+            <div class="range-input">
+                <label style="color: #aaa; font-size: 11px;">Max: </label>
+                <input type="number" id="x-max" step="0.5" value="5">
+            </div>
+
+        </div>
+        
+        <h3>Parameters</h3>
+        <div id="param-container"></div>
+        
+        <h3>Statistics</h3>
+        <div id="stats-container" class="param-group"></div>
+        
+        <h3>Select Distribution</h3>
+        <button type="button" class="dist-btn active" data-dist="normal">Normal (Gaussian)</button>
+        <button type="button" class="dist-btn" data-dist="exponential">Exponential</button>
+        <button type="button" class="dist-btn" data-dist="uniform">Uniform</button>
+        <button type="button" class="dist-btn" data-dist="gamma">Gamma</button>
+        <button type="button" class="dist-btn" data-dist="cauchy">Cauchy</button>
+        <button type="button" class="dist-btn" data-dist="laplace">Laplace</button>
+        
+        <div id="legend-container" style="display:none;"></div>
+
+    </div>
+
+    <script>
+        const canvas = document.getElementById('main-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Ensure high-DPI crispness and consistent CSS coordinate usage
+        function ensureCanvasSize() {
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            // rect.width/height are in CSS pixels; fallback to clientWidth if zero
+            const cssWidth = Math.max(200, rect.width || canvas.clientWidth || 400);
+            const cssHeight = Math.max(200, rect.height || canvas.clientHeight || 300);
+            const targetWidth = Math.floor(cssWidth * dpr);
+            const targetHeight = Math.floor(cssHeight * dpr);
+            if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
+                canvas.width = targetWidth;
+                canvas.height = targetHeight;
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                console.log('ensureCanvasSize: set canvas size', { cssWidth, cssHeight, targetWidth, targetHeight, dpr });
+            }
+        }
+
+        // Return plot metrics in CSS pixel coordinates (what we draw in)
+        function getPlotMetrics(padding = 80) {
+            ensureCanvasSize();
+            const dpr = window.devicePixelRatio || 1;
+            const cssWidth = canvas.width / dpr;
+            const cssHeight = canvas.height / dpr;
+            const plotWidth = Math.max(50, cssWidth - 2 * padding);
+            const plotHeight = Math.max(50, cssHeight - 2 * padding);
+            const plotX = padding;
+            const plotY = cssHeight - padding;
+            return { padding, plotX, plotY, plotWidth, plotHeight, cssWidth, cssHeight };
+        }
+
+        // Sample the PDF across the x range and compute max y for autoscaling
+        function samplePDFPoints(xMin, xMax, samples = 500, yCap) {
+            const pts = new Array(samples + 1);
+            let rawMax = 1e-6;
+            for (let i = 0; i <= samples; i++) {
+                const x = xMin + (i / samples) * (xMax - xMin);
+                const yRaw = getPDF(x);
+                rawMax = Math.max(rawMax, yRaw);
+                // If yCap is provided (fixed axis), clamp values so the plotted curve scales within the fixed axis
+                const y = (typeof yCap === 'number') ? Math.min(yRaw, yCap) : yRaw;
+                pts[i] = { x, y, yRaw };
+            }
+            // Determine yMax: use provided cap when given, otherwise autoscale with small padding
+            let yMax;
+            if (typeof yCap === 'number') {
+                yMax = yCap;
+            } else {
+                yMax = rawMax * 1.08;
+            }
+            return { points: pts, yMax };
+        }
+
+        let currentDist = 'normal';
+        let dragging = null;
+        let xRangeOverride = null;
+        
+        const params = {
+            normal: { mu: 0, sigma: 1 },
+            exponential: { lambda: 1 },
+            uniform: { a: -2, b: 2 },
+            gamma: { alpha: 2, beta: 1 },
+            cauchy: { x0: 0, gamma: 1 },
+            laplace: { mu: 0, b: 1 }
+        };
+        
+        const paramLabels = {
+            normal: { mu: 'μ', sigma: 'σ' },
+            exponential: { lambda: 'λ' },
+            uniform: { a: 'a', b: 'b' },
+            gamma: { alpha: 'α', beta: 'β' },
+            cauchy: { x0: 'x₀', gamma: 'γ' },
+            laplace: { mu: 'μ', b: 'b' }
+        };
+        
+        const defaultXRanges = {
+            normal: [-5, 5],
+            exponential: [0, 8],
+            uniform: [-5, 5],
+            gamma: [0, 15],
+            cauchy: [-10, 10],
+            laplace: [-8, 8]
+        };
+
+        // Fixed Y-axis limits per distribution (so the axis labels stay consistent while curves change)
+        const fixedYMax = {
+            normal: 0.5,
+            exponential: 1.2,
+            uniform: 1.2,
+            gamma: 0.8,
+            cauchy: 0.6,
+            laplace: 0.6
+        };
+        
+        function normalPDF(x, mean, std) {
+            return (1 / (std * Math.sqrt(2 * Math.PI))) * Math.exp(-0.5 * Math.pow((x - mean) / std, 2));
+        }
+        
+        function exponentialPDF(x, lambda) {
+            return x < 0 ? 0 : lambda * Math.exp(-lambda * x);
+        }
+        
+        function uniformPDF(x, min, max) {
+            return (x >= min && x <= max) ? 1 / (max - min) : 0;
+        }
+        
+        function gammaPDF(x, k, theta) {
+            if (x <= 0) return 0;
+            return (Math.pow(x, k - 1) * Math.exp(-x / theta)) / (Math.pow(theta, k) * gamma(k));
+        }
+        
+        function gamma(z) {
+            if (z < 0.5) return Math.PI / (Math.sin(Math.PI * z) * gamma(1 - z));
+            z -= 1;
+            let x = 0.99999999999980993;
+            const coef = [676.5203681218851, -1259.1392167224028, 771.32342877765313,
+                         -176.61502916214059, 12.507343278686905, -0.13857109526572012,
+                         9.9843695780195716e-6, 1.5056327351493116e-7];
+            for (let i = 0; i < 8; i++) {
+                x += coef[i] / (z + i + 1);
+            }
+            const t = z + 7.5;
+            return Math.sqrt(2 * Math.PI) * Math.pow(t, z + 0.5) * Math.exp(-t) * x;
+        }
+        
+        function cauchyPDF(x, x0, gam) {
+            return 1 / (Math.PI * gam * (1 + Math.pow((x - x0) / gam, 2)));
+        }
+        
+        function laplacePDF(x, mu, b) {
+            return (1 / (2 * b)) * Math.exp(-Math.abs(x - mu) / b);
+        }
+        
+        function getPDF(x) {
+            const p = params[currentDist];
+            switch(currentDist) {
+                case 'normal':
+                    return normalPDF(x, p.mu, p.sigma);
+                case 'exponential':
+                    return exponentialPDF(x, p.lambda);
+                case 'uniform':
+                    return uniformPDF(x, p.a, p.b);
+                case 'gamma':
+                    return gammaPDF(x, p.alpha, 1/p.beta);
+                case 'cauchy':
+                    return cauchyPDF(x, p.x0, p.gamma);
+                case 'laplace':
+                    return laplacePDF(x, p.mu, p.b);
+                default:
+                    return 0;
+            }
+        }
+        
+        function getXRange() {
+            if (xRangeOverride) return xRangeOverride;
+            return defaultXRanges[currentDist] || [-5, 5];
+        }
+        
+        function getMeanAndStd() {
+            const p = params[currentDist];
+            let mean, variance;
+            
+            switch(currentDist) {
+                case 'normal':
+                    mean = p.mu;
+                    variance = p.sigma * p.sigma;
+                    break;
+                case 'exponential':
+                    mean = 1 / p.lambda;
+                    variance = 1 / (p.lambda * p.lambda);
+                    break;
+                case 'uniform':
+                    mean = (p.a + p.b) / 2;
+                    variance = Math.pow(p.b - p.a, 2) / 12;
+                    break;
+                case 'gamma':
+                    mean = p.alpha / p.beta;
+                    variance = p.alpha / (p.beta * p.beta);
+                    break;
+                case 'cauchy':
+                    mean = undefined;
+                    variance = undefined;
+                    break;
+                case 'laplace':
+                    mean = p.mu;
+                    variance = 2 * p.b * p.b;
+                    break;
+            }
+            
+            return { mean, std: variance !== undefined ? Math.sqrt(variance) : undefined };
+        }
+        
+        function draw() {
+            try {
+                ensureCanvasSize();
+                // clear using CSS coordinates so clearing matches transformed drawing space
+                const metrics = getPlotMetrics();
+                const cssW = metrics.cssWidth;
+                const cssH = metrics.cssHeight;
+                ctx.clearRect(0, 0, cssW, cssH);
+
+                const padding = metrics.padding;
+                const plotWidth = metrics.plotWidth;
+                const plotHeight = metrics.plotHeight;
+                const plotX = metrics.plotX;
+                const plotY = metrics.plotY;
+
+                const [xMin, xMax] = getXRange();
+                const yMin = 0;
+
+// Sample PDF and determine yMax — use fixed Y limits when available so axes remain constant
+            const samples = 500;
+            const yCap = fixedYMax[currentDist];
+            const { points, yMax } = samplePDFPoints(xMin, xMax, samples, yCap);
+
+                const xScale = plotWidth / (xMax - xMin);
+                const yScale = plotHeight / (yMax - yMin);
+
+                const toCanvasX = (x) => plotX + (x - xMin) * xScale;
+                const toCanvasY = (y) => plotY - (y - yMin) * yScale;
+
+                console.log('draw', { xMin, xMax, yMax, plotWidth, plotHeight, cssW, cssH, pointsCount: points.length });
+
+            
+            // Fill under curve with shading
+            const { mean: distMean, std: distStd } = getMeanAndStd();
+            
+            if (currentDist === 'normal') {
+                const p = params.normal;
+                const mean = p.mu;
+                const std = p.sigma;
+                
+                const colors = [
+                    { range: [mean - 3*std, mean - 2*std], color: 'rgba(231, 76, 60, 0.15)' },
+                    { range: [mean - 2*std, mean - std], color: 'rgba(241, 196, 15, 0.15)' },
+                    { range: [mean - std, mean + std], color: 'rgba(46, 204, 113, 0.2)' },
+                    { range: [mean + std, mean + 2*std], color: 'rgba(241, 196, 15, 0.15)' },
+                    { range: [mean + 2*std, mean + 3*std], color: 'rgba(231, 76, 60, 0.15)' }
+                ];
+                
+                colors.forEach(({range, color}) => {
+                    ctx.fillStyle = color;
+                    ctx.beginPath();
+                    ctx.moveTo(toCanvasX(Math.max(range[0], xMin)), plotY);
+                    for (let pt of points) {
+                        if (pt.x >= range[0] && pt.x <= range[1]) {
+                            ctx.lineTo(toCanvasX(pt.x), toCanvasY(pt.y));
+                        }
+                    }
+                    ctx.lineTo(toCanvasX(Math.min(range[1], xMax)), plotY);
+                    ctx.closePath();
+                    ctx.fill();
+                });
+            } else if (distMean !== undefined && distStd !== undefined) {
+                // Highlight ±1σ region for all other distributions
+                const leftStd = distMean - distStd;
+                const rightStd = distMean + distStd;
+                
+                // Green highlight for ±1σ
+                ctx.fillStyle = 'rgba(46, 204, 113, 0.15)';
+                ctx.beginPath();
+                ctx.moveTo(toCanvasX(Math.max(leftStd, xMin)), plotY);
+                for (let pt of points) {
+                    if (pt.x >= leftStd && pt.x <= rightStd) {
+                        ctx.lineTo(toCanvasX(pt.x), toCanvasY(pt.y));
+                    }
+                }
+                ctx.lineTo(toCanvasX(Math.min(rightStd, xMax)), plotY);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Light fill for rest
+                ctx.fillStyle = 'rgba(78, 204, 163, 0.08)';
+                ctx.beginPath();
+                ctx.moveTo(toCanvasX(points[0].x), plotY);
+                for (let pt of points) {
+                    const cy = toCanvasY(pt.y);
+                    if (cy >= plotY - plotHeight && cy <= plotY) {
+                        ctx.lineTo(toCanvasX(pt.x), cy);
+                    }
+                }
+                ctx.lineTo(toCanvasX(points[points.length - 1].x), plotY);
+                ctx.closePath();
+                ctx.fill();
+            } else {
+                // No mean/std (Cauchy) - just light fill
+                ctx.fillStyle = 'rgba(78, 204, 163, 0.15)';
+                ctx.beginPath();
+                ctx.moveTo(toCanvasX(points[0].x), plotY);
+                for (let pt of points) {
+                    const cy = toCanvasY(pt.y);
+                    if (cy >= plotY - plotHeight && cy <= plotY) {
+                        ctx.lineTo(toCanvasX(pt.x), cy);
+                    }
+                }
+                ctx.lineTo(toCanvasX(points[points.length - 1].x), plotY);
+                ctx.closePath();
+                ctx.fill();
+            }
+            
+            // Draw PDF curve
+            ctx.strokeStyle = '#4ecca3';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            let started = false;
+            for (let pt of points) {
+                const cy = toCanvasY(pt.y);
+                const cx = toCanvasX(pt.x);
+                if (!started) {
+                    ctx.moveTo(cx, cy);
+                    started = true;
+                } else {
+                    ctx.lineTo(cx, cy);
+                }
+            }
+            ctx.stroke();
+            
+            // Draw axes
+            ctx.strokeStyle = '#4a5568';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(plotX, plotY);
+            ctx.lineTo(plotX + plotWidth, plotY);
+            ctx.moveTo(plotX, plotY);
+            ctx.lineTo(plotX, plotY - plotHeight);
+            ctx.stroke();
+            
+            // X-axis labels
+            ctx.fillStyle = '#aaa';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            for (let i = 0; i <= 10; i++) {
+                const x = xMin + (i / 10) * (xMax - xMin);
+                const cx = toCanvasX(x);
+                ctx.fillText(x.toFixed(1), cx, plotY + 20);
+                ctx.beginPath();
+                ctx.moveTo(cx, plotY);
+                ctx.lineTo(cx, plotY + 5);
+                ctx.strokeStyle = '#4a5568';
+                ctx.stroke();
+            }
+            
+            // Y-axis labels
+            ctx.textAlign = 'right';
+            for (let i = 0; i <= 10; i++) {
+                const y = (i / 10) * yMax;
+                const cy = toCanvasY(y);
+                ctx.fillText(y.toFixed(1), plotX - 10, cy + 4);
+                ctx.beginPath();
+                ctx.moveTo(plotX - 5, cy);
+                ctx.lineTo(plotX, cy);
+                ctx.strokeStyle = '#4a5568';
+                ctx.stroke();
+            }
+            
+            // Axis titles
+            ctx.fillStyle = '#eee';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('x', plotX + plotWidth / 2, metrics.cssHeight - 20);
+            
+            ctx.save();
+            ctx.translate(20, plotY - plotHeight / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('Probability Density', 0, 0);
+            ctx.restore();
+            
+            drawControls(metrics, toCanvasX, toCanvasY, xMin, xMax);
+            
+            // Draw compact overlay (legend / stats) on the top-right of the canvas so menu can be shorter
+            (function drawOverlay() {
+                // Build structured lines (label/value) for styled rendering
+                const rows = [];
+                const dist = currentDist;
+                if (dist === 'normal') {
+                    const p = params.normal;
+                    rows.push(['Mean (μ)', p.mu.toFixed(3)]);
+                    rows.push(['Std Dev (σ)', p.sigma.toFixed(3)]);
+                    rows.push(['', '±1σ:68%  ±2σ:95%  ±3σ:99.7%']);
+                } else if (dist === 'exponential') {
+                    const p = params.exponential;
+                    const mean = 1 / p.lambda;
+                    const std = 1 / p.lambda;
+                    rows.push(['λ', p.lambda.toFixed(3)]);
+                    rows.push(['Mean (μ)', mean.toFixed(3)]);
+                    rows.push(['Std Dev (σ)', std.toFixed(3)]);
+                } else if (dist === 'uniform') {
+                    const p = params.uniform;
+                    const mean = (p.a + p.b) / 2;
+                    const std = Math.sqrt((Math.pow(p.b - p.a, 2)) / 12);
+                    rows.push(['a / b', `${p.a.toFixed(3)} / ${p.b.toFixed(3)}`]);
+                    rows.push(['Mean (μ)', mean.toFixed(3)]);
+                    rows.push(['Std Dev (σ)', std.toFixed(3)]);
+                } else if (dist === 'gamma') {
+                    const p = params.gamma;
+                    const mean = p.alpha / p.beta;
+                    const std = Math.sqrt(p.alpha) / p.beta;
+                    rows.push(['α / β', `${p.alpha.toFixed(3)} / ${p.beta.toFixed(3)}`]);
+                    rows.push(['Mean (μ)', mean.toFixed(3)]);
+                    rows.push(['Std Dev (σ)', std.toFixed(3)]);
+                    rows.push(['', 'Formulas: μ = α / β, σ = √α / β']);
+                } else if (dist === 'cauchy') {
+                    const p = params.cauchy;
+                    rows.push(['x₀ / γ', `${p.x0.toFixed(3)} / ${p.gamma.toFixed(3)}`]);
+                    rows.push(['', 'Median/Mode = x₀']);
+                    rows.push(['', 'Mean & Variance: undefined']);
+                } else if (dist === 'laplace') {
+                    const p = params.laplace;
+                    const mean = p.mu;
+                    const std = Math.sqrt(2) * p.b;
+                    rows.push(['μ / b', `${mean.toFixed(3)} / ${p.b.toFixed(3)}`]);
+                    rows.push(['Std Dev (σ)', std.toFixed(3)]);
+                    rows.push(['', 'Formulas: μ = μ, σ = √2 · b']);
+                } else {
+                    rows.push([dist.toUpperCase(), '']);
+                }
+
+                const boxW = 300;
+                const padding = 12;
+                const lineH = 18;
+                const boxH = 22 + rows.length * lineH;
+                const px = metrics.cssWidth - boxW - 10;
+                const py = 8;
+                // background
+                ctx.fillStyle = 'rgba(0,0,0,0.45)';
+                ctx.fillRect(px, py, boxW, boxH);
+                ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(px, py, boxW, boxH);
+
+                // Title
+                ctx.fillStyle = '#e94560';
+                ctx.font = 'bold 14px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText(dist.toUpperCase(), px + padding, py + 16);
+
+                // Rows: left label, right value (colors)
+                const labelColor = 'rgba(200,200,200,0.95)';
+                const valueColor = '#4ecca3';
+                ctx.font = '13px Arial';
+                for (let i = 0; i < rows.length; i++) {
+                    const [label, val] = rows[i];
+                    const y = py + 16 + (i + 1) * lineH;
+                    if (label) {
+                        ctx.fillStyle = labelColor;
+                        ctx.textAlign = 'left';
+                        ctx.fillText(label, px + padding, y);
+                        ctx.fillStyle = valueColor;
+                        ctx.textAlign = 'right';
+                        ctx.fillText(val, px + boxW - padding, y);
+                    } else {
+                        ctx.fillStyle = 'rgba(200,200,200,0.85)';
+                        ctx.textAlign = 'left';
+                        ctx.fillText(val, px + padding, y);
+                    }
+                }
+            })();
+        } catch (err) {
+            console.error('Error in draw():', err);
+            // Show an error message on the canvas for visibility
+            try {
+                // temporarily reset transform to draw message in device-independent pixels
+                ctx.save();
+                ctx.setTransform(1,0,0,1,0,0);
+                ctx.fillStyle = 'rgba(0,0,0,0.6)';
+                ctx.fillRect(0,0,canvas.width, canvas.height);
+                ctx.fillStyle = '#ff6b6b';
+                ctx.font = '16px Arial';
+                ctx.fillText('Rendering error: ' + (err && err.message ? err.message : String(err)), 10, 30);
+                ctx.restore();
+            } catch (err2) {
+                console.error('Also failed to draw error message', err2);
+            }
+        }
+    }
+        
+        function drawControls(metrics, toCanvasX, toCanvasY, xMin, xMax) {
+            const plotY = metrics.plotY;
+            const plotX = metrics.plotX;
+            const plotWidth = metrics.plotWidth;
+            const plotHeight = metrics.plotHeight;
+            const topY = plotY - plotHeight;
+            const p = params[currentDist];
+            
+            if (currentDist === 'normal') {
+                const meanX = toCanvasX(p.mu);
+                const leftX = toCanvasX(p.mu - p.sigma);
+                const rightX = toCanvasX(p.mu + p.sigma);
+                
+                if (p.mu >= xMin && p.mu <= xMax) {
+                    ctx.strokeStyle = '#e94560';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 5]);
+                    ctx.beginPath();
+                    ctx.moveTo(meanX, plotY);
+                    ctx.lineTo(meanX, topY);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    
+                    ctx.fillStyle = '#e94560';
+                    ctx.beginPath();
+                    ctx.arc(meanX, plotY - 30, 8, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+                
+                const arrowY = plotY - 50;
+                ctx.strokeStyle = '#4ecca3';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(leftX, arrowY);
+                ctx.lineTo(rightX, arrowY);
+                ctx.stroke();
+                
+                ctx.fillStyle = '#4ecca3';
+                ctx.beginPath();
+                ctx.moveTo(leftX, arrowY);
+                ctx.lineTo(leftX + 8, arrowY - 5);
+                ctx.lineTo(leftX + 8, arrowY + 5);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(rightX, arrowY);
+                ctx.lineTo(rightX - 8, arrowY - 5);
+                ctx.lineTo(rightX - 8, arrowY + 5);
+                ctx.fill();
+                
+                ctx.fillStyle = '#4ecca3';
+                ctx.beginPath();
+                ctx.arc(leftX, arrowY, 6, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(rightX, arrowY, 6, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+            else if (currentDist === 'exponential') {
+                const mean = 1 / p.lambda;
+                const meanX = toCanvasX(mean);
+                
+                ctx.fillStyle = '#e94560';
+                ctx.beginPath();
+                ctx.arc(meanX, plotY - 30, 8, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // Vertical line at mean
+                ctx.strokeStyle = '#e94560';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([3, 3]);
+                ctx.beginPath();
+                ctx.moveTo(meanX, plotY - 30);
+                ctx.lineTo(meanX, plotY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+            else if (currentDist === 'uniform') {
+                const minX = toCanvasX(p.a);
+                const maxX = toCanvasX(p.b);
+                const y = plotY - 30;
+                
+                ctx.fillStyle = '#f39c12';
+                ctx.beginPath();
+                ctx.arc(minX, y, 8, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                ctx.fillStyle = '#3498db';
+                ctx.beginPath();
+                ctx.arc(maxX, y, 8, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.stroke();
+            }
+            else if (currentDist === 'gamma') {
+                const scale = 1 / p.beta;
+                // For Gamma we do not draw the mode/mean dots (controls in menu handle parameters)
+                // but we keep mean/mode calculation available for reference (no dots drawn).
+            }
+            else if (currentDist === 'cauchy') {
+                // For Cauchy we show the vertical location line and an arrow range for the scale
+                const locX = toCanvasX(p.x0);
+                const leftX = toCanvasX(p.x0 - p.gamma);
+                const rightX = toCanvasX(p.x0 + p.gamma);
+
+                if (p.x0 >= xMin && p.x0 <= xMax) {
+                    ctx.strokeStyle = '#e94560';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 5]);
+                    ctx.beginPath();
+                    ctx.moveTo(locX, plotY);
+                    ctx.lineTo(locX, topY);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    // No dot marker for Cauchy (menu controls handle parameter adjustments)
+                }
+
+            }
+            else if (currentDist === 'laplace') {
+                const locX = toCanvasX(p.mu);
+                const markerY = plotY - 30;
+                if (p.mu >= xMin && p.mu <= xMax) {
+                    ctx.strokeStyle = '#e94560';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 5]);
+                    ctx.beginPath();
+                    ctx.moveTo(locX, plotY);
+                    ctx.lineTo(locX, markerY);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+
+                    // stroked circle to indicate draggable μ (non-filled to avoid implying variance)
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(locX, markerY, 8, 0, 2 * Math.PI);
+                    ctx.stroke();
+                }
+            }
+            
+            // Draw mean and std dev markers for all distributions
+            const { mean, std } = getMeanAndStd();
+            const padding = 80;
+            if (mean !== undefined && std !== undefined) {
+                const plotWidth = canvas.width - 2 * padding;
+                const meanX = toCanvasX(mean);
+                const leftStdX = toCanvasX(mean - std);
+                const rightStdX = toCanvasX(mean + std);
+                
+                // For Normal, these are already drawn as controls, skip the dashed lines
+                if (currentDist !== 'normal') {
+                    // Mean line (thin, dashed)
+                    if (mean >= xMin && mean <= xMax) {
+                        ctx.strokeStyle = 'rgba(233, 69, 96, 0.4)';
+                        ctx.lineWidth = 1;
+                        ctx.setLineDash([3, 3]);
+                        ctx.beginPath();
+                        ctx.moveTo(meanX, plotY);
+                        ctx.lineTo(meanX, 80);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                        
+                        // Label
+                        ctx.fillStyle = 'rgba(233, 69, 96, 0.8)';
+                        ctx.font = '10px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('μ', meanX, 70);
+                    }
+                    
+                    // Std dev markers (thin, dashed)
+                    const plotLeft = 80;
+                    const plotRight = 80 + plotWidth;
+                    if (leftStdX >= plotLeft - 10 && leftStdX <= plotRight + 10) {
+                        ctx.strokeStyle = 'rgba(78, 204, 163, 0.4)';
+                        ctx.lineWidth = 1;
+                        ctx.setLineDash([3, 3]);
+                        ctx.beginPath();
+                        ctx.moveTo(leftStdX, plotY);
+                        ctx.lineTo(leftStdX, 80);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                        
+                        ctx.fillStyle = 'rgba(78, 204, 163, 0.8)';
+                        ctx.font = '10px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('-σ', leftStdX, 70);
+                    }
+                    
+                    if (rightStdX >= plotLeft - 10 && rightStdX <= plotRight + 10) {
+                        ctx.strokeStyle = 'rgba(78, 204, 163, 0.4)';
+                        ctx.lineWidth = 1;
+                        ctx.setLineDash([3, 3]);
+                        ctx.beginPath();
+                        ctx.moveTo(rightStdX, plotY);
+                        ctx.lineTo(rightStdX, 80);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                        
+                        ctx.fillStyle = 'rgba(78, 204, 163, 0.8)';
+                        ctx.font = '10px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('+σ', rightStdX, 70);
+                    }
+                }
+            }
+        }
+        
+        function updateParamDisplay() {
+            const container = document.getElementById('param-container');
+            container.innerHTML = '';
+            // Hide the menu stats box (we render full statistics in the canvas overlay instead)
+            const statsEl = document.getElementById('stats-container');
+            if (statsEl) { statsEl.style.display = 'none'; statsEl.innerHTML = ''; }
+            
+            const p = params[currentDist];
+            const labels = paramLabels[currentDist];
+            
+            if (!p || !labels) {
+                // If no distribution is selected or an unexpected button was clicked, show a simple placeholder and avoid errors
+                container.innerHTML = '<div class="param-group"><div class="param-label">No parameters</div></div>';
+                document.getElementById('stats-container').innerHTML = '<div class="param-label">Mean (μ)</div><div class="param-value">—</div>';
+                document.getElementById('legend-container').innerHTML = '';
+                return;
+            }
+
+            // Special UI for Gamma: show sliders for α and β and formulas for mean/std on the menu
+            if (currentDist === 'gamma') {
+                const div = document.createElement('div');
+                div.className = 'param-group';
+                div.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <div class="param-label">α (shape)</div>
+                        <div class="param-value" id="gamma-alpha-val">${p.alpha.toFixed(2)}</div>
+                    </div>
+                    <input id="gamma-alpha-range" type="range" min="0.1" max="20" step="0.01" value="${p.alpha.toFixed(2)}" style="width:100%;">
+                    <div style="height:12px"></div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <div class="param-label">β (rate)</div>
+                        <div class="param-value" id="gamma-beta-val">${p.beta.toFixed(2)}</div>
+                    </div>
+                    <input id="gamma-beta-range" type="range" min="0.1" max="10" step="0.01" value="${p.beta.toFixed(2)}" style="width:100%;">
+                `;
+                container.appendChild(div);
+
+                // Stats & formulas
+                const statsContainer = document.getElementById('stats-container');
+                function updateGammaStats() {
+                    const mean = p.alpha / p.beta;
+                    const std = Math.sqrt(p.alpha) / p.beta;
+                    statsContainer.innerHTML = `
+                        <div class="param-label">Mean (μ)</div>
+                        <div class="param-value">${mean.toFixed(3)}</div>
+                        <div class="param-label" style="margin-top: 8px;">Std Dev (σ)</div>
+                        <div class="param-value">${std.toFixed(3)}</div>
+                        <div style="margin-top:8px; font-size:12px; color:#aaa;">
+                            <div>Formula: <strong>μ = α / β</strong></div>
+                            <div>Formula: <strong>σ = √α / β</strong></div>
+                        </div>
+                    `;
+                }
+                updateGammaStats();
+
+                // Attach listeners to the sliders
+                const alphaRange = document.getElementById('gamma-alpha-range');
+                const betaRange = document.getElementById('gamma-beta-range');
+
+                function setAlpha(v) {
+                    const val = Math.max(0.1, Math.min(50, parseFloat(v) || 0.1));
+                    p.alpha = val;
+                    document.getElementById('gamma-alpha-val').textContent = val.toFixed(2);
+                    updateGammaStats();
+                    draw();
+                }
+                function setBeta(v) {
+                    const val = Math.max(0.1, Math.min(10, parseFloat(v) || 0.1));
+                    p.beta = val;
+                    document.getElementById('gamma-beta-val').textContent = val.toFixed(2);
+                    updateGammaStats();
+                    draw();
+                }
+
+                alphaRange.addEventListener('input', (e) => setAlpha(e.target.value));
+                betaRange.addEventListener('input', (e) => setBeta(e.target.value));
+
+                const legendContainer = document.getElementById('legend-container');
+                legendContainer.innerHTML = '<div style="font-size:11px; color:#aaa;">Mean and Std formulas are shown here; adjust α and β using the sliders.</div>';
+
+                return;
+            }
+
+            // --- Cauchy: parameters via sliders (no dragging on plot) ---
+            if (currentDist === 'cauchy') {
+                const [xMin, xMax] = getXRange();
+                const div = document.createElement('div');
+                div.className = 'param-group';
+                div.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <div class="param-label">x₀ (location)</div>
+                        <div class="param-value" id="cauchy-x0-val">${p.x0.toFixed(2)}</div>
+                    </div>
+                    <input id="cauchy-x0-range" type="range" min="${xMin}" max="${xMax}" step="0.01" value="${p.x0.toFixed(2)}" style="width:100%;">
+                    <div style="height:12px"></div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <div class="param-label">γ (scale)</div>
+                        <div class="param-value" id="cauchy-gamma-val">${p.gamma.toFixed(2)}</div>
+                    </div>
+                    <input id="cauchy-gamma-range" type="range" min="0.1" max="10" step="0.01" value="${p.gamma.toFixed(2)}" style="width:100%;">
+                `;
+                container.appendChild(div);
+
+                // Stats & formulas
+                const statsContainer = document.getElementById('stats-container');
+                function updateCauchyStats() {
+                    statsContainer.innerHTML = `
+                        <div class="param-label">Median</div>
+                        <div class="param-value">x₀ = ${p.x0.toFixed(3)}</div>
+                        <div class="param-label" style="margin-top: 8px;">Mode</div>
+                        <div class="param-value">x₀ = ${p.x0.toFixed(3)}</div>
+                        <div class="param-label" style="margin-top: 8px;">Mean</div>
+                        <div class="param-value" style="color: #e94560;">Undefined</div>
+                        <div class="param-label" style="margin-top: 8px;">Variance</div>
+                        <div class="param-value" style="color: #e94560;">Undefined</div>
+                        <div style="margin-top:8px; font-size:12px; color:#aaa;">
+                            <div>Notes: Median and mode equal <strong>x₀</strong>. Mean and variance are undefined for Cauchy.</div>
+                        </div>
+                    `;
+                }
+                updateCauchyStats();
+
+                // Attach listeners to sliders
+                const x0Range = document.getElementById('cauchy-x0-range');
+                const gammaRange = document.getElementById('cauchy-gamma-range');
+
+                function setX0(v) {
+                    const val = Math.max(xMin, Math.min(xMax, parseFloat(v) || 0));
+                    p.x0 = val;
+                    document.getElementById('cauchy-x0-val').textContent = val.toFixed(2);
+                    updateCauchyStats();
+                    draw();
+                }
+                function setGamma(v) {
+                    const val = Math.max(0.1, Math.min(10, parseFloat(v) || 0.1));
+                    p.gamma = val;
+                    document.getElementById('cauchy-gamma-val').textContent = val.toFixed(2);
+                    draw();
+                }
+
+                x0Range.addEventListener('input', (e) => setX0(e.target.value));
+                gammaRange.addEventListener('input', (e) => setGamma(e.target.value));
+
+                const legendContainer = document.getElementById('legend-container');
+                legendContainer.innerHTML = '<div style="font-size:11px; color:#aaa;">Cauchy: location x₀ (median/mode) and scale γ (adjust with sliders).</div>';
+
+                return;
+            }
+
+
+
+            // Special UI: Normal — parameters are μ and σ (drag on graph). Show numeric values in stats box.
+            if (currentDist === 'normal') {
+                // Parameter box: indicate drag on graph
+                container.innerHTML = '';
+                const muDiv = document.createElement('div');
+                muDiv.className = 'param-group';
+                muDiv.innerHTML = `
+                    <div class="param-label">μ (mean)</div>
+                    <div class="param-value">Drag on graph</div>
+                `;
+                container.appendChild(muDiv);
+                const sigmaDiv = document.createElement('div');
+                sigmaDiv.className = 'param-group';
+                sigmaDiv.innerHTML = `
+                    <div class="param-label">σ (std dev)</div>
+                    <div class="param-value">Drag on graph</div>
+                `;
+                container.appendChild(sigmaDiv);
+
+                // Stats: show numeric parameter measures
+                const statsContainer = document.getElementById('stats-container');
+                const p = params.normal;
+                statsContainer.innerHTML = `
+                    <div class="param-label">Mean (μ)</div>
+                    <div class="param-value">${p.mu.toFixed(3)}</div>
+                    <div class="param-label" style="margin-top:8px;">Std Dev (σ)</div>
+                    <div class="param-value">${p.sigma.toFixed(3)}</div>
+                `;
+
+                // Legend
+                document.getElementById('legend-container').innerHTML = `
+                    <h3 style="margin-top: 15px;">Standard Deviations</h3>
+                    <div style="font-size: 11px; color: #aaa; line-height: 1.6;">
+                        <div>±1σ: 68%</div>
+                        <div>±2σ: 95%</div>
+                        <div>±3σ: 99.7%</div>
+                    </div>
+                `;
+
+                return;
+            }
+
+            // Special UI: Uniform — a and b are draggable on graph; show as parameters with drag hint
+            if (currentDist === 'uniform') {
+                container.innerHTML = '';
+                const aDiv = document.createElement('div');
+                aDiv.className = 'param-group';
+                aDiv.innerHTML = `
+                    <div class="param-label">a (min)</div>
+                    <div class="param-value">Drag on graph</div>
+                `;
+                container.appendChild(aDiv);
+                const bDiv = document.createElement('div');
+                bDiv.className = 'param-group';
+                bDiv.innerHTML = `
+                    <div class="param-label">b (max)</div>
+                    <div class="param-value">Drag on graph</div>
+                `;
+                container.appendChild(bDiv);
+
+                // Stats box: mean and std
+                const statsContainerU = document.getElementById('stats-container');
+                const { mean: uMean, std: uStd } = getMeanAndStd();
+                statsContainerU.innerHTML = `
+                    <div class="param-label">Mean (μ)</div>
+                    <div class="param-value">${uMean.toFixed(3)}</div>
+                    <div class="param-label" style="margin-top: 8px;">Std Dev (σ)</div>
+                    <div class="param-value">${uStd.toFixed(3)}</div>
+                `;
+                document.getElementById('legend-container').innerHTML = '';
+                return;
+            }
+
+            // Special UI: Exponential — λ adjustable via slider; stats show mean and std
+            if (currentDist === 'exponential') {
+                container.innerHTML = '';
+                const div = document.createElement('div');
+                div.className = 'param-group';
+                div.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <div class="param-label">λ (rate)</div>
+                        <div class="param-value" id="exp-lambda-val">${params.exponential.lambda.toFixed(2)}</div>
+                    </div>
+                    <input id="exp-lambda-range" type="range" min="0.05" max="5" step="0.01" value="${params.exponential.lambda.toFixed(2)}" style="width:100%;">
+                `;
+                container.appendChild(div);
+
+                // Stats
+                const statsContainerE = document.getElementById('stats-container');
+                function updateExpStats() {
+                    const mean = 1 / params.exponential.lambda;
+                    const std = 1 / params.exponential.lambda;
+                    statsContainerE.innerHTML = `
+                        <div class="param-label">Mean (μ)</div>
+                        <div class="param-value">${mean.toFixed(3)}</div>
+                        <div class="param-label" style="margin-top: 8px;">Std Dev (σ)</div>
+                        <div class="param-value">${std.toFixed(3)}</div>
+                    `;
+                }
+                updateExpStats();
+
+                // Lambda slider
+                const expRange = document.getElementById('exp-lambda-range');
+                expRange.addEventListener('input', (e) => {
+                    const v = Math.max(0.05, Math.min(5, parseFloat(e.target.value) || 0.05));
+                    params.exponential.lambda = v;
+                    document.getElementById('exp-lambda-val').textContent = v.toFixed(2);
+                    updateExpStats();
+                    draw();
+                });
+
+                document.getElementById('legend-container').innerHTML = '';
+                return;
+            }
+
+            // Special UI: Laplace — μ draggable on graph, b is a slider in parameters; stats box shows derived statistics
+            if (currentDist === 'laplace') {
+                container.innerHTML = '';
+                const muParam = document.createElement('div');
+                muParam.className = 'param-group';
+                muParam.innerHTML = `
+                    <div class="param-label">μ (location)</div>
+                    <div class="param-value">Drag on graph</div>
+                `;
+                container.appendChild(muParam);
+                // keep b slider (already created previously)
+                const bDiv = document.createElement('div');
+                bDiv.className = 'param-group';
+                bDiv.innerHTML = `
+                    <div class="param-label">b (scale)</div>
+                    <div class="param-value" id="laplace-b-val">${p.b.toFixed(2)}</div>
+                    <input id="laplace-b-range" type="range" min="0.1" max="10" step="0.01" value="${p.b.toFixed(2)}" style="width:100%; margin-top:8px;">
+                `;
+                container.appendChild(bDiv);
+                // attach listener for b slider
+                document.getElementById('laplace-b-range').addEventListener('input', (e) => { p.b = Math.max(0.1, Math.min(10, parseFloat(e.target.value) || 0.1)); document.getElementById('laplace-b-val').textContent = p.b.toFixed(2); updateLaplaceStats(); draw(); });
+
+                // Stats box
+                const statsContainerL = document.getElementById('stats-container');
+                function updateLaplaceStats() {
+                    const mean = p.mu;
+                    const std = Math.sqrt(2) * p.b;
+                    statsContainerL.innerHTML = `
+                        <div class="param-label">Mean (μ)</div>
+                        <div class="param-value">${mean.toFixed(3)}</div>
+                        <div class="param-label" style="margin-top: 8px;">Std Dev (σ)</div>
+                        <div class="param-value">${std.toFixed(3)}</div>
+                        <div style="margin-top:8px; font-size:12px; color:#aaa;">
+                            <div>Formula: <strong>μ = μ</strong></div>
+                            <div>Formula: <strong>σ = √2 · b</strong></div>
+                        </div>
+                    `;
+                }
+                updateLaplaceStats();
+                document.getElementById('legend-container').innerHTML = '<div style="font-size:11px; color:#aaa;">Laplace: μ draggable, b adjustable with slider.</div>';
+                return;
+            }
+
+            // Default parameter display for other distributions
+            for (let [key, value] of Object.entries(p)) {
+                const div = document.createElement('div');
+                div.className = 'param-group';
+                div.innerHTML = `
+                    <div class="param-label">${labels[key]}</div>
+                    <div class="param-value">${value.toFixed(3)}</div>
+                `;
+                container.appendChild(div);
+            }
+            
+            const statsContainer = document.getElementById('stats-container');
+            const { mean, std } = getMeanAndStd();
+            
+            if (mean !== undefined && std !== undefined) {
+                statsContainer.innerHTML = `
+                    <div class="param-label">Mean (μ)</div>
+                    <div class="param-value">${mean.toFixed(3)}</div>
+                    <div class="param-label" style="margin-top: 8px;">Std Dev (σ)</div>
+                    <div class="param-value">${std.toFixed(3)}</div>
+                `;
+            } else {
+                statsContainer.innerHTML = `
+                    <div class="param-label">Mean (μ)</div>
+                    <div class="param-value" style="color: #e94560;">Undefined</div>
+                    <div class="param-label" style="margin-top: 8px;">Std Dev (σ)</div>
+                    <div class="param-value" style="color: #e94560;">Undefined</div>
+                `;
+            }
+            
+            const legendContainer = document.getElementById('legend-container');
+            if (currentDist === 'normal') {
+                legendContainer.innerHTML = `
+                    <h3 style="margin-top: 15px;">Standard Deviations</h3>
+                    <div style="font-size: 11px; color: #aaa; line-height: 1.6;">
+                        <div>±1σ: 68%</div>
+                        <div>±2σ: 95%</div>
+                        <div>±3σ: 99.7%</div>
+                    </div>
+                `;
+            } else {
+                legendContainer.innerHTML = '';
+            }
+        }
+        
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+            const my = e.clientY - rect.top;
+
+            const [xMin, xMax] = getXRange();
+            const metrics = getPlotMetrics();
+            const plotX = metrics.plotX;
+            const plotY = metrics.plotY;
+            const plotWidth = metrics.plotWidth;
+            const plotHeight = metrics.plotHeight;
+
+            // Sample to get yMax used for vertical positioning (respect fixed Y limits)
+            const { points, yMax } = samplePDFPoints(xMin, xMax, 500, fixedYMax[currentDist]);
+            const xScale = plotWidth / (xMax - xMin);
+            const yScale = plotHeight / (yMax - 0);
+            const toCanvasX = (x) => plotX + (x - xMin) * xScale;
+            const toCanvasY = (y) => plotY - (y - 0) * yScale;
+
+            const p = params[currentDist];
+
+            function near(cx, cy, mx, my, r = 12) {
+                return Math.hypot(cx - mx, cy - my) <= r;
+            }
+
+            if (currentDist === 'normal') {
+                const meanX = toCanvasX(p.mu);
+                // Normal's mean marker is displayed at plotY - 30 (above the axis)
+                const meanY = plotY - 30;
+                const leftX = toCanvasX(p.mu - p.sigma);
+                const rightX = toCanvasX(p.mu + p.sigma);
+                // Std markers are drawn at arrowY = plotY - 50
+                const stdY = plotY - 50;
+
+                if (near(meanX, meanY, mx, my)) {
+                    dragging = 'mean';
+                } else if (near(leftX, stdY, mx, my) || near(rightX, stdY, mx, my)) {
+                    dragging = 'std';
+                }
+            }
+            else if (currentDist === 'exponential') {
+                // Exponential is adjusted via λ slider in the menu; hover is allowed but no dragging on plot
+                const mean = 1 / p.lambda;
+                const meanX = toCanvasX(mean);
+                // Exponential mean marker drawn at plotY - 30 (hover only)
+                const meanY = plotY - 30;
+                if (near(meanX, meanY, mx, my)) {
+                    // hover only
+                }
+            }
+            else if (currentDist === 'uniform') {
+                const minX = toCanvasX(p.a);
+                const maxX = toCanvasX(p.b);
+                // uniform markers drawn at y = plotY - 30
+                const y = plotY - 30;
+                if (near(minX, y, mx, my)) {
+                    dragging = 'uniform-min';
+                } else if (near(maxX, y, mx, my)) {
+                    dragging = 'uniform-max';
+                }
+            }
+            else if (currentDist === 'gamma') {
+                // Gamma is adjusted using sliders in the controls menu; do not start dragging from the plot to avoid confusion.
+                // However, we still detect hover over mode/mean markers for cursor feedback.
+                const scale = 1 / p.beta;
+                if (p.alpha > 1) {
+                    const mode = (p.alpha - 1) * scale;
+                    const modeX = toCanvasX(mode);
+                    const modeY = toCanvasY(getPDF(mode));
+                    if (near(modeX, modeY, mx, my)) {
+                        // show pointer but do not enter dragging mode
+                        // hover handled below
+                    }
+                }
+                const mean = p.alpha / p.beta;
+                const meanX = toCanvasX(mean);
+                const meanY = plotY - 30;
+                if (near(meanX, meanY, mx, my)) {
+                    // pointer only, not dragging
+                }
+            }
+            else if (currentDist === 'cauchy') {
+                // Cauchy parameters are adjusted via the menu sliders (no dragging on plot)
+                const locX = toCanvasX(p.x0);
+                // cauchy location marker is visualized near plotY - 30
+                const locY = plotY - 30;
+                const leftX = toCanvasX(p.x0 - p.gamma);
+                const rightX = toCanvasX(p.x0 + p.gamma);
+                // do not enter dragging mode; keep hover detection only
+            }
+            else if (currentDist === 'laplace') {
+                const locX = toCanvasX(p.mu);
+                // treat the draggable μ marker as being at plotY - 30 so it's easy to hit with the pointer
+                const markerY = plotY - 30;
+                const leftX = toCanvasX(p.mu - p.b);
+                const rightX = toCanvasX(p.mu + p.b);
+                
+                if (near(locX, markerY, mx, my)) {
+                    dragging = 'laplace-loc';
+                }
+                // scale adjustments for Laplace are done via menu slider (no plot-based dragging)
+            }
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+            const my = e.clientY - rect.top;
+
+            const [xMin, xMax] = getXRange();
+            const metrics = getPlotMetrics();
+            const plotX = metrics.plotX;
+            const plotY = metrics.plotY;
+            const plotWidth = metrics.plotWidth;
+            const plotHeight = metrics.plotHeight;
+
+            const { points, yMax } = samplePDFPoints(xMin, xMax);
+            const xScale = plotWidth / (xMax - xMin);
+            const yScale = plotHeight / (yMax - 0);
+            const toDataX = (cx) => xMin + (cx - plotX) / xScale;
+            const toDataY = (cy) => 0 + (plotY - cy) / yScale;
+            const toCanvasX = (x) => plotX + (x - xMin) * xScale;
+            const toCanvasY = (y) => plotY - (y - 0) * yScale;
+
+            const p = params[currentDist];
+
+            // If not currently dragging, show pointer cursor when hovering over a marker
+            if (!dragging) {
+                let hover = false;
+                function near(cx, cy, mx, my, r = 12) { return Math.hypot(cx - mx, cy - my) <= r; }
+
+                if (currentDist === 'normal') {
+                    const meanX = toCanvasX(p.mu);
+                    const meanY = toCanvasY(getPDF(p.mu));
+                    const leftX = toCanvasX(p.mu - p.sigma);
+                    const rightX = toCanvasX(p.mu + p.sigma);
+                    const stdY = toCanvasY(getPDF(p.mu - p.sigma));
+                    if (near(meanX, meanY, mx, my) || near(leftX, stdY, mx, my) || near(rightX, stdY, mx, my)) hover = true;
+                } else if (currentDist === 'exponential') {
+                    const mean = 1 / p.lambda; if (near(toCanvasX(mean), toCanvasY(getPDF(mean)), mx, my)) hover = true;
+                } else if (currentDist === 'uniform') {
+                    if (near(toCanvasX(p.a), toCanvasY(getPDF((p.a+p.b)/2)), mx, my) || near(toCanvasX(p.b), toCanvasY(getPDF((p.a+p.b)/2)), mx, my)) hover = true;
+                } else if (currentDist === 'gamma') {
+                    const scale = 1 / p.beta; if (p.alpha > 1) { const mode = (p.alpha - 1) * scale; if (near(toCanvasX(mode), toCanvasY(getPDF(mode)), mx, my)) hover = true; } const mean = p.alpha / p.beta; if (near(toCanvasX(mean), toCanvasY(getPDF(mean)), mx, my)) hover = true;
+                } else if (currentDist === 'cauchy') {
+                    if (near(toCanvasX(p.x0), toCanvasY(getPDF(p.x0)), mx, my)) hover = true;
+                } else if (currentDist === 'laplace') {
+                    if (near(toCanvasX(p.mu), plotY - 30, mx, my)) hover = true;
+                }
+                canvas.style.cursor = hover ? 'pointer' : 'crosshair';
+                return;
+            }
+
+            // Dragging behavior (kept mostly the same, but uses computed toDataX)
+            if (dragging === 'mean') {
+                p.mu = Math.max(xMin, Math.min(xMax, toDataX(mx)));
+            }
+            else if (dragging === 'std') {
+                const newX = toDataX(mx);
+                p.sigma = Math.abs(newX - p.mu);
+                p.sigma = Math.max(0.1, Math.min(5, p.sigma));
+            }
+
+            else if (dragging === 'uniform-min') {
+                p.a = Math.max(xMin, Math.min(p.b - 0.5, toDataX(mx)));
+            }
+            else if (dragging === 'uniform-max') {
+                p.b = Math.min(xMax, Math.max(p.a + 0.5, toDataX(mx)));
+            }
+
+
+            else if (dragging === 'laplace-loc') {
+                p.mu = Math.max(xMin, Math.min(xMax, toDataX(mx)));
+            }
+
+            updateParamDisplay();
+            draw();
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            dragging = null;
+        });
+        
+        canvas.addEventListener('mouseleave', () => {
+            dragging = null;
+        });
+        
+        // Attach handlers only to real distribution buttons that define data-dist
+        document.querySelectorAll('.dist-btn[data-dist]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const dist = btn.dataset.dist;
+                if (!dist) return; // defensive
+                console.log('dist button click:', dist, btn);
+                document.querySelectorAll('.dist-btn[data-dist]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentDist = dist;
+                xRangeOverride = null;
+                updateXRangeInputs();
+                updateParamDisplay();
+                draw();
+            });
+        });
+
+        // Diagnostic: check which element is under key controls (elementFromPoint) and highlight
+        function checkControlsHit() {
+            const firstBtn = document.querySelector('.dist-btn');
+            if (!firstBtn) return;
+            const rect = firstBtn.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+            const el = document.elementFromPoint(cx, cy);
+            console.log('checkControlsHit: element under first dist-btn center is', el);
+            // highlight the element briefly if it's not the button
+            if (el && el !== firstBtn) {
+                const prevOutline = el.style.outline;
+                el.style.outline = '3px solid rgba(255,0,0,0.9)';
+                setTimeout(() => { el.style.outline = prevOutline; }, 2000);
+            }
+            // Also check whether controls receive clicks by dispatching a synthetic pointer event (non-invasive)
+            // Skip actual event dispatch to avoid side effects; rely on logging
+        }
+
+        // Debug layout button toggles outlines and logs bounding boxes then runs the hit test (guarded)
+        const _debugBtn = document.getElementById('debug-layout-btn');
+        if (_debugBtn) {
+            _debugBtn.addEventListener('click', () => {
+                const canvasContainer = document.getElementById('canvas-container');
+                const controls = document.getElementById('controls');
+                const canvasRect = canvas.getBoundingClientRect();
+                const containerRect = canvasContainer.getBoundingClientRect();
+                const controlsRect = controls.getBoundingClientRect();
+                console.log('DEBUG LAYOUT: canvasRect, containerRect, controlsRect', { canvasRect, containerRect, controlsRect });
+                // toggle outlines
+                const toggled = !canvasContainer.style.outline;
+                canvasContainer.style.outline = toggled ? '2px dashed rgba(255,0,0,0.6)' : '';
+                controls.style.outline = toggled ? '2px dashed rgba(0,255,0,0.6)' : '';
+                checkControlsHit();
+            });
+        }
+
+        // Log pointerdown on controls to verify events fire
+        document.getElementById('controls').addEventListener('pointerdown', (e) => { console.log('controls pointerdown:', e.target); });
+
+        // Run hit test at startup after layout
+        setTimeout(checkControlsHit, 250);
+
+        
+        function updateXRangeInputs() {
+            const [xMin, xMax] = getXRange();
+            document.getElementById('x-min').value = xMin;
+            document.getElementById('x-max').value = xMax;
+        }
+        
+        document.getElementById('x-min').addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            if (!isNaN(val)) {
+                const [, xMax] = getXRange();
+                xRangeOverride = [val, xMax];
+                draw();
+            }
+        });
+        
+        document.getElementById('x-max').addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            if (!isNaN(val)) {
+                const [xMin] = getXRange();
+                xRangeOverride = [xMin, val];
+                draw();
+            }
+        });
+        
+        // Initial sizing and draw (delayed slightly to allow layout)
+        setTimeout(() => {
+            ensureCanvasSize();
+            updateXRangeInputs();
+            updateParamDisplay();
+            draw();
+            console.log('init: bounding rects', { canvasRect: canvas.getBoundingClientRect(), controlsRect: document.getElementById('controls').getBoundingClientRect(), canvasContainerRect: document.getElementById('canvas-container').getBoundingClientRect() });
+        }, 50);
+
+        // Redraw on resize
+        window.addEventListener('resize', () => {
+            ensureCanvasSize();
+            updateXRangeInputs();
+            draw();
+        });
+
+        // Add quick logging for control inputs to ensure events fire
+        document.getElementById('x-min').addEventListener('input', (e) => console.log('x-min input', e.target.value));
+        document.getElementById('x-max').addEventListener('input', (e) => console.log('x-max input', e.target.value));
+        document.getElementById('smooth-display');
+        document.getElementById('controls').addEventListener('click', (e) => { console.log('controls clicked', e.target); });
+    </script>
+</body>
+</html>

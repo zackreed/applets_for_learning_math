@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Probability Distributions Explorer</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/quiz.js"></script>
+</head>
+<body>
+    <div class="page-container">
+        <header>
+            <a href="../index.html" style="color: #00d9ff; text-decoration: none; font-weight: bold;">&larr; Back to Home</a>
+            <h1>📊 Probability Distribution Explorer</h1>
+            <p style="font-size: 1.2em; margin-top: 10px;">Explore and compare common continuous probability distributions!</p>
+        </header>
+        
+        <div class="content">
+            <!-- Introduction Section -->
+            <div class="section">
+                <h2>🎯 Introduction</h2>
+                <p>A <strong>probability distribution</strong> describes how likely different outcomes are for a random variable. For continuous random variables, we use a <strong>probability density function (PDF)</strong> to represent the distribution. The area under the PDF curve equals 1, representing 100% probability.</p>
+                
+                <div class="key-concepts">
+                    <h4>Key Concept: Probability Density Functions</h4>
+                    <p>A probability density function \(f(x)\) satisfies:</p>
+                    <ul style="margin-left: 25px; margin-top: 10px;">
+                        <li>\(f(x) \geq 0\) for all \(x\) (non-negative)</li>
+                        <li>\(\int_{-\infty}^{\infty} f(x) \, dx = 1\) (total probability is 1)</li>
+                        <li>\(P(a \leq X \leq b) = \int_a^b f(x) \, dx\) (probability of interval)</li>
+                    </ul>
+                    <p style="margin-top: 10px;">Different distributions model different types of random phenomena!</p>
+                </div>
+            </div>
+            
+            <!-- Interactive Applet -->
+            <div class="section">
+                <h2>📈 Interactive Distribution Explorer</h2>
+                <p><strong>Instructions:</strong></p>
+                <ol>
+                    <li>Select different distributions from the sidebar.</li>
+                    <li>Adjust parameters by dragging markers on the plot or using sliders.</li>
+                    <li>Observe how the shape changes with different parameters.</li>
+                    <li>Note the mean (red line) and standard deviation (green lines) where applicable.</li>
+                    <li>Adjust the X-range to zoom in on different regions.</li>
+                </ol>
+                
+                <div class="applet-container">
+                    <iframe src="../applets/prob-dist-explorer.html" width="1200" height="750" style="border: none; border-radius: 8px; max-width: 100%; overflow: hidden;"></iframe>
+                </div>
+            </div>
+            
+            <!-- Distribution Descriptions -->
+            <div class="section">
+                <h2>📚 Distribution Catalog</h2>
+                
+                <div class="key-concepts">
+                    <h4>1. Normal (Gaussian) Distribution</h4>
+                    <p><strong>PDF:</strong> \(f(x) = \frac{1}{\sigma\sqrt{2\pi}} e^{-\frac{(x-\mu)^2}{2\sigma^2}}\)</p>
+                    <p><strong>Parameters:</strong> \(\mu\) (mean), \(\sigma\) (standard deviation)</p>
+                    <p><strong>Properties:</strong></p>
+                    <ul style="margin-left: 25px;">
+                        <li>Bell-shaped, symmetric around the mean</li>
+                        <li>68% of data within \(\pm 1\sigma\), 95% within \(\pm 2\sigma\), 99.7% within \(\pm 3\sigma\)</li>
+                        <li>Models many natural phenomena (heights, measurement errors, etc.)</li>
+                        <li>Mean = Median = Mode = \(\mu\)</li>
+                    </ul>
+                </div>
+                
+                <div class="key-concepts">
+                    <h4>2. Exponential Distribution</h4>
+                    <p><strong>PDF:</strong> \(f(x) = \lambda e^{-\lambda x}\) for \(x \geq 0\)</p>
+                    <p><strong>Parameters:</strong> \(\lambda\) (rate parameter)</p>
+                    <p><strong>Properties:</strong></p>
+                    <ul style="margin-left: 25px;">
+                        <li>Models time between events in a Poisson process</li>
+                        <li>Memoryless property: past doesn't affect future</li>
+                        <li>Mean = \(1/\lambda\), Variance = \(1/\lambda^2\)</li>
+                        <li>Used for: lifetimes, waiting times, radioactive decay</li>
+                    </ul>
+                </div>
+                
+                <div class="key-concepts">
+                    <h4>3. Uniform Distribution</h4>
+                    <p><strong>PDF:</strong> \(f(x) = \frac{1}{b-a}\) for \(a \leq x \leq b\), else 0</p>
+                    <p><strong>Parameters:</strong> \(a\) (minimum), \(b\) (maximum)</p>
+                    <p><strong>Properties:</strong></p>
+                    <ul style="margin-left: 25px;">
+                        <li>All values in range \([a, b]\) are equally likely</li>
+                        <li>Rectangular/flat distribution</li>
+                        <li>Mean = \((a+b)/2\), Variance = \((b-a)^2/12\)</li>
+                        <li>Used for: random number generation, lack of information scenarios</li>
+                    </ul>
+                </div>
+                
+                <div class="key-concepts">
+                    <h4>4. Gamma Distribution</h4>
+                    <p><strong>PDF:</strong> \(f(x) = \frac{\beta^\alpha}{\Gamma(\alpha)} x^{\alpha-1} e^{-\beta x}\) for \(x > 0\)</p>
+                    <p><strong>Parameters:</strong> \(\alpha\) (shape), \(\beta\) (rate)</p>
+                    <p><strong>Properties:</strong></p>
+                    <ul style="margin-left: 25px;">
+                        <li>Generalizes exponential distribution (exponential is Gamma with \(\alpha=1\))</li>
+                        <li>Models sum of \(\alpha\) independent exponential random variables</li>
+                        <li>Mean = \(\alpha/\beta\), Variance = \(\alpha/\beta^2\)</li>
+                        <li>Used for: insurance claims, rainfall amounts, waiting times</li>
+                    </ul>
+                </div>
+                
+                <div class="key-concepts">
+                    <h4>5. Cauchy Distribution</h4>
+                    <p><strong>PDF:</strong> \(f(x) = \frac{1}{\pi\gamma\left[1 + \left(\frac{x-x_0}{\gamma}\right)^2\right]}\)</p>
+                    <p><strong>Parameters:</strong> \(x_0\) (location), \(\gamma\) (scale)</p>
+                    <p><strong>Properties:</strong></p>
+                    <ul style="margin-left: 25px;">
+                        <li>Heavy tails - extreme values are more likely than in normal distribution</li>
+                        <li>Mean and variance are <strong>undefined</strong> (do not exist!)</li>
+                        <li>Median = Mode = \(x_0\)</li>
+                        <li>Used in physics (resonance), financial modeling</li>
+                        <li>Example of how not all distributions have finite moments</li>
+                    </ul>
+                </div>
+                
+                <div class="key-concepts">
+                    <h4>6. Laplace Distribution</h4>
+                    <p><strong>PDF:</strong> \(f(x) = \frac{1}{2b} e^{-\frac{|x-\mu|}{b}}\)</p>
+                    <p><strong>Parameters:</strong> \(\mu\) (location), \(b\) (scale)</p>
+                    <p><strong>Properties:</strong></p>
+                    <ul style="margin-left: 25px;">
+                        <li>Sharp peak at \(\mu\) with exponential tails</li>
+                        <li>More peaked than normal, heavier tails than normal</li>
+                        <li>Mean = Median = Mode = \(\mu\), Variance = \(2b^2\)</li>
+                        <li>Used in: signal processing, machine learning (Lasso regression)</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Guided Explorations -->
+            <div class="section">
+                <h2>🧪 Guided Explorations</h2>
+                
+                <div class="exploration" id="exp1">
+                    <h4>Exploration 1: Normal Distribution Properties</h4>
+                    <p><strong>Try this:</strong> Set the distribution to Normal with \(\mu = 0\) and \(\sigma = 1\).</p>
+                    <p><strong>Question:</strong> What percentage of the data falls within one standard deviation (\(\mu \pm \sigma\)) of the mean?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'exp1', 'a')">
+                            <input type="radio" name="exp1" value="a"> Approximately 68%
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp1', 'b')">
+                            <input type="radio" name="exp1" value="b"> Approximately 50%
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp1', 'c')">
+                            <input type="radio" name="exp1" value="c"> Approximately 95%
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('exp1', 'a')">Check Answer</button>
+                    <div class="feedback" id="exp1-feedback"></div>
+                </div>
+                
+                <div class="exploration" id="exp2">
+                    <h4>Exploration 2: Exponential Memoryless Property</h4>
+                    <p><strong>Observe:</strong> The exponential distribution has a distinctive shape - it starts high and decays exponentially.</p>
+                    <p><strong>Question:</strong> If \(\lambda = 1\), what is the mean (expected value) of the exponential distribution?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'exp2', 'a')">
+                            <input type="radio" name="exp2" value="a"> 1
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp2', 'b')">
+                            <input type="radio" name="exp2" value="b"> 0.5
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp2', 'c')">
+                            <input type="radio" name="exp2" value="c"> 2
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('exp2', 'a')">Check Answer</button>
+                    <div class="feedback" id="exp2-feedback"></div>
+                </div>
+                
+                <div class="exploration" id="exp3">
+                    <h4>Exploration 3: Uniform Distribution</h4>
+                    <p><strong>Try this:</strong> Set the distribution to Uniform with \(a = 0\) and \(b = 4\).</p>
+                    <p><strong>Question:</strong> What is the height of the PDF for this uniform distribution?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'exp3', 'a')">
+                            <input type="radio" name="exp3" value="a"> 0.25
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp3', 'b')">
+                            <input type="radio" name="exp3" value="b"> 0.5
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp3', 'c')">
+                            <input type="radio" name="exp3" value="c"> 1.0
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('exp3', 'a')">Check Answer</button>
+                    <div class="feedback" id="exp3-feedback"></div>
+                    <div class="hint">Hint: The PDF must integrate to 1. For uniform on \([0,4]\), height \(\times\) width = 1, so height = \(1/(b-a)\).</div>
+                </div>
+                
+                <div class="exploration" id="exp4">
+                    <h4>Exploration 4: Cauchy's Heavy Tails</h4>
+                    <p><strong>Try this:</strong> Switch between Normal and Cauchy distributions. Compare their tails.</p>
+                    <p><strong>Question:</strong> Why doesn't the Cauchy distribution have a defined mean or variance?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'exp4', 'a')">
+                            <input type="radio" name="exp4" value="a"> Its heavy tails make the integrals diverge (infinite)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp4', 'b')">
+                            <input type="radio" name="exp4" value="b"> It's not symmetric
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp4', 'c')">
+                            <input type="radio" name="exp4" value="c"> Its peak is too sharp
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('exp4', 'a')">Check Answer</button>
+                    <div class="feedback" id="exp4-feedback"></div>
+                </div>
+                
+                <div class="exploration" id="exp5">
+                    <h4>Exploration 5: Comparing Shapes</h4>
+                    <p><strong>Try this:</strong> Compare the shapes of Normal, Laplace, and Cauchy distributions with similar location parameters.</p>
+                    <p><strong>Question:</strong> Which distribution has the sharpest peak at its center?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'exp5', 'a')">
+                            <input type="radio" name="exp5" value="a"> Laplace
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp5', 'b')">
+                            <input type="radio" name="exp5" value="b"> Normal
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp5', 'c')">
+                            <input type="radio" name="exp5" value="c"> Cauchy
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('exp5', 'a')">Check Answer</button>
+                    <div class="feedback" id="exp5-feedback"></div>
+                </div>
+            </div>
+            
+            <!-- Practice Questions -->
+            <div class="section">
+                <h2>📝 Practice Questions</h2>
+                
+                <div class="question" id="q1">
+                    <h4>Question 1: Normal Distribution Calculation</h4>
+                    <p>For a normal distribution with \(\mu = 10\) and \(\sigma = 2\), approximately 95% of values fall within what range?</p>
+                    <div class="hint">Use the 68-95-99.7 rule: 95% of data is within \(\pm 2\sigma\) of the mean.</div>
+                    <p><strong>(a)</strong> What is the lower bound of this range?</p>
+                    <div class="number-input">
+                        <label>Lower bound =</label>
+                        <input type="number" id="q1a-input" step="0.1" placeholder="Enter value">
+                    </div>
+                    <button class="check-btn" onclick="checkNumericAnswer('q1a', 6, 0.1)">Check Answer</button>
+                    <div class="feedback" id="q1a-feedback"></div>
+                    
+                    <p style="margin-top: 15px;"><strong>(b)</strong> What is the upper bound of this range?</p>
+                    <div class="number-input">
+                        <label>Upper bound =</label>
+                        <input type="number" id="q1b-input" step="0.1" placeholder="Enter value">
+                    </div>
+                    <button class="check-btn" onclick="checkNumericAnswer('q1b', 14, 0.1)">Check Answer</button>
+                    <div class="feedback" id="q1b-feedback"></div>
+                </div>
+                
+                <div class="question" id="q2">
+                    <h4>Question 2: Exponential Mean</h4>
+                    <p>An exponential distribution has \(\lambda = 0.5\).</p>
+                    <p><strong>(a)</strong> What is the mean of this distribution?</p>
+                    <div class="hint">Hint: Mean = \(1/\lambda\)</div>
+                    <div class="number-input">
+                        <label>Mean =</label>
+                        <input type="number" id="q2a-input" step="0.1" placeholder="Enter value">
+                    </div>
+                    <button class="check-btn" onclick="checkNumericAnswer('q2a', 2, 0.1)">Check Answer</button>
+                    <div class="feedback" id="q2a-feedback"></div>
+                </div>
+                
+                <div class="question" id="q3">
+                    <h4>Question 3: Uniform Distribution Area</h4>
+                    <p>A uniform distribution has \(a = -3\) and \(b = 5\).</p>
+                    <p><strong>(a)</strong> What is the height of the PDF?</p>
+                    <div class="hint">Hint: The area under the curve must equal 1. Area = height \(\times\) (b - a) = 1.</div>
+                    <div class="number-input">
+                        <label>Height =</label>
+                        <input type="number" id="q3a-input" step="0.001" placeholder="Enter value">
+                    </div>
+                    <button class="check-btn" onclick="checkNumericAnswer('q3a', 0.125, 0.001)">Check Answer</button>
+                    <div class="feedback" id="q3a-feedback"></div>
+                </div>
+                
+                <div class="question" id="q4">
+                    <h4>Question 4: Distribution Selection</h4>
+                    <p>You're modeling the time until a light bulb burns out. Which distribution would be most appropriate?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'q4', 'a')">
+                            <input type="radio" name="q4" value="a"> Exponential
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q4', 'b')">
+                            <input type="radio" name="q4" value="b"> Normal
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q4', 'c')">
+                            <input type="radio" name="q4" value="c"> Uniform
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('q4', 'a')">Check Answer</button>
+                    <div class="feedback" id="q4-feedback"></div>
+                    <div class="hint">Think about which distribution models "time until an event" with the memoryless property.</div>
+                </div>
+                
+                <div class="question" id="q5">
+                    <h4>Question 5: Gamma vs Exponential</h4>
+                    <p>What is the relationship between the Gamma distribution and the Exponential distribution?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'q5', 'a')">
+                            <input type="radio" name="q5" value="a"> Exponential is a special case of Gamma with \(\alpha = 1\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q5', 'b')">
+                            <input type="radio" name="q5" value="b"> They are completely unrelated
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q5', 'c')">
+                            <input type="radio" name="q5" value="c"> Gamma is a special case of Exponential
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('q5', 'a')">Check Answer</button>
+                    <div class="feedback" id="q5-feedback"></div>
+                </div>
+                
+                <div class="question" id="q6">
+                    <h4>Question 6: Understanding the Cauchy Distribution</h4>
+                    <p>Why is the Cauchy distribution important in statistics despite not having a defined mean?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'q6', 'a')">
+                            <input type="radio" name="q6" value="a"> It shows that not all distributions have finite moments; important for understanding heavy tails
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q6', 'b')">
+                            <input type="radio" name="q6" value="b"> It's not actually used in real applications
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q6', 'c')">
+                            <input type="radio" name="q6" value="c"> It always gives more accurate predictions than the normal distribution
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('q6', 'a')">Check Answer</button>
+                    <div class="feedback" id="q6-feedback"></div>
+                </div>
+            </div>
+            
+            <!-- Connection to Statistics -->
+            <div class="section">
+                <h2>🔗 Connection to Statistics & Calculus</h2>
+                
+                <div class="key-concepts">
+                    <h4>Expected Value (Mean)</h4>
+                    <p>For a continuous random variable with PDF \(f(x)\), the expected value is:</p>
+                    <p style="text-align: center; font-size: 1.3em; margin: 15px 0;">
+                        \(\mu = E[X] = \int_{-\infty}^{\infty} x \cdot f(x) \, dx\)
+                    </p>
+                    <p>This integral may not converge (as with the Cauchy distribution), in which case the mean is undefined.</p>
+                </div>
+                
+                <div class="key-concepts">
+                    <h4>Variance and Standard Deviation</h4>
+                    <p>The variance measures the spread of the distribution:</p>
+                    <p style="text-align: center; font-size: 1.3em; margin: 15px 0;">
+                        \(\sigma^2 = \text{Var}(X) = E[(X-\mu)^2] = \int_{-\infty}^{\infty} (x-\mu)^2 \cdot f(x) \, dx\)
+                    </p>
+                    <p>The standard deviation is \(\sigma = \sqrt{\sigma^2}\).</p>
+                </div>
+                
+                <div class="key-concepts">
+                    <h4>Probability as Area</h4>
+                    <p>The probability that a random variable falls in an interval \([a, b]\) is the area under the PDF curve:</p>
+                    <p style="text-align: center; font-size: 1.3em; margin: 15px 0;">
+                        \(P(a \leq X \leq b) = \int_a^b f(x) \, dx\)
+                    </p>
+                    <p>This is a direct application of the definite integral from calculus!</p>
+                </div>
+                
+                <div class="key-concepts">
+                    <h4>Central Limit Theorem</h4>
+                    <p>One of the most important theorems in statistics: regardless of the underlying distribution, the sum (or average) of many independent random variables tends toward a normal distribution as the number of variables increases. This explains why the normal distribution appears so frequently in nature!</p>
+                </div>
+                
+                <div class="key-concepts">
+                    <h4>Applications by Distribution</h4>
+                    <ul style="margin-left: 25px; margin-top: 10px;">
+                        <li><strong>Normal:</strong> IQ scores, heights, measurement errors, natural phenomena</li>
+                        <li><strong>Exponential:</strong> Time between arrivals, radioactive decay, component lifetimes</li>
+                        <li><strong>Uniform:</strong> Random number generation, prior distributions in Bayesian statistics</li>
+                        <li><strong>Gamma:</strong> Insurance claims, rainfall, queue waiting times</li>
+                        <li><strong>Cauchy:</strong> Resonance in physics, ratio of two normal random variables</li>
+                        <li><strong>Laplace:</strong> Financial returns, signal processing, machine learning regularization</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Challenge Problems -->
+            <div class="section">
+                <h2>🎓 Challenge Problems</h2>
+                
+                <div class="question" id="c1">
+                    <h4>Challenge 1: Standard Normal</h4>
+                    <p>The "standard normal" distribution has \(\mu = 0\) and \(\sigma = 1\). Using the 68-95-99.7 rule, approximately what percentage of values fall between -1 and 2?</p>
+                    <div class="hint">Think about the symmetry. From -1 to 0 is half of the 68% within ±1σ. From 0 to 2 includes more area.</div>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'c1', 'a')">
+                            <input type="radio" name="c1" value="a"> Approximately 81.5%
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'c1', 'b')">
+                            <input type="radio" name="c1" value="b"> Approximately 68%
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'c1', 'c')">
+                            <input type="radio" name="c1" value="c"> Approximately 95%
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('c1', 'a')">Check Answer</button>
+                    <div class="feedback" id="c1-feedback"></div>
+                </div>
+                
+                <div class="question" id="c2">
+                    <h4>Challenge 2: Comparing Distributions</h4>
+                    <p>If you needed to model data with occasional extreme outliers (much more frequent than a normal distribution would predict), which distribution might be more appropriate?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'c2', 'a')">
+                            <input type="radio" name="c2" value="a"> Cauchy (heavy tails)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'c2', 'b')">
+                            <input type="radio" name="c2" value="b"> Uniform (no tails)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'c2', 'c')">
+                            <input type="radio" name="c2" value="c"> Normal (light tails)
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('c2', 'a')">Check Answer</button>
+                    <div class="feedback" id="c2-feedback"></div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Probability Distribution Explorer | Built with Claude | For educational purposes</p>
+        </footer>
+        <footer style="text-align:center; margin: 40px 0 10px 0; font-size: 0.95em; color: #888;">
+            © 2025 Zackery Reed. All rights reserved.
+        </footer>
+    </div>
+    
+    <script>
+        // Render LaTeX
+        document.addEventListener("DOMContentLoaded", function() {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: "$$", right: "$$", display: true},
+                    {left: "\\[", right: "\\]", display: true},
+                    {left: "$", right: "$", display: false},
+                    {left: "\\(", right: "\\)", display: false}
+                ]
+            });
+        });
+    </script>
+</body>
+</html>
