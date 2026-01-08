@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multivariable Chain Rule - Directional Derivatives in 3D</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/quiz.js"></script>
+</head>
+<body>
+    <div class="page-container">
+        <header>
+            <a href="../index.html" style="color: #00d9ff; text-decoration: none; font-weight: bold;">&larr; Back to Home</a>
+            <h1>🌐 Multivariable Chain Rule: Directional Derivatives in 3D</h1>
+            <p style="font-size: 1.2em; margin-top: 10px;">Explore how rates of change flow through parametric curves on surfaces</p>
+        </header>
+        
+        <div class="content">
+            <!-- Introduction Section -->
+            <div class="section">
+                <h2>🎯 Introduction</h2>
+                <p>The multivariable chain rule extends the single-variable chain rule to functions of several variables. It's essential for understanding how changes propagate through composite multivariable systems.</p>
+                
+                <div class="key-concepts">
+                    <h4>Key Concept: The Multivariable Chain Rule</h4>
+                    <p>Suppose we have a surface \(z = f(x, y)\) and a parametric curve \((x(t), y(t))\) that traces a path through the domain. The curve on the surface is then \(z(t) = f(x(t), y(t))\).</p>
+                    <p style="text-align: center; font-size: 1.4em; margin: 15px 0;">
+                        \(\frac{dz}{dt} = \frac{\partial z}{\partial x} \cdot \frac{dx}{dt} + \frac{\partial z}{\partial y} \cdot \frac{dy}{dt}\)
+                    </p>
+                    <p>This tells us that the <strong>total rate of change</strong> of \(z\) along the curve is the sum of:</p>
+                    <ul style="margin-left: 20px; margin-top: 10px;">
+                        <li>The contribution from changes in \(x\): \(\frac{\partial z}{\partial x} \cdot \frac{dx}{dt}\)</li>
+                        <li>The contribution from changes in \(y\): \(\frac{\partial z}{\partial y} \cdot \frac{dy}{dt}\)</li>
+                    </ul>
+                </div>
+                
+                <div class="info-box" style="margin-top: 15px;">
+                    <h4>Why This Matters</h4>
+                    <p>This formula appears everywhere in multivariable calculus:</p>
+                    <ul>
+                        <li><strong>Directional derivatives:</strong> Setting \(\mathbf{v} = (dx/dt, dy/dt)\) as a direction vector</li>
+                        <li><strong>Gradient:</strong> The gradient \(\nabla f = (\partial f/\partial x, \partial f/\partial y)\) points in the direction of steepest ascent</li>
+                        <li><strong>Optimization:</strong> Finding critical points and understanding how functions change</li>
+                        <li><strong>Physics:</strong> Tracking quantities that change in space and time</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Interactive Applet -->
+            <div class="section">
+                <h2>📊 Interactive 3D Visualization</h2>
+                <p><strong>Instructions:</strong></p>
+                <ol>
+                    <li><strong>Rotate the view:</strong> Click and drag on the canvas to rotate the 3D scene</li>
+                    <li><strong>Zoom:</strong> Scroll to zoom in/out</li>
+                    <li><strong>Set the point:</strong> Click on the domain plane (xy-plane) to place the red point</li>
+                    <li><strong>Adjust direction:</strong> Use the "Direction Vector" slider to change the angle \(\theta\) and magnitude</li>
+                    <li><strong>Observe the chain rule:</strong> Watch how the partial derivatives (\(\partial z/\partial x\) and \(\partial z/\partial y\) in orange) combine with the direction vector (in yellow) to produce the total derivative (in cyan)</li>
+                </ol>
+                
+                <div class="key-concepts" style="margin-top: 15px;">
+                    <h4>What You're Seeing</h4>
+                    <ul>
+                        <li><strong>Green surface:</strong> The function \(z = f(x, y)\)</li>
+                        <li><strong>Yellow curve:</strong> A parametric curve through the surface following your direction vector</li>
+                        <li><strong>Yellow plane:</strong> The tangent plane at the point, showing local linearity</li>
+                        <li><strong>Orange arrows:</strong> Partial derivative vectors \(\partial z/\partial x\) and \(\partial z/\partial y\)</li>
+                        <li><strong>Yellow arrow (on domain):</strong> Direction vector \((dx/dt, dy/dt)\)</li>
+                        <li><strong>Cyan arrow:</strong> Total derivative \(dz/dt\) along the curve</li>
+                    </ul>
+                </div>
+                
+                <div class="applet-container">
+                    <iframe src="../applets/multivariable-chain-rule.html" width="1300" height="750" style="border: none; border-radius: 8px; max-width: 100%; overflow: hidden;"></iframe>
+                </div>
+            </div>
+            
+            <!-- Guided Explorations -->
+            <div class="section">
+                <h2>🧪 Guided Explorations</h2>
+                
+                <div class="exploration" id="exp1">
+                    <h4>Exploration 1: Understanding Partial Derivatives</h4>
+                    <p><strong>Try this:</strong> With the paraboloid \(z = x^2 + y^2\), place the point at \((1, 0)\). Look at the orange partial derivative vectors.</p>
+                    <p><strong>Question:</strong> The partial derivative \(\partial z/\partial x\) at \((1, 0)\) represents the rate of change when moving in which direction?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'exp1', 'a')">
+                            <input type="radio" name="exp1" value="a"> In the positive \(x\)-direction (keeping \(y\) constant)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp1', 'b')">
+                            <input type="radio" name="exp1" value="b"> In the positive \(y\)-direction (keeping \(x\) constant)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp1', 'c')">
+                            <input type="radio" name="exp1" value="c"> In any arbitrary direction
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('exp1', 'a')">Check Answer</button>
+                    <div class="feedback" id="exp1-feedback"></div>
+                </div>
+                
+                <div class="exploration" id="exp2">
+                    <h4>Exploration 2: The Chain Rule Formula</h4>
+                    <p><strong>Setup:</strong> Look at the "Chain Rule Values" panel on the right side of the applet.</p>
+                    <p><strong>Question:</strong> If \(\partial z/\partial x = 2\), \(\partial z/\partial y = 3\), \(dx/dt = 1\), and \(dy/dt = 1\), what should \(dz/dt\) equal?</p>
+                    <div class="number-input">
+                        <label>\(dz/dt\) =</label>
+                        <input type="number" id="exp2-input" step="0.1" placeholder="Enter value">
+                    </div>
+                    <button class="check-btn" onclick="checkNumericAnswer('exp2', 5, 0.1)">Check Answer</button>
+                    <div class="feedback" id="exp2-feedback"></div>
+                    <div class="hint" style="margin-top: 10px; font-size: 0.9em; color: #aaa;">
+                        <em>Hint: Use the formula \(dz/dt = (\partial z/\partial x)(dx/dt) + (\partial z/\partial y)(dy/dt)\)</em>
+                    </div>
+                </div>
+                
+                <div class="exploration" id="exp3">
+                    <h4>Exploration 3: Direction Matters</h4>
+                    <p><strong>Experiment:</strong> Switch to the saddle surface \(z = x^2 - y^2\). Place the point at the origin \((0, 0)\).</p>
+                    <p><strong>Question:</strong> At the origin of a saddle surface, why can \(dz/dt\) be positive, negative, or zero depending on the direction?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'exp3', 'a')">
+                            <input type="radio" name="exp3" value="a"> Because the surface curves up in some directions and down in others
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp3', 'b')">
+                            <input type="radio" name="exp3" value="b"> Because the partial derivatives are always zero at the origin
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp3', 'c')">
+                            <input type="radio" name="exp3" value="c"> Because the direction vector can have any magnitude
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('exp3', 'a')">Check Answer</button>
+                    <div class="feedback" id="exp3-feedback"></div>
+                </div>
+                
+                <div class="exploration" id="exp4">
+                    <h4>Exploration 4: Tangent Plane and Local Linearity</h4>
+                    <p><strong>Observe:</strong> The yellow tangent plane shows the "best linear approximation" to the surface at the point.</p>
+                    <p><strong>Question:</strong> How does the tangent plane relate to the partial derivatives?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'exp4', 'a')">
+                            <input type="radio" name="exp4" value="a"> The plane's slope in the \(x\)-direction is \(\partial z/\partial x\) and in the \(y\)-direction is \(\partial z/\partial y\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp4', 'b')">
+                            <input type="radio" name="exp4" value="b"> The plane is always horizontal
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp4', 'c')">
+                            <input type="radio" name="exp4" value="c"> The plane has no relation to derivatives
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('exp4', 'a')">Check Answer</button>
+                    <div class="feedback" id="exp4-feedback"></div>
+                </div>
+                
+                <div class="exploration" id="exp5">
+                    <h4>Exploration 5: The Gradient Connection</h4>
+                    <p><strong>Concept:</strong> The gradient is \(\nabla f = \left(\frac{\partial f}{\partial x}, \frac{\partial f}{\partial y}\right)\). The directional derivative in direction \(\mathbf{v} = (dx/dt, dy/dt)\) is \(\nabla f \cdot \mathbf{v}\).</p>
+                    <p><strong>Question:</strong> What does the chain rule formula \(dz/dt = (\partial z/\partial x)(dx/dt) + (\partial z/\partial y)(dy/dt)\) represent geometrically?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'exp5', 'a')">
+                            <input type="radio" name="exp5" value="a"> The dot product of the gradient with the direction vector
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp5', 'b')">
+                            <input type="radio" name="exp5" value="b"> The cross product of the gradient with the direction vector
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp5', 'c')">
+                            <input type="radio" name="exp5" value="c"> The magnitude of the gradient
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('exp5', 'a')">Check Answer</button>
+                    <div class="feedback" id="exp5-feedback"></div>
+                </div>
+            </div>
+            
+            <!-- Practice Questions -->
+            <div class="section">
+                <h2>📝 Practice Questions</h2>
+                
+                <div class="question" id="q1">
+                    <h4>Question 1: Computing with the Chain Rule</h4>
+                    <p>Suppose \(z = f(x, y) = x^2 + y^2\) and we move along the path \(x(t) = t\), \(y(t) = 2t\).</p>
+                    <p><strong>(a)</strong> What is \(\partial z/\partial x\) at a general point \((x, y)\)?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'q1a', 'a')">
+                            <input type="radio" name="q1a" value="a"> \(2x\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q1a', 'b')">
+                            <input type="radio" name="q1a" value="b"> \(x^2\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q1a', 'c')">
+                            <input type="radio" name="q1a" value="c"> \(2y\)
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('q1a', 'a')">Check Answer</button>
+                    <div class="feedback" id="q1a-feedback"></div>
+                    
+                    <p style="margin-top: 20px;"><strong>(b)</strong> What is \(\partial z/\partial y\)?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'q1b', 'a')">
+                            <input type="radio" name="q1b" value="a"> \(2x\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q1b', 'b')">
+                            <input type="radio" name="q1b" value="b"> \(2y\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q1b', 'c')">
+                            <input type="radio" name="q1b" value="c"> \(y^2\)
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('q1b', 'b')">Check Answer</button>
+                    <div class="feedback" id="q1b-feedback"></div>
+                    
+                    <p style="margin-top: 20px;"><strong>(c)</strong> What are \(dx/dt\) and \(dy/dt\)?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'q1c', 'a')">
+                            <input type="radio" name="q1c" value="a"> \(dx/dt = 1\), \(dy/dt = 2\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q1c', 'b')">
+                            <input type="radio" name="q1c" value="b"> \(dx/dt = t\), \(dy/dt = 2t\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q1c', 'c')">
+                            <input type="radio" name="q1c" value="c"> \(dx/dt = 0\), \(dy/dt = 0\)
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('q1c', 'a')">Check Answer</button>
+                    <div class="feedback" id="q1c-feedback"></div>
+                    
+                    <p style="margin-top: 20px;"><strong>(d)</strong> Using the chain rule, what is \(dz/dt\)?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'q1d', 'a')">
+                            <input type="radio" name="q1d" value="a"> \(2x + 4y\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q1d', 'b')">
+                            <input type="radio" name="q1d" value="b"> \(2x + 2y\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q1d', 'c')">
+                            <input type="radio" name="q1d" value="c"> \(x + y\)
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('q1d', 'a')">Check Answer</button>
+                    <div class="feedback" id="q1d-feedback"></div>
+                </div>
+                
+                <div class="question" id="q2">
+                    <h4>Question 2: Directional Derivative</h4>
+                    <p>Let \(f(x, y) = x^2 - y^2\). At the point \((1, 1)\), find the directional derivative in the direction \(\mathbf{v} = (1, 1)\).</p>
+                    <p><strong>(a)</strong> First, what is the gradient \(\nabla f\) at \((1, 1)\)?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'q2a', 'a')">
+                            <input type="radio" name="q2a" value="a"> \((2, -2)\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q2a', 'b')">
+                            <input type="radio" name="q2a" value="b"> \((2, 2)\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q2a', 'c')">
+                            <input type="radio" name="q2a" value="c"> \((1, -1)\)
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('q2a', 'a')">Check Answer</button>
+                    <div class="feedback" id="q2a-feedback"></div>
+                    
+                    <p style="margin-top: 20px;"><strong>(b)</strong> The directional derivative is \(\nabla f \cdot \mathbf{u}\) where \(\mathbf{u}\) is the unit vector. What is \(\mathbf{u}\) for \(\mathbf{v} = (1, 1)\)?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'q2b', 'a')">
+                            <input type="radio" name="q2b" value="a"> \((\frac{1}{\sqrt{2}}, \frac{1}{\sqrt{2}})\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q2b', 'b')">
+                            <input type="radio" name="q2b" value="b"> \((1, 1)\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q2b', 'c')">
+                            <input type="radio" name="q2b" value="c"> \((\frac{1}{2}, \frac{1}{2})\)
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('q2b', 'a')">Check Answer</button>
+                    <div class="feedback" id="q2b-feedback"></div>
+                    
+                    <p style="margin-top: 20px;"><strong>(c)</strong> What is the directional derivative \(D_{\mathbf{u}}f(1,1)\)?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'q2c', 'a')">
+                            <input type="radio" name="q2c" value="a"> \(0\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q2c', 'b')">
+                            <input type="radio" name="q2c" value="b"> \(4\)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q2c', 'c')">
+                            <input type="radio" name="q2c" value="c"> \(2\sqrt{2}\)
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('q2c', 'a')">Check Answer</button>
+                    <div class="feedback" id="q2c-feedback"></div>
+                    <div class="hint" style="margin-top: 10px; font-size: 0.9em; color: #aaa;">
+                        <em>Hint: Compute \((2, -2) \cdot (\frac{1}{\sqrt{2}}, \frac{1}{\sqrt{2}})\)</em>
+                    </div>
+                </div>
+                
+                <div class="question" id="q3">
+                    <h4>Question 3: Real-World Application</h4>
+                    <p>A hiker is on a hill described by elevation \(h(x, y) = 100 - x^2 - 2y^2\) (in meters). The hiker is at position \((x, y) = (2, 1)\) and walking in direction \(\mathbf{v} = (-1, 1)\).</p>
+                    <p><strong>Question:</strong> Is the hiker going uphill or downhill?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'q3', 'a')">
+                            <input type="radio" name="q3" value="a"> Uphill (positive directional derivative)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q3', 'b')">
+                            <input type="radio" name="q3" value="b"> Downhill (negative directional derivative)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'q3', 'c')">
+                            <input type="radio" name="q3" value="c"> Neither (staying at same elevation)
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('q3', 'b')">Check Answer</button>
+                    <div class="feedback" id="q3-feedback"></div>
+                    <div class="hint" style="margin-top: 10px; font-size: 0.9em; color: #aaa;">
+                        <em>Hint: Calculate \(\nabla h(2,1) = (-4, -4)\), then find \(\nabla h \cdot (-1, 1)\). Note: We don't need to normalize for just the sign!</em>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Conceptual Summary -->
+            <div class="section">
+                <h2>💡 Conceptual Summary</h2>
+                
+                <div class="key-concepts">
+                    <h4>Three Ways to Think About the Multivariable Chain Rule</h4>
+                    
+                    <p><strong>1. Component-wise Contribution:</strong></p>
+                    <p style="margin-left: 20px;">
+                        Each input variable contributes to the total rate of change. The formula \(\frac{dz}{dt} = \frac{\partial z}{\partial x} \frac{dx}{dt} + \frac{\partial z}{\partial y} \frac{dy}{dt}\) adds up these contributions.
+                    </p>
+                    
+                    <p style="margin-top: 15px;"><strong>2. Dot Product (Gradient):</strong></p>
+                    <p style="margin-left: 20px;">
+                        The total derivative is the dot product \(\nabla f \cdot \mathbf{v}\), where \(\nabla f\) is the gradient (direction of steepest ascent) and \(\mathbf{v}\) is the direction we're moving. This measures how well the direction aligns with the gradient.
+                    </p>
+                    
+                    <p style="margin-top: 15px;"><strong>3. Linear Approximation:</strong></p>
+                    <p style="margin-left: 20px;">
+                        The tangent plane gives the best linear approximation to the surface. Moving along a direction on this plane gives us the rate \(dz/dt\), which matches what the chain rule predicts.
+                    </p>
+                </div>
+                
+                <div class="info-box" style="margin-top: 15px;">
+                    <h4>Key Insights</h4>
+                    <ul>
+                        <li><strong>The gradient points uphill:</strong> \(\nabla f\) points in the direction of maximum increase</li>
+                        <li><strong>Orthogonal means level:</strong> If \(\mathbf{v} \perp \nabla f\), then \(dz/dt = 0\) (moving along a level curve)</li>
+                        <li><strong>Magnitude matters:</strong> \(|dz/dt|\) is maximized when \(\mathbf{v}\) points in the direction of \(\nabla f\)</li>
+                        <li><strong>Local linearity:</strong> The tangent plane approximation is exactly what the chain rule computes</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Further Exploration -->
+            <div class="section">
+                <h2>🚀 Further Exploration</h2>
+                
+                <div class="info-box">
+                    <h4>Try These Challenges</h4>
+                    <ol>
+                        <li><strong>Find level curves:</strong> On the paraboloid, try different directions and find one where \(dz/dt = 0\). What does this tell you about level curves?</li>
+                        <li><strong>Saddle point behavior:</strong> At the origin of the saddle, rotate the direction vector 360°. How does \(dz/dt\) change? Where is it maximum/minimum?</li>
+                        <li><strong>Wave interference:</strong> On the \(z = \sin(x)\cos(y)\) surface, find points where both partial derivatives are zero. What happens to \(dz/dt\)?</li>
+                        <li><strong>Gradient magnitude:</strong> Compare \(|\nabla f|\) to \(|dz/dt|\) for different directions. When are they equal?</li>
+                    </ol>
+                </div>
+                
+                <div class="info-box" style="margin-top: 15px;">
+                    <h4>Extensions</h4>
+                    <ul>
+                        <li><strong>More variables:</strong> The chain rule extends to any number of variables: \(\frac{dw}{dt} = \sum_i \frac{\partial w}{\partial x_i} \frac{dx_i}{dt}\)</li>
+                        <li><strong>Implicit differentiation:</strong> Use the chain rule to differentiate implicit functions</li>
+                        <li><strong>Coordinate transformations:</strong> Converting between coordinate systems (polar, cylindrical, spherical)</li>
+                        <li><strong>Optimization:</strong> Lagrange multipliers use the gradient (which comes from the chain rule)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>&copy; 2026 Interactive Math Learning. Created for exploring multivariable calculus concepts.</p>
+        </footer>
+    </div>
+
+    <script>
+        // Render LaTeX when page loads
+        document.addEventListener("DOMContentLoaded", function() {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: "$$", right: "$$", display: true},
+                    {left: "\\[", right: "\\]", display: true},
+                    {left: "$", right: "$", display: false},
+                    {left: "\\(", right: "\\)", display: false}
+                ],
+                throwOnError: false
+            });
+        });
+    </script>
+</body>
+</html>

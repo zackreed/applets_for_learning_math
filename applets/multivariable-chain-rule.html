@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multivariable Chain Rule 3D Visualization</title>
+    <link rel="stylesheet" href="../css/applet-styles.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        #canvas-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        canvas {
+            border: 2px solid #4a5568;
+            background: #16213e;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            display: block;
+            cursor: grab;
+        }
+        
+        canvas:active {
+            cursor: grabbing;
+        }
+        
+        #controls {
+            width: 350px;
+            background: #0f3460;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            overflow-y: auto;
+            max-height: 90vh;
+        }
+        
+        h2 {
+            margin-top: 0;
+            color: #e94560;
+            border-bottom: 2px solid #e94560;
+            padding-bottom: 10px;
+            font-size: 20px;
+        }
+        
+        h3 {
+            color: #4ecca3;
+            font-size: 14px;
+            margin-top: 15px;
+            margin-bottom: 8px;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #aaa;
+            font-size: 13px;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            margin: 5px 0;
+        }
+        
+        .slider-display {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 3px;
+            font-size: 12px;
+            color: #4ecca3;
+        }
+        
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #4ecca3;
+            color: #1a1a2e;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            margin-top: 8px;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #3db894;
+        }
+        
+        button.active {
+            background: #e94560;
+            color: white;
+        }
+        
+        .value-display {
+            background: #16213e;
+            padding: 12px;
+            border-radius: 4px;
+            margin-top: 8px;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+        
+        .info-box {
+            background: #16213e;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            line-height: 1.5;
+            margin-top: 10px;
+        }
+        
+        .formula {
+            font-family: 'Courier New', monospace;
+            background: #0f1925;
+            padding: 8px;
+            border-radius: 4px;
+            margin: 5px 0;
+            text-align: center;
+            color: #4ecca3;
+            font-size: 13px;
+        }
+        
+        .color-legend {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-top: 10px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            border: 1px solid #4a5568;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container">
+        <canvas id="main-canvas" width="900" height="700"></canvas>
+    </div>
+    
+    <div id="controls">
+        <h2>Multivariable Chain Rule</h2>
+        
+        <div class="info-box">
+            <strong>Drag</strong> to rotate the 3D view<br>
+            <strong>Scroll</strong> to zoom<br>
+            <strong>Click</strong> on the domain plane to set point<br>
+            Use sliders to adjust direction vector
+        </div>
+        
+        <div class="control-group">
+            <h3>Surface Function</h3>
+            <button id="func-paraboloid" class="active">z = x² + y²</button>
+            <button id="func-saddle">z = x² - y²</button>
+            <button id="func-waves">z = sin(x)cos(y)</button>
+            <button id="func-hill">z = 3/(1+x²+y²)</button>
+        </div>
+        
+        <div class="control-group">
+            <h3>Parametric Curve</h3>
+            <label>t parameter (affects curve position)</label>
+            <input type="range" id="t-param" min="0" max="6.283" step="0.01" value="0.785">
+            <div class="slider-display">
+                <span>0</span>
+                <span id="t-value">0.79</span>
+                <span>2π</span>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <h3>Direction Vector (dx/dt, dy/dt)</h3>
+            <label>dx/dt = cos(θ)</label>
+            <input type="range" id="dx-dt" min="-6.283" max="6.283" step="0.01" value="1.571">
+            <div class="slider-display">
+                <span>-2π</span>
+                <span id="dx-value">1.57</span>
+                <span>2π</span>
+            </div>
+            
+            <label>Magnitude</label>
+            <input type="range" id="magnitude" min="0.1" max="2" step="0.1" value="1">
+            <div class="slider-display">
+                <span>0.1</span>
+                <span id="mag-value">1.0</span>
+                <span>2.0</span>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <h3>Display Options</h3>
+            <button id="toggle-grid" class="active">Grid: ON</button>
+            <button id="toggle-curve">Curve: ON</button>
+            <button id="toggle-tangent" class="active">Tangent Plane: ON</button>
+            <button id="toggle-vectors" class="active">Vectors: ON</button>
+        </div>
+        
+        <div class="value-display">
+            <h3 style="margin: 0 0 10px 0; color: #ffe66d;">Chain Rule Values</h3>
+            <div style="margin: 5px 0;">
+                Point: <span id="point-display" style="color: #e94560;">(0, 0)</span>
+            </div>
+            <div style="margin: 5px 0;">
+                z = <span id="z-display" style="color: #4ecca3;">0</span>
+            </div>
+            <hr style="margin: 10px 0; border-color: #4a5568;">
+            <div style="margin: 5px 0;">
+                ∂z/∂x = <span id="dzdx-display" style="color: #ff9d76;">0</span>
+            </div>
+            <div style="margin: 5px 0;">
+                ∂z/∂y = <span id="dzdy-display" style="color: #ff9d76;">0</span>
+            </div>
+            <div style="margin: 5px 0;">
+                dx/dt = <span id="dxdt-display" style="color: #ffe66d;">0</span>
+            </div>
+            <div style="margin: 5px 0;">
+                dy/dt = <span id="dydt-display" style="color: #ffe66d;">0</span>
+            </div>
+            <hr style="margin: 10px 0; border-color: #4a5568;">
+            <div style="margin: 5px 0; font-weight: bold; font-size: 16px;">
+                dz/dt = <span id="dzdt-display" style="color: #00d9ff;">0</span>
+            </div>
+            <div class="formula">
+                dz/dt = (∂z/∂x)(dx/dt) + (∂z/∂y)(dy/dt)
+            </div>
+        </div>
+        
+        <div class="info-box">
+            <h3 style="margin-top: 0;">Color Legend</h3>
+            <div class="color-legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #4ecca3;"></div>
+                    <span>Surface z = f(x,y)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #e94560;"></div>
+                    <span>Point on surface</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ffe66d;"></div>
+                    <span>Curve through surface</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ff9d76;"></div>
+                    <span>Partial derivatives (∂z/∂x, ∂z/∂y)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #00d9ff;"></div>
+                    <span>Total derivative (dz/dt)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('main-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Camera state
+        let cameraAngleX = 0.3;
+        let cameraAngleY = 0.8;
+        let cameraDistance = 8;
+        let isDragging = false;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+        
+        // Point and direction state
+        let pointX = 0;
+        let pointY = 0;
+        let tParam = Math.PI / 4;
+        let directionAngle = Math.PI / 2;
+        let magnitude = 1.0;
+        
+        // Display toggles
+        let showGrid = true;
+        let showCurve = true;
+        let showTangentPlane = true;
+        let showVectors = true;
+        
+        // Current function
+        let currentFunction = 'paraboloid';
+        
+        // Surface functions and their derivatives
+        const functions = {
+            paraboloid: {
+                f: (x, y) => x*x + y*y,
+                dfdx: (x, y) => 2*x,
+                dfdy: (x, y) => 2*y,
+                name: 'z = x² + y²'
+            },
+            saddle: {
+                f: (x, y) => x*x - y*y,
+                dfdx: (x, y) => 2*x,
+                dfdy: (x, y) => -2*y,
+                name: 'z = x² - y²'
+            },
+            waves: {
+                f: (x, y) => Math.sin(x) * Math.cos(y),
+                dfdx: (x, y) => Math.cos(x) * Math.cos(y),
+                dfdy: (x, y) => -Math.sin(x) * Math.sin(y),
+                name: 'z = sin(x)cos(y)'
+            },
+            hill: {
+                f: (x, y) => 3 / (1 + x*x + y*y),
+                dfdx: (x, y) => -6*x / Math.pow(1 + x*x + y*y, 2),
+                dfdy: (x, y) => -6*y / Math.pow(1 + x*x + y*y, 2),
+                name: 'z = 3/(1+x²+y²)'
+            }
+        };
+        
+        // Parametric curve (we'll use a straight line through the domain)
+        function getCurvePoint(t) {
+            const angle = directionAngle;
+            const x = pointX + magnitude * Math.cos(angle) * (t - tParam);
+            const y = pointY + magnitude * Math.sin(angle) * (t - tParam);
+            return {x, y};
+        }
+        
+        function getCurveDerivative() {
+            return {
+                dx: magnitude * Math.cos(directionAngle),
+                dy: magnitude * Math.sin(directionAngle)
+            };
+        }
+        
+        // 3D to 2D projection
+        function project3D(x, y, z) {
+            // Rotate around Y axis
+            const cosY = Math.cos(cameraAngleY);
+            const sinY = Math.sin(cameraAngleY);
+            let x1 = x * cosY - z * sinY;
+            let z1 = x * sinY + z * cosY;
+            let y1 = y;
+            
+            // Rotate around X axis
+            const cosX = Math.cos(cameraAngleX);
+            const sinX = Math.sin(cameraAngleX);
+            let y2 = y1 * cosX - z1 * sinX;
+            let z2 = y1 * sinX + z1 * cosX;
+            let x2 = x1;
+            
+            // Apply distance
+            z2 += cameraDistance;
+            
+            // Perspective projection
+            const scale = 600 / z2;
+            const screenX = canvas.width / 2 + x2 * scale;
+            const screenY = canvas.height / 2 - y2 * scale;
+            
+            return {x: screenX, y: screenY, depth: z2};
+        }
+        
+        // Draw axes
+        function drawAxes() {
+            const axisLength = 3;
+            
+            // X axis (red)
+            drawLine3D(0, 0, 0, axisLength, 0, 0, '#e94560', 2);
+            
+            // Y axis (green)
+            drawLine3D(0, 0, 0, 0, axisLength, 0, '#4ecca3', 2);
+            
+            // Z axis (blue)
+            drawLine3D(0, 0, 0, 0, 0, axisLength, '#00d9ff', 2);
+        }
+        
+        // Draw a 3D line
+        function drawLine3D(x1, y1, z1, x2, y2, z2, color, width = 2) {
+            const p1 = project3D(x1, y1, z1);
+            const p2 = project3D(x2, y2, z2);
+            
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+        }
+        
+        // Draw grid on xy-plane
+        function drawGrid() {
+            if (!showGrid) return;
+            
+            const gridSize = 2;
+            const step = 0.5;
+            
+            ctx.strokeStyle = 'rgba(74, 85, 104, 0.3)';
+            ctx.lineWidth = 1;
+            
+            // Lines parallel to X axis
+            for (let y = -gridSize; y <= gridSize; y += step) {
+                const p1 = project3D(-gridSize, y, 0);
+                const p2 = project3D(gridSize, y, 0);
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
+            }
+            
+            // Lines parallel to Y axis
+            for (let x = -gridSize; x <= gridSize; x += step) {
+                const p1 = project3D(x, -gridSize, 0);
+                const p2 = project3D(x, gridSize, 0);
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
+            }
+        }
+        
+        // Draw the surface
+        function drawSurface() {
+            const func = functions[currentFunction];
+            const resolution = 25;
+            const range = 2;
+            const step = (2 * range) / resolution;
+            
+            // Create mesh triangles
+            const triangles = [];
+            
+            for (let i = 0; i < resolution; i++) {
+                for (let j = 0; j < resolution; j++) {
+                    const x1 = -range + i * step;
+                    const y1 = -range + j * step;
+                    const x2 = x1 + step;
+                    const y2 = y1 + step;
+                    
+                    const z1 = func.f(x1, y1);
+                    const z2 = func.f(x2, y1);
+                    const z3 = func.f(x1, y2);
+                    const z4 = func.f(x2, y2);
+                    
+                    // Two triangles per grid square
+                    triangles.push({
+                        p1: {x: x1, y: y1, z: z1},
+                        p2: {x: x2, y: y1, z: z2},
+                        p3: {x: x1, y: y2, z: z3}
+                    });
+                    
+                    triangles.push({
+                        p1: {x: x2, y: y1, z: z2},
+                        p2: {x: x2, y: y2, z: z4},
+                        p3: {x: x1, y: y2, z: z3}
+                    });
+                }
+            }
+            
+            // Sort triangles by depth (painter's algorithm)
+            triangles.forEach(tri => {
+                const avgZ = (tri.p1.z + tri.p2.z + tri.p3.z) / 3;
+                const avgX = (tri.p1.x + tri.p2.x + tri.p3.x) / 3;
+                const avgY = (tri.p1.y + tri.p2.y + tri.p3.y) / 3;
+                const proj = project3D(avgX, avgY, avgZ);
+                tri.depth = proj.depth;
+            });
+            
+            triangles.sort((a, b) => b.depth - a.depth);
+            
+            // Draw triangles
+            triangles.forEach(tri => {
+                const p1 = project3D(tri.p1.x, tri.p1.y, tri.p1.z);
+                const p2 = project3D(tri.p2.x, tri.p2.y, tri.p2.z);
+                const p3 = project3D(tri.p3.x, tri.p3.y, tri.p3.z);
+                
+                // Calculate lighting based on normal
+                const v1x = tri.p2.x - tri.p1.x;
+                const v1y = tri.p2.y - tri.p1.y;
+                const v1z = tri.p2.z - tri.p1.z;
+                const v2x = tri.p3.x - tri.p1.x;
+                const v2y = tri.p3.y - tri.p1.y;
+                const v2z = tri.p3.z - tri.p1.z;
+                
+                const nx = v1y * v2z - v1z * v2y;
+                const ny = v1z * v2x - v1x * v2z;
+                const nz = v1x * v2y - v1y * v2x;
+                
+                const lightDot = Math.max(0.2, (nx + ny + nz * 2) / Math.sqrt(nx*nx + ny*ny + nz*nz) * 0.5 + 0.5);
+                
+                ctx.fillStyle = `rgba(78, 204, 163, ${lightDot * 0.6})`;
+                ctx.strokeStyle = `rgba(78, 204, 163, 0.3)`;
+                ctx.lineWidth = 0.5;
+                
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.lineTo(p3.x, p3.y);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            });
+        }
+        
+        // Draw the parametric curve through the surface
+        function drawCurve() {
+            if (!showCurve) return;
+            
+            const func = functions[currentFunction];
+            const tRange = 2;
+            const tStart = tParam - tRange;
+            const tEnd = tParam + tRange;
+            const steps = 100;
+            
+            ctx.strokeStyle = '#ffe66d';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            
+            let first = true;
+            for (let i = 0; i <= steps; i++) {
+                const t = tStart + (tEnd - tStart) * i / steps;
+                const pt = getCurvePoint(t);
+                const z = func.f(pt.x, pt.y);
+                const proj = project3D(pt.x, pt.y, z);
+                
+                if (first) {
+                    ctx.moveTo(proj.x, proj.y);
+                    first = false;
+                } else {
+                    ctx.lineTo(proj.x, proj.y);
+                }
+            }
+            ctx.stroke();
+        }
+        
+        // Draw tangent plane
+        function drawTangentPlane() {
+            if (!showTangentPlane) return;
+            
+            const func = functions[currentFunction];
+            const z0 = func.f(pointX, pointY);
+            const dzdx = func.dfdx(pointX, pointY);
+            const dzdy = func.dfdy(pointX, pointY);
+            
+            const size = 0.5;
+            const corners = [
+                {x: pointX - size, y: pointY - size},
+                {x: pointX + size, y: pointY - size},
+                {x: pointX + size, y: pointY + size},
+                {x: pointX - size, y: pointY + size}
+            ];
+            
+            corners.forEach(corner => {
+                corner.z = z0 + dzdx * (corner.x - pointX) + dzdy * (corner.y - pointY);
+            });
+            
+            const projCorners = corners.map(c => project3D(c.x, c.y, c.z));
+            
+            ctx.fillStyle = 'rgba(255, 230, 109, 0.3)';
+            ctx.strokeStyle = '#ffe66d';
+            ctx.lineWidth = 2;
+            
+            ctx.beginPath();
+            ctx.moveTo(projCorners[0].x, projCorners[0].y);
+            for (let i = 1; i < projCorners.length; i++) {
+                ctx.lineTo(projCorners[i].x, projCorners[i].y);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        }
+        
+        // Draw vectors
+        function drawVectors() {
+            if (!showVectors) return;
+            
+            const func = functions[currentFunction];
+            const z0 = func.f(pointX, pointY);
+            const dzdx = func.dfdx(pointX, pointY);
+            const dzdy = func.dfdy(pointX, pointY);
+            
+            const deriv = getCurveDerivative();
+            const dxdt = deriv.dx;
+            const dydt = deriv.dy;
+            
+            // Draw partial derivative vectors (in tangent plane)
+            const scale = 0.5;
+            
+            // ∂z/∂x direction (shows change in x direction)
+            drawArrow3D(
+                pointX, pointY, z0,
+                pointX + scale, pointY, z0 + dzdx * scale,
+                '#ff9d76', 3
+            );
+            
+            // ∂z/∂y direction (shows change in y direction)
+            drawArrow3D(
+                pointX, pointY, z0,
+                pointX, pointY + scale, z0 + dzdy * scale,
+                '#ff9d76', 3
+            );
+            
+            // dx/dt, dy/dt direction vector (on domain plane)
+            drawArrow3D(
+                pointX, pointY, 0,
+                pointX + dxdt * 0.5, pointY + dydt * 0.5, 0,
+                '#ffe66d', 3
+            );
+            
+            // Total derivative dz/dt (along the curve)
+            const dzdt = dzdx * dxdt + dzdy * dydt;
+            const endX = pointX + dxdt * 0.5;
+            const endY = pointY + dydt * 0.5;
+            const endZ = z0 + dzdt * 0.5;
+            
+            drawArrow3D(
+                pointX, pointY, z0,
+                endX, endY, endZ,
+                '#00d9ff', 4
+            );
+        }
+        
+        // Draw an arrow in 3D
+        function drawArrow3D(x1, y1, z1, x2, y2, z2, color, width = 2) {
+            const p1 = project3D(x1, y1, z1);
+            const p2 = project3D(x2, y2, z2);
+            
+            // Draw line
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+            
+            // Draw arrowhead
+            const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+            const arrowLength = 10;
+            const arrowAngle = Math.PI / 6;
+            
+            ctx.beginPath();
+            ctx.moveTo(p2.x, p2.y);
+            ctx.lineTo(
+                p2.x - arrowLength * Math.cos(angle - arrowAngle),
+                p2.y - arrowLength * Math.sin(angle - arrowAngle)
+            );
+            ctx.moveTo(p2.x, p2.y);
+            ctx.lineTo(
+                p2.x - arrowLength * Math.cos(angle + arrowAngle),
+                p2.y - arrowLength * Math.sin(angle + arrowAngle)
+            );
+            ctx.stroke();
+        }
+        
+        // Draw the point
+        function drawPoint() {
+            const func = functions[currentFunction];
+            const z = func.f(pointX, pointY);
+            const proj = project3D(pointX, pointY, z);
+            
+            // Draw vertical line from domain to surface
+            const projBase = project3D(pointX, pointY, 0);
+            ctx.strokeStyle = 'rgba(233, 69, 96, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(projBase.x, projBase.y);
+            ctx.lineTo(proj.x, proj.y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Draw point on surface
+            ctx.fillStyle = '#e94560';
+            ctx.beginPath();
+            ctx.arc(proj.x, proj.y, 8, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Draw point on domain
+            ctx.fillStyle = 'rgba(233, 69, 96, 0.7)';
+            ctx.beginPath();
+            ctx.arc(projBase.x, projBase.y, 6, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+        
+        // Update display values
+        function updateDisplays() {
+            const func = functions[currentFunction];
+            const z = func.f(pointX, pointY);
+            const dzdx = func.dfdx(pointX, pointY);
+            const dzdy = func.dfdy(pointX, pointY);
+            const deriv = getCurveDerivative();
+            const dzdt = dzdx * deriv.dx + dzdy * deriv.dy;
+            
+            document.getElementById('point-display').textContent = 
+                `(${pointX.toFixed(2)}, ${pointY.toFixed(2)})`;
+            document.getElementById('z-display').textContent = z.toFixed(3);
+            document.getElementById('dzdx-display').textContent = dzdx.toFixed(3);
+            document.getElementById('dzdy-display').textContent = dzdy.toFixed(3);
+            document.getElementById('dxdt-display').textContent = deriv.dx.toFixed(3);
+            document.getElementById('dydt-display').textContent = deriv.dy.toFixed(3);
+            document.getElementById('dzdt-display').textContent = dzdt.toFixed(3);
+            
+            document.getElementById('t-value').textContent = tParam.toFixed(2);
+            document.getElementById('dx-value').textContent = directionAngle.toFixed(2);
+            document.getElementById('mag-value').textContent = magnitude.toFixed(1);
+        }
+        
+        // Main render function
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            drawGrid();
+            drawAxes();
+            drawSurface();
+            drawTangentPlane();
+            drawCurve();
+            drawVectors();
+            drawPoint();
+            
+            updateDisplays();
+        }
+        
+        // Mouse event handlers
+        canvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const dx = e.clientX - lastMouseX;
+                const dy = e.clientY - lastMouseY;
+                
+                cameraAngleY += dx * 0.01;
+                cameraAngleX += dy * 0.01;
+                
+                // Clamp camera angle
+                cameraAngleX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, cameraAngleX));
+                
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+                
+                render();
+            }
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+        
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            cameraDistance += e.deltaY * 0.01;
+            cameraDistance = Math.max(3, Math.min(15, cameraDistance));
+            render();
+        });
+        
+        canvas.addEventListener('click', (e) => {
+            if (isDragging) return;
+            
+            // Simple approximation: find point on xy plane nearest to click
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+            
+            // Try different xy points and find closest to click
+            let minDist = Infinity;
+            let bestX = 0, bestY = 0;
+            
+            for (let x = -2; x <= 2; x += 0.1) {
+                for (let y = -2; y <= 2; y += 0.1) {
+                    const proj = project3D(x, y, 0);
+                    const dist = Math.hypot(proj.x - clickX, proj.y - clickY);
+                    if (dist < minDist) {
+                        minDist = dist;
+                        bestX = x;
+                        bestY = y;
+                    }
+                }
+            }
+            
+            if (minDist < 30) {
+                pointX = bestX;
+                pointY = bestY;
+                render();
+            }
+        });
+        
+        // Control event listeners
+        document.getElementById('t-param').addEventListener('input', (e) => {
+            tParam = parseFloat(e.target.value);
+            render();
+        });
+        
+        document.getElementById('dx-dt').addEventListener('input', (e) => {
+            directionAngle = parseFloat(e.target.value);
+            render();
+        });
+        
+        document.getElementById('magnitude').addEventListener('input', (e) => {
+            magnitude = parseFloat(e.target.value);
+            render();
+        });
+        
+        // Function buttons
+        document.getElementById('func-paraboloid').addEventListener('click', () => {
+            currentFunction = 'paraboloid';
+            document.querySelectorAll('#controls button').forEach(b => {
+                if (b.id.startsWith('func-')) b.classList.remove('active');
+            });
+            document.getElementById('func-paraboloid').classList.add('active');
+            render();
+        });
+        
+        document.getElementById('func-saddle').addEventListener('click', () => {
+            currentFunction = 'saddle';
+            document.querySelectorAll('#controls button').forEach(b => {
+                if (b.id.startsWith('func-')) b.classList.remove('active');
+            });
+            document.getElementById('func-saddle').classList.add('active');
+            render();
+        });
+        
+        document.getElementById('func-waves').addEventListener('click', () => {
+            currentFunction = 'waves';
+            document.querySelectorAll('#controls button').forEach(b => {
+                if (b.id.startsWith('func-')) b.classList.remove('active');
+            });
+            document.getElementById('func-waves').classList.add('active');
+            render();
+        });
+        
+        document.getElementById('func-hill').addEventListener('click', () => {
+            currentFunction = 'hill';
+            document.querySelectorAll('#controls button').forEach(b => {
+                if (b.id.startsWith('func-')) b.classList.remove('active');
+            });
+            document.getElementById('func-hill').classList.add('active');
+            render();
+        });
+        
+        // Toggle buttons
+        document.getElementById('toggle-grid').addEventListener('click', function() {
+            showGrid = !showGrid;
+            this.textContent = showGrid ? 'Grid: ON' : 'Grid: OFF';
+            this.classList.toggle('active', showGrid);
+            render();
+        });
+        
+        document.getElementById('toggle-curve').addEventListener('click', function() {
+            showCurve = !showCurve;
+            this.textContent = showCurve ? 'Curve: ON' : 'Curve: OFF';
+            this.classList.toggle('active', showCurve);
+            render();
+        });
+        
+        document.getElementById('toggle-tangent').addEventListener('click', function() {
+            showTangentPlane = !showTangentPlane;
+            this.textContent = showTangentPlane ? 'Tangent Plane: ON' : 'Tangent Plane: OFF';
+            this.classList.toggle('active', showTangentPlane);
+            render();
+        });
+        
+        document.getElementById('toggle-vectors').addEventListener('click', function() {
+            showVectors = !showVectors;
+            this.textContent = showVectors ? 'Vectors: ON' : 'Vectors: OFF';
+            this.classList.toggle('active', showVectors);
+            render();
+        });
+        
+        // Initial render
+        render();
+    </script>
+</body>
+</html>

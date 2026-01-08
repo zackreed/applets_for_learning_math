@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multivariable Chain Rule - Standalone Example</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            gap: 20px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #e94560;
+            margin-bottom: 20px;
+        }
+        
+        canvas {
+            border: 2px solid #4a5568;
+            background: #16213e;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            cursor: grab;
+        }
+        
+        canvas:active {
+            cursor: grabbing;
+        }
+        
+        #controls {
+            width: 300px;
+            background: #0f3460;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        
+        h3 {
+            color: #4ecca3;
+            margin-bottom: 10px;
+        }
+        
+        button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            background: #4ecca3;
+            color: #1a1a2e;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        button:hover {
+            background: #3db894;
+        }
+        
+        .info {
+            background: #16213e;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+        
+        .value {
+            color: #00d9ff;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Multivariable Chain Rule - Standalone Example</h1>
+    
+    <div class="container">
+        <canvas id="vizCanvas" width="900" height="700"></canvas>
+        
+        <div id="controls">
+            <h3>Instructions</h3>
+            <p style="font-size: 13px; line-height: 1.6;">
+                • <strong>Drag</strong> to rotate the 3D view<br>
+                • <strong>Scroll</strong> to zoom<br>
+                • <strong>Click</strong> to set the point<br>
+                • Use buttons below to change function
+            </p>
+            
+            <h3 style="margin-top: 20px;">Surface Function</h3>
+            <button onclick="viz.setFunction('paraboloid'); updateValues();">z = x² + y²</button>
+            <button onclick="viz.setFunction('saddle'); updateValues();">z = x² - y²</button>
+            <button onclick="viz.setFunction('waves'); updateValues();">z = sin(x)cos(y)</button>
+            <button onclick="viz.setFunction('hill'); updateValues();">z = 3/(1+x²+y²)</button>
+            
+            <h3 style="margin-top: 20px;">Display Toggles</h3>
+            <button onclick="viz.toggleGrid();">Toggle Grid</button>
+            <button onclick="viz.toggleCurve();">Toggle Curve</button>
+            <button onclick="viz.toggleTangentPlane();">Toggle Tangent Plane</button>
+            <button onclick="viz.toggleVectors();">Toggle Vectors</button>
+            
+            <div class="info">
+                <h3 style="margin-top: 0;">Chain Rule Values</h3>
+                <div style="margin: 8px 0;">
+                    Point: <span class="value" id="point-val">(0.00, 0.00)</span>
+                </div>
+                <div style="margin: 8px 0;">
+                    z = <span class="value" id="z-val">0.00</span>
+                </div>
+                <hr style="margin: 10px 0; border-color: #4a5568;">
+                <div style="margin: 8px 0;">
+                    ∂z/∂x = <span class="value" id="dzdx-val">0.00</span>
+                </div>
+                <div style="margin: 8px 0;">
+                    ∂z/∂y = <span class="value" id="dzdy-val">0.00</span>
+                </div>
+                <div style="margin: 8px 0;">
+                    dx/dt = <span class="value" id="dxdt-val">0.00</span>
+                </div>
+                <div style="margin: 8px 0;">
+                    dy/dt = <span class="value" id="dydt-val">0.00</span>
+                </div>
+                <hr style="margin: 10px 0; border-color: #4a5568;">
+                <div style="margin: 8px 0; font-size: 16px;">
+                    <strong>dz/dt = <span class="value" id="dzdt-val">0.00</span></strong>
+                </div>
+                <div style="margin-top: 10px; font-size: 12px; font-family: monospace; color: #4ecca3;">
+                    dz/dt = (∂z/∂x)(dx/dt) + (∂z/∂y)(dy/dt)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include the standalone JavaScript class -->
+    <script src="../js/multivariable-chain-rule-standalone.js"></script>
+    
+    <script>
+        // Initialize the visualization
+        const viz = new MultivariableChainRuleViz('vizCanvas');
+        viz.render();
+        
+        // Update display values
+        function updateValues() {
+            const values = viz.getChainRuleValues();
+            document.getElementById('point-val').textContent = 
+                `(${values.pointX.toFixed(2)}, ${values.pointY.toFixed(2)})`;
+            document.getElementById('z-val').textContent = values.z.toFixed(3);
+            document.getElementById('dzdx-val').textContent = values.dzdx.toFixed(3);
+            document.getElementById('dzdy-val').textContent = values.dzdy.toFixed(3);
+            document.getElementById('dxdt-val').textContent = values.dxdt.toFixed(3);
+            document.getElementById('dydt-val').textContent = values.dydt.toFixed(3);
+            document.getElementById('dzdt-val').textContent = values.dzdt.toFixed(3);
+        }
+        
+        // Update values every 100ms while interacting
+        setInterval(updateValues, 100);
+        
+        // Initial update
+        updateValues();
+    </script>
+</body>
+</html>

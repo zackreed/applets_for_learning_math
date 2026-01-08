@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Multivariable Chain Rule</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+        }
+        h1 {
+            color: #e94560;
+        }
+        iframe {
+            border: 2px solid #4ecca3;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .info {
+            background: #0f3460;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .success {
+            color: #4ecca3;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>✅ Multivariable Chain Rule Applet - Test Page</h1>
+    
+    <div class="info">
+        <h3 class="success">Test Instructions:</h3>
+        <ol>
+            <li>The applet should load in the iframe below</li>
+            <li>Try dragging to rotate the view</li>
+            <li>Scroll to zoom in/out</li>
+            <li>Click on the domain plane to set a point</li>
+            <li>Use the control panel to:
+                <ul>
+                    <li>Change surface functions</li>
+                    <li>Adjust direction angle and magnitude</li>
+                    <li>Toggle display elements</li>
+                </ul>
+            </li>
+            <li>Verify that chain rule values update correctly</li>
+        </ol>
+    </div>
+    
+    <h2>Embedded Applet:</h2>
+    <iframe src="../applets/multivariable-chain-rule.html" width="1300" height="750"></iframe>
+    
+    <div class="info" style="margin-top: 20px;">
+        <h3>Expected Behavior:</h3>
+        <ul>
+            <li><strong>Visual Elements:</strong>
+                <ul>
+                    <li>Green 3D surface with lighting</li>
+                    <li>Grid on the xy-plane</li>
+                    <li>Red point on surface</li>
+                    <li>Yellow curve through surface</li>
+                    <li>Yellow tangent plane</li>
+                    <li>Orange partial derivative vectors</li>
+                    <li>Cyan total derivative vector</li>
+                </ul>
+            </li>
+            <li><strong>Interactions:</strong>
+                <ul>
+                    <li>Smooth rotation when dragging</li>
+                    <li>Zoom responds to scroll wheel</li>
+                    <li>Point placement updates when clicking</li>
+                    <li>Sliders update direction vector in real-time</li>
+                </ul>
+            </li>
+            <li><strong>Mathematical Accuracy:</strong>
+                <ul>
+                    <li>dz/dt = (∂z/∂x)(dx/dt) + (∂z/∂y)(dy/dt)</li>
+                    <li>Values should change as you move the point</li>
+                    <li>Direction changes should affect dz/dt</li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+    
+    <div class="info" style="margin-top: 20px;">
+        <h3>Test Cases:</h3>
+        <ol>
+            <li><strong>Paraboloid at origin:</strong>
+                <ul>
+                    <li>Set point at (0, 0)</li>
+                    <li>Both partial derivatives should be 0</li>
+                    <li>dz/dt should be 0 regardless of direction</li>
+                </ul>
+            </li>
+            <li><strong>Paraboloid at (1, 0):</strong>
+                <ul>
+                    <li>∂z/∂x should be 2</li>
+                    <li>∂z/∂y should be 0</li>
+                    <li>If moving in x-direction (angle ≈ 1.57), dz/dt ≈ 2</li>
+                </ul>
+            </li>
+            <li><strong>Saddle at origin:</strong>
+                <ul>
+                    <li>Both partial derivatives should be 0</li>
+                    <li>Surface should curve up in x-direction, down in y-direction</li>
+                </ul>
+            </li>
+            <li><strong>Toggle features:</strong>
+                <ul>
+                    <li>Grid toggle should hide/show grid lines</li>
+                    <li>Curve toggle should hide/show yellow curve</li>
+                    <li>Tangent Plane toggle should hide/show yellow plane</li>
+                    <li>Vectors toggle should hide/show all arrows</li>
+                </ul>
+            </li>
+        </ol>
+    </div>
+    
+    <div class="info success" style="margin-top: 20px;">
+        <h3>✅ If all tests pass, the applet is ready to use!</h3>
+    </div>
+</body>
+</html>
