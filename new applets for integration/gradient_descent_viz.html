@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gradient Descent for Linear Regression</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        #main-content {
+            display: flex;
+            gap: 20px;
+            flex: 1;
+            min-width: 0;
+            height: calc(100vh - 40px);
+        }
+        
+        .canvas-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            min-width: 0;
+        }
+        
+        .canvas-container {
+            background: #16213e;
+            border: 2px solid #4a5568;
+            border-radius: 8px;
+            padding: 15px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            position: relative;
+        }
+        
+        .canvas-container h3 {
+            color: #4ecca3;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .legend-overlay {
+            position: absolute;
+            top: 50px;
+            right: 20px;
+            background: rgba(15, 34, 96, 0.9);
+            border: 1px solid #4a5568;
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 12px;
+            z-index: 10;
+            backdrop-filter: blur(4px);
+        }
+        
+        .legend-overlay div {
+            margin-bottom: 4px;
+        }
+        
+        canvas {
+            border: 1px solid #4a5568;
+            background: #0f1925;
+            border-radius: 4px;
+            flex: 1;
+            min-height: 0;
+        }
+        
+        #three-container {
+            position: relative;
+            flex: 1;
+            min-height: 0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        #controls {
+            width: 320px;
+            background: #0f3460;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+        
+        h2 {
+            color: #e94560;
+            border-bottom: 2px solid #e94560;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        
+        h3 {
+            color: #4ecca3;
+            font-size: 14px;
+            margin-top: 15px;
+            margin-bottom: 8px;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #aaa;
+            font-size: 13px;
+        }
+        
+        input[type="number"], input[type="range"] {
+            width: 100%;
+            padding: 8px;
+            background: #16213e;
+            border: 1px solid #4a5568;
+            border-radius: 4px;
+            color: #e8e8e8;
+            font-size: 14px;
+        }
+        
+        input[type="range"] {
+            padding: 0;
+            height: 30px;
+        }
+        
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #e94560;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: background 0.2s;
+        }
+        
+        button:hover {
+            background: #d63651;
+        }
+        
+        button.secondary {
+            background: #4ecca3;
+        }
+        
+        button.secondary:hover {
+            background: #3db891;
+        }
+        
+        button.tertiary {
+            background: #f9d423;
+            color: #1a1a2e;
+        }
+        
+        button.tertiary:hover {
+            background: #e0c020;
+        }
+        
+        .value-display {
+            color: #4ecca3;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .stats-box {
+            background: #16213e;
+            padding: 12px;
+            border-radius: 4px;
+            margin-top: 8px;
+            font-size: 13px;
+        }
+        
+        .radio-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+        
+        .radio-group input[type="radio"] {
+            width: auto;
+        }
+        
+        .formula {
+            background: #0f1925;
+            padding: 8px;
+            border-radius: 4px;
+            margin: 5px 0;
+            text-align: center;
+            color: #4ecca3;
+            font-size: 15px;
+            font-style: italic;
+        }
+        
+        .formula-overlay {
+            position: absolute;
+            top: 60px;
+            left: 20px;
+            background: rgba(15, 34, 96, 0.95);
+            border: 2px solid #4a5568;
+            border-radius: 6px;
+            padding: 14px 18px;
+            font-size: 15px;
+            z-index: 10;
+            backdrop-filter: blur(4px);
+            color: #4ecca3;
+            font-style: italic;
+            max-width: 400px;
+        }
+        
+        .sub {
+            font-size: 0.8em;
+            vertical-align: sub;
+        }
+        
+        .sup {
+            font-size: 0.8em;
+            vertical-align: super;
+        }
+    </style>
+</head>
+<body>
+    <div id="main-content">
+        <div class="canvas-section">
+            <div class="canvas-container">
+                <h3>Parameter Space (m₀, m₁)</h3>
+                <div class="legend-overlay">
+                    <div><strong>Current Parameters:</strong></div>
+                    <div>m₀ = <span class="value-display" id="m0-display">0.00</span></div>
+                    <div>m₁ = <span class="value-display" id="m1-display">0.00</span></div>
+                    <div style="margin-top: 6px;">Error = <span class="value-display" id="loss-display">0.00</span></div>
+                </div>
+                <canvas id="param-canvas"></canvas>
+            </div>
+        </div>
+        
+        <div class="canvas-section">
+            <div class="canvas-container">
+                <h3 id="right-title">Data & Linear Fit</h3>
+                <div class="radio-group" style="margin-bottom: 10px;">
+                    <label><input type="radio" name="view" value="data" checked> Data View</label>
+                    <label><input type="radio" name="view" value="loss"> Error Surface</label>
+                </div>
+                <canvas id="data-canvas"></canvas>
+                <div id="three-container" style="display: none;">
+                    <div class="formula-overlay" id="error-formula" style="display: none;">
+                        <div style="margin-bottom: 4px; color: #fff; font-size: 12px;"><strong>Error Function:</strong></div>
+                        <div style="font-size: 14px;" id="error-formula-content">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="controls">
+        <h2>Gradient Descent</h2>
+        
+        <div class="control-group">
+            <h3>Gradient</h3>
+            <div class="stats-box">
+                <div>∇<span style="font-style: italic;">E</span> = <span class="value-display" id="grad-display">[0.00, 0.00]</span></div>
+                <div style="margin-top: 6px;">||∇<span style="font-style: italic;">E</span>|| = <span class="value-display" id="grad-mag-display">0.00</span></div>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <h3>Learning Rate</h3>
+            <label><span style="font-style: italic;">α</span> = <span class="value-display" id="lr-display">0.01</span></label>
+            <input type="range" id="lr-slider" min="0.001" max="0.1" step="0.001" value="0.01">
+        </div>
+        
+        <div class="control-group">
+            <h3>Step Size</h3>
+            <div class="stats-box">
+                <div class="formula">
+                    Δ<span style="font-style: italic;">s</span> = <span style="font-style: italic;">α</span> · ∇<span style="font-style: italic;">E</span>
+                </div>
+                <div style="margin-top: 6px;">Δ<span style="font-style: italic;">s</span> = <span class="value-display" id="step-size-display">[0.00, 0.00]</span></div>
+                <div style="margin-top: 4px;">||Δ<span style="font-style: italic;">s</span>|| = <span class="value-display" id="step-mag-display">0.00</span></div>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <h3>Gradient Descent Steps</h3>
+            <label>Number of Steps</label>
+            <input type="number" id="steps-input" min="1" max="1000" value="1">
+            <button id="step-button">Take Steps</button>
+            <button class="tertiary" id="reset-path-button">Reset Path</button>
+            <button class="secondary" id="reset-button">Reset Position</button>
+        </div>
+        
+        <div class="control-group">
+            <h3>Visualization Options</h3>
+            <label style="display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" id="show-gradient" checked>
+                Show Gradient Vector
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" id="show-next-line" checked>
+                Show Next Line (dotted)
+            </label>
+        </div>
+        
+        <div class="control-group">
+            <h3>Data Points</h3>
+            <button class="secondary" id="generate-data">Generate New Data</button>
+            <div class="stats-box">
+                Data points: <span class="value-display" id="num-points">20</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Canvases
+        const paramCanvas = document.getElementById('param-canvas');
+        const paramCtx = paramCanvas.getContext('2d');
+        const dataCanvas = document.getElementById('data-canvas');
+        const dataCtx = dataCanvas.getContext('2d');
+        const threeContainer = document.getElementById('three-container');
+        
+        // State
+        let m0 = 0, m1 = 0;
+        let learningRate = 0.01;
+        let dataPoints = [];
+        let history = [];
+        let isDragging = false;
+        let currentView = 'data';
+        
+        // View options
+        let showGradient = true;
+        let showNextLine = true;
+        
+        // Three.js for loss surface
+        let scene, camera, renderer, lossSurface;
+        let currentPointMarker, tangentVector;
+        let pathLine;
+        
+        // Generate random data points
+        function generateData() {
+            dataPoints = [];
+            const numPoints = 20;
+            const trueM0 = Math.random() * 4 - 2;
+            const trueM1 = Math.random() * 2 + 0.5;
+            
+            for (let i = 0; i < numPoints; i++) {
+                const x = Math.random() * 10 - 5;
+                const y = trueM0 + trueM1 * x + (Math.random() - 0.5) * 2;
+                dataPoints.push({ x, y });
+            }
+            
+            document.getElementById('num-points').textContent = numPoints;
+        }
+        
+        // Calculate loss (Mean Squared Error)
+        function calculateLoss(m0Val, m1Val) {
+            let sum = 0;
+            for (const point of dataPoints) {
+                const pred = m0Val + m1Val * point.x;
+                const error = pred - point.y;
+                sum += error * error;
+            }
+            return sum / dataPoints.length;
+        }
+        
+        // Calculate gradient
+        function calculateGradient(m0Val, m1Val) {
+            let gradM0 = 0;
+            let gradM1 = 0;
+            
+            for (const point of dataPoints) {
+                const pred = m0Val + m1Val * point.x;
+                const error = pred - point.y;
+                gradM0 += 2 * error;
+                gradM1 += 2 * error * point.x;
+            }
+            
+            gradM0 /= dataPoints.length;
+            gradM1 /= dataPoints.length;
+            
+            return { gradM0, gradM1 };
+        }
+        
+        // Calculate quadratic error surface coefficients
+        // E(m0, m1) = a*m0^2 + b*m0*m1 + c*m1^2 + d*m0 + e*m1 + f
+        function calculateErrorSurfaceCoefficients() {
+            const n = dataPoints.length;
+            let sumXi = 0, sumYi = 0, sumXi2 = 0, sumXiYi = 0, sumXi3 = 0, sumXi4 = 0, sumXi2Yi = 0;
+            
+            for (const point of dataPoints) {
+                sumXi += point.x;
+                sumYi += point.y;
+                sumXi2 += point.x * point.x;
+                sumXiYi += point.x * point.y;
+                sumXi3 += point.x * point.x * point.x;
+                sumXi4 += point.x * point.x * point.x * point.x;
+                sumXi2Yi += point.x * point.x * point.y;
+            }
+            
+            // Coefficients for E(m0, m1) = a*m0^2 + b*m0*m1 + c*m1^2 + d*m0 + e*m1 + f
+            const a = 1;
+            const b = (2 * sumXi) / n;
+            const c = sumXi2 / n;
+            const d = (-2 * sumYi) / n;
+            const e = (-2 * sumXiYi) / n;
+            const f = (sumYi * sumYi / n + sumXiYi * sumXiYi / sumXi2) / n; // approximate constant term
+            
+            return { a, b, c, d, e, f };
+        }
+        
+        // Format error surface formula
+        function formatErrorFormula() {
+            const coef = calculateErrorSurfaceCoefficients();
+            
+            let formula = '<span style="font-style: italic;">E</span>(<span style="font-style: italic;">m</span><span class="sub">0</span>, <span style="font-style: italic;">m</span><span class="sub">1</span>) = ';
+            
+            // m0^2 term
+            if (Math.abs(coef.a - 1) < 0.01) {
+                formula += '<span style="font-style: italic;">m</span><span class="sub">0</span><span class="sup">2</span>';
+            } else {
+                formula += `${coef.a.toFixed(2)}<span style="font-style: italic;">m</span><span class="sub">0</span><span class="sup">2</span>`;
+            }
+            
+            // m0*m1 term
+            if (Math.abs(coef.b) > 0.01) {
+                formula += coef.b > 0 ? ' + ' : ' − ';
+                formula += `${Math.abs(coef.b).toFixed(2)}<span style="font-style: italic;">m</span><span class="sub">0</span><span style="font-style: italic;">m</span><span class="sub">1</span>`;
+            }
+            
+            // m1^2 term
+            if (Math.abs(coef.c) > 0.01) {
+                formula += coef.c > 0 ? ' + ' : ' − ';
+                formula += `${Math.abs(coef.c).toFixed(2)}<span style="font-style: italic;">m</span><span class="sub">1</span><span class="sup">2</span>`;
+            }
+            
+            // m0 term
+            if (Math.abs(coef.d) > 0.01) {
+                formula += coef.d > 0 ? ' + ' : ' − ';
+                formula += `${Math.abs(coef.d).toFixed(2)}<span style="font-style: italic;">m</span><span class="sub">0</span>`;
+            }
+            
+            // m1 term
+            if (Math.abs(coef.e) > 0.01) {
+                formula += coef.e > 0 ? ' + ' : ' − ';
+                formula += `${Math.abs(coef.e).toFixed(2)}<span style="font-style: italic;">m</span><span class="sub">1</span>`;
+            }
+            
+            // constant term
+            if (Math.abs(coef.f) > 0.01) {
+                formula += coef.f > 0 ? ' + ' : ' − ';
+                formula += `${Math.abs(coef.f).toFixed(2)}`;
+            }
+            
+            document.getElementById('error-formula-content').innerHTML = formula;
+        }
+        
+        // Perform gradient descent step
+        function gradientDescentStep() {
+            const grad = calculateGradient(m0, m1);
+            m0 -= learningRate * grad.gradM0;
+            m1 -= learningRate * grad.gradM1;
+            
+            history.push({ m0, m1 });
+        }
+        
+        // Draw parameter space
+        function drawParamSpace() {
+            const dpr = window.devicePixelRatio || 1;
+            const rect = paramCanvas.getBoundingClientRect();
+            paramCanvas.width = rect.width * dpr;
+            paramCanvas.height = rect.height * dpr;
+            paramCtx.scale(dpr, dpr);
+            
+            const w = rect.width;
+            const h = rect.height;
+            const padding = 50;
+            
+            paramCtx.clearRect(0, 0, w, h);
+            
+            // Coordinate system
+            const m0Min = -5, m0Max = 5;
+            const m1Min = -2, m1Max = 4;
+            
+            const toScreenX = (m0Val) => padding + (m0Val - m0Min) / (m0Max - m0Min) * (w - 2 * padding);
+            const toScreenY = (m1Val) => h - padding - (m1Val - m1Min) / (m1Max - m1Min) * (h - 2 * padding);
+            const fromScreenX = (x) => m0Min + (x - padding) / (w - 2 * padding) * (m0Max - m0Min);
+            const fromScreenY = (y) => m1Min + (h - padding - y) / (h - 2 * padding) * (m1Max - m1Min);
+            
+            // Grid
+            paramCtx.strokeStyle = '#2a3548';
+            paramCtx.lineWidth = 1;
+            for (let i = m0Min; i <= m0Max; i++) {
+                paramCtx.beginPath();
+                paramCtx.moveTo(toScreenX(i), padding);
+                paramCtx.lineTo(toScreenX(i), h - padding);
+                paramCtx.stroke();
+            }
+            for (let i = m1Min; i <= m1Max; i++) {
+                paramCtx.beginPath();
+                paramCtx.moveTo(padding, toScreenY(i));
+                paramCtx.lineTo(w - padding, toScreenY(i));
+                paramCtx.stroke();
+            }
+            
+            // Axes
+            paramCtx.strokeStyle = '#4a5568';
+            paramCtx.lineWidth = 2;
+            paramCtx.beginPath();
+            paramCtx.moveTo(padding, h - padding);
+            paramCtx.lineTo(w - padding, h - padding);
+            paramCtx.moveTo(padding, padding);
+            paramCtx.lineTo(padding, h - padding);
+            paramCtx.stroke();
+            
+            // Labels
+            paramCtx.fillStyle = '#aaa';
+            paramCtx.font = '14px Arial';
+            paramCtx.textAlign = 'center';
+            paramCtx.fillText('m₀', w / 2, h - 10);
+            paramCtx.save();
+            paramCtx.translate(15, h / 2);
+            paramCtx.rotate(-Math.PI / 2);
+            paramCtx.fillText('m₁', 0, 0);
+            paramCtx.restore();
+            
+            // Tick labels
+            paramCtx.font = '11px Arial';
+            for (let i = m0Min; i <= m0Max; i++) {
+                paramCtx.fillText(i, toScreenX(i), h - padding + 20);
+            }
+            paramCtx.textAlign = 'right';
+            for (let i = m1Min; i <= m1Max; i++) {
+                paramCtx.fillText(i, padding - 10, toScreenY(i) + 4);
+            }
+            
+            // History trail
+            if (history.length > 1) {
+                paramCtx.strokeStyle = '#4ecca3';
+                paramCtx.lineWidth = 2;
+                paramCtx.globalAlpha = 0.5;
+                paramCtx.beginPath();
+                paramCtx.moveTo(toScreenX(history[0].m0), toScreenY(history[0].m1));
+                for (let i = 1; i < history.length; i++) {
+                    paramCtx.lineTo(toScreenX(history[i].m0), toScreenY(history[i].m1));
+                }
+                paramCtx.stroke();
+                paramCtx.globalAlpha = 1;
+                
+                // Draw dots for history
+                for (const point of history) {
+                    paramCtx.fillStyle = '#4ecca3';
+                    paramCtx.beginPath();
+                    paramCtx.arc(toScreenX(point.m0), toScreenY(point.m1), 3, 0, Math.PI * 2);
+                    paramCtx.fill();
+                }
+            }
+            
+            // Gradient vector
+            if (showGradient) {
+                const grad = calculateGradient(m0, m1);
+                const scale = 0.5;
+                const x1 = toScreenX(m0);
+                const y1 = toScreenY(m1);
+                const x2 = toScreenX(m0 - scale * grad.gradM0);
+                const y2 = toScreenY(m1 - scale * grad.gradM1);
+                
+                paramCtx.strokeStyle = '#f9d423';
+                paramCtx.lineWidth = 2;
+                paramCtx.beginPath();
+                paramCtx.moveTo(x1, y1);
+                paramCtx.lineTo(x2, y2);
+                paramCtx.stroke();
+                
+                // Arrowhead
+                const angle = Math.atan2(y2 - y1, x2 - x1);
+                const headLen = 10;
+                paramCtx.beginPath();
+                paramCtx.moveTo(x2, y2);
+                paramCtx.lineTo(
+                    x2 - headLen * Math.cos(angle - Math.PI / 6),
+                    y2 - headLen * Math.sin(angle - Math.PI / 6)
+                );
+                paramCtx.moveTo(x2, y2);
+                paramCtx.lineTo(
+                    x2 - headLen * Math.cos(angle + Math.PI / 6),
+                    y2 - headLen * Math.sin(angle + Math.PI / 6)
+                );
+                paramCtx.stroke();
+            }
+            
+            // Current point
+            paramCtx.fillStyle = '#e94560';
+            paramCtx.beginPath();
+            paramCtx.arc(toScreenX(m0), toScreenY(m1), 8, 0, Math.PI * 2);
+            paramCtx.fill();
+            paramCtx.strokeStyle = '#fff';
+            paramCtx.lineWidth = 2;
+            paramCtx.stroke();
+            
+            // Store conversion functions for dragging
+            paramCanvas.toScreenX = toScreenX;
+            paramCanvas.toScreenY = toScreenY;
+            paramCanvas.fromScreenX = fromScreenX;
+            paramCanvas.fromScreenY = fromScreenY;
+        }
+        
+        // Draw data view
+        function drawDataView() {
+            const dpr = window.devicePixelRatio || 1;
+            const rect = dataCanvas.getBoundingClientRect();
+            dataCanvas.width = rect.width * dpr;
+            dataCanvas.height = rect.height * dpr;
+            dataCtx.scale(dpr, dpr);
+            
+            const w = rect.width;
+            const h = rect.height;
+            const padding = 50;
+            
+            dataCtx.clearRect(0, 0, w, h);
+            
+            // Find data bounds
+            const xMin = Math.min(...dataPoints.map(p => p.x)) - 1;
+            const xMax = Math.max(...dataPoints.map(p => p.x)) + 1;
+            const yMin = Math.min(...dataPoints.map(p => p.y)) - 1;
+            const yMax = Math.max(...dataPoints.map(p => p.y)) + 1;
+            
+            const toScreenX = (x) => padding + (x - xMin) / (xMax - xMin) * (w - 2 * padding);
+            const toScreenY = (y) => h - padding - (y - yMin) / (yMax - yMin) * (h - 2 * padding);
+            
+            // Grid
+            dataCtx.strokeStyle = '#2a3548';
+            dataCtx.lineWidth = 1;
+            for (let x = Math.ceil(xMin); x <= Math.floor(xMax); x++) {
+                dataCtx.beginPath();
+                dataCtx.moveTo(toScreenX(x), padding);
+                dataCtx.lineTo(toScreenX(x), h - padding);
+                dataCtx.stroke();
+            }
+            for (let y = Math.ceil(yMin); y <= Math.floor(yMax); y++) {
+                dataCtx.beginPath();
+                dataCtx.moveTo(padding, toScreenY(y));
+                dataCtx.lineTo(w - padding, toScreenY(y));
+                dataCtx.stroke();
+            }
+            
+            // Axes
+            dataCtx.strokeStyle = '#4a5568';
+            dataCtx.lineWidth = 2;
+            dataCtx.beginPath();
+            dataCtx.moveTo(padding, h - padding);
+            dataCtx.lineTo(w - padding, h - padding);
+            dataCtx.moveTo(padding, padding);
+            dataCtx.lineTo(padding, h - padding);
+            dataCtx.stroke();
+            
+            // Labels
+            dataCtx.fillStyle = '#aaa';
+            dataCtx.font = '14px Arial';
+            dataCtx.textAlign = 'center';
+            dataCtx.fillText('x', w / 2, h - 10);
+            dataCtx.save();
+            dataCtx.translate(15, h / 2);
+            dataCtx.rotate(-Math.PI / 2);
+            dataCtx.fillText('y', 0, 0);
+            dataCtx.restore();
+            
+            // Next line (dotted) if gradient exists
+            if (showNextLine) {
+                const grad = calculateGradient(m0, m1);
+                const nextM0 = m0 - learningRate * grad.gradM0;
+                const nextM1 = m1 - learningRate * grad.gradM1;
+                
+                dataCtx.strokeStyle = '#f9d423';
+                dataCtx.lineWidth = 2;
+                dataCtx.setLineDash([5, 5]);
+                dataCtx.beginPath();
+                dataCtx.moveTo(toScreenX(xMin), toScreenY(nextM0 + nextM1 * xMin));
+                dataCtx.lineTo(toScreenX(xMax), toScreenY(nextM0 + nextM1 * xMax));
+                dataCtx.stroke();
+                dataCtx.setLineDash([]);
+            }
+            
+            // Current line
+            dataCtx.strokeStyle = '#e94560';
+            dataCtx.lineWidth = 3;
+            dataCtx.beginPath();
+            dataCtx.moveTo(toScreenX(xMin), toScreenY(m0 + m1 * xMin));
+            dataCtx.lineTo(toScreenX(xMax), toScreenY(m0 + m1 * xMax));
+            dataCtx.stroke();
+            
+            // Data points
+            for (const point of dataPoints) {
+                dataCtx.fillStyle = '#4ecca3';
+                dataCtx.beginPath();
+                dataCtx.arc(toScreenX(point.x), toScreenY(point.y), 5, 0, Math.PI * 2);
+                dataCtx.fill();
+                dataCtx.strokeStyle = '#fff';
+                dataCtx.lineWidth = 1;
+                dataCtx.stroke();
+                
+                // Error lines
+                const predY = m0 + m1 * point.x;
+                dataCtx.strokeStyle = '#e94560';
+                dataCtx.lineWidth = 1;
+                dataCtx.globalAlpha = 0.3;
+                dataCtx.beginPath();
+                dataCtx.moveTo(toScreenX(point.x), toScreenY(point.y));
+                dataCtx.lineTo(toScreenX(point.x), toScreenY(predY));
+                dataCtx.stroke();
+                dataCtx.globalAlpha = 1;
+            }
+        }
+        
+        // Initialize Three.js
+        function initThree() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0f1925);
+            
+            const width = threeContainer.clientWidth;
+            const height = threeContainer.clientHeight;
+            const aspect = width / height;
+            
+            camera = new THREE.PerspectiveCamera(60, aspect, 0.1, 1000);
+            camera.position.set(8, 8, 8);
+            camera.lookAt(0, 0, 0);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(window.devicePixelRatio || 1);
+            threeContainer.appendChild(renderer.domElement);
+            
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            dirLight.position.set(5, 5, 5);
+            scene.add(dirLight);
+            
+            // Create loss surface
+            createLossSurface();
+            
+            // Animate
+            function animate() {
+                requestAnimationFrame(animate);
+                renderer.render(scene, camera);
+            }
+            animate();
+            
+            // Orbit controls (simple)
+            let isRotating = false;
+            let previousMouse = { x: 0, y: 0 };
+            
+            renderer.domElement.addEventListener('mousedown', (e) => {
+                if (e.button === 0) {
+                    isRotating = true;
+                    previousMouse = { x: e.clientX, y: e.clientY };
+                }
+            });
+            
+            renderer.domElement.addEventListener('mousemove', (e) => {
+                if (isRotating) {
+                    const deltaX = e.clientX - previousMouse.x;
+                    const deltaY = e.clientY - previousMouse.y;
+                    
+                    const radius = Math.sqrt(
+                        camera.position.x ** 2 + 
+                        camera.position.y ** 2 + 
+                        camera.position.z ** 2
+                    );
+                    
+                    const theta = Math.atan2(camera.position.x, camera.position.z);
+                    const phi = Math.acos(Math.max(-1, Math.min(1, camera.position.y / radius)));
+                    
+                    const newTheta = theta - deltaX * 0.01;
+                    const newPhi = Math.max(0.1, Math.min(Math.PI - 0.1, phi - deltaY * 0.01));
+                    
+                    camera.position.x = radius * Math.sin(newPhi) * Math.sin(newTheta);
+                    camera.position.y = radius * Math.cos(newPhi);
+                    camera.position.z = radius * Math.sin(newPhi) * Math.cos(newTheta);
+                    camera.lookAt(0, 0, 0);
+                    
+                    previousMouse = { x: e.clientX, y: e.clientY };
+                }
+            });
+            
+            renderer.domElement.addEventListener('mouseup', () => {
+                isRotating = false;
+            });
+        }
+        
+        function createLossSurface() {
+            // Clear previous surface and all objects
+            while(scene.children.length > 0) { 
+                scene.remove(scene.children[0]); 
+            }
+            
+            // Re-add lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            dirLight.position.set(5, 5, 5);
+            scene.add(dirLight);
+            
+            const m0Range = [-5, 5];
+            const m1Range = [-2, 4];
+            const resolution = 50;
+            
+            const geometry = new THREE.BufferGeometry();
+            const vertices = [];
+            const colors = [];
+            const indices = [];
+            
+            let maxLoss = 0;
+            const lossGrid = [];
+            
+            // Calculate loss grid
+            for (let i = 0; i <= resolution; i++) {
+                const row = [];
+                for (let j = 0; j <= resolution; j++) {
+                    const m0Val = m0Range[0] + (m0Range[1] - m0Range[0]) * i / resolution;
+                    const m1Val = m1Range[0] + (m1Range[1] - m1Range[0]) * j / resolution;
+                    const loss = calculateLoss(m0Val, m1Val);
+                    row.push(loss);
+                    maxLoss = Math.max(maxLoss, loss);
+                }
+                lossGrid.push(row);
+            }
+            
+            // Create vertices
+            for (let i = 0; i <= resolution; i++) {
+                for (let j = 0; j <= resolution; j++) {
+                    const m0Val = m0Range[0] + (m0Range[1] - m0Range[0]) * i / resolution;
+                    const m1Val = m1Range[0] + (m1Range[1] - m1Range[0]) * j / resolution;
+                    const loss = lossGrid[i][j];
+                    const normalizedLoss = Math.min(loss / maxLoss * 5, 5);
+                    
+                    vertices.push(m0Val, normalizedLoss, m1Val);
+                    
+                    // Color based on height
+                    const t = normalizedLoss / 5;
+                    const r = t;
+                    const g = 0.3 + 0.4 * (1 - t);
+                    const b = 1 - t;
+                    colors.push(r, g, b);
+                }
+            }
+            
+            // Create indices
+            for (let i = 0; i < resolution; i++) {
+                for (let j = 0; j < resolution; j++) {
+                    const a = i * (resolution + 1) + j;
+                    const b = a + 1;
+                    const c = (i + 1) * (resolution + 1) + j;
+                    const d = c + 1;
+                    
+                    indices.push(a, b, d);
+                    indices.push(a, d, c);
+                }
+            }
+            
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+            geometry.setIndex(indices);
+            geometry.computeVertexNormals();
+            
+            const material = new THREE.MeshPhongMaterial({
+                vertexColors: true,
+                side: THREE.DoubleSide,
+                shininess: 30
+            });
+            
+            lossSurface = new THREE.Mesh(geometry, material);
+            scene.add(lossSurface);
+            
+            // Add wireframe grid overlay for better depth perception
+            const wireframeGeometry = new THREE.EdgesGeometry(geometry);
+            const wireframeMaterial = new THREE.LineBasicMaterial({ color: 0x4a5568, opacity: 0.3, transparent: true });
+            const wireframe = new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
+            scene.add(wireframe);
+            
+            // Add current point marker
+            const currentLoss = calculateLoss(m0, m1);
+            const normalizedLoss = Math.min(currentLoss / maxLoss * 5, 5);
+            
+            const markerGeometry = new THREE.SphereGeometry(0.15, 16, 16);
+            const markerMaterial = new THREE.MeshPhongMaterial({ color: 0xe94560, emissive: 0x500000 });
+            currentPointMarker = new THREE.Mesh(markerGeometry, markerMaterial);
+            currentPointMarker.position.set(m0, normalizedLoss, m1);
+            scene.add(currentPointMarker);
+            
+            // Add vertical line from point to base plane (single line, no history trace)
+            const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(m0, 0, m1),
+                new THREE.Vector3(m0, normalizedLoss, m1)
+            ]);
+            const lineMaterial = new THREE.LineDashedMaterial({ 
+                color: 0xe94560, 
+                linewidth: 2,
+                dashSize: 0.15, 
+                gapSize: 0.08 
+            });
+            const errorLine = new THREE.Line(lineGeometry, lineMaterial);
+            errorLine.computeLineDistances();
+            scene.add(errorLine);
+            
+            // Add "Error" label at midpoint of the line
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = 512;
+            canvas.height = 256;
+            context.fillStyle = '#e94560';
+            context.font = 'Bold 72px Arial';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.fillText('Error', canvas.width / 2, canvas.height / 2);
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+            const sprite = new THREE.Sprite(spriteMaterial);
+            sprite.position.set(m0 + 0.4, normalizedLoss / 2, m1);
+            sprite.scale.set(1.2, 0.6, 1);
+            scene.add(sprite);
+            
+            // Add tangent plane vector in direction of gradient descent
+            // Removed - user doesn't want the yellow arrow going downward
+            
+            // Add path trail on the surface
+            if (history.length > 1) {
+                const pathPoints = [];
+                for (const point of history) {
+                    const loss = calculateLoss(point.m0, point.m1);
+                    const normLoss = Math.min(loss / maxLoss * 5, 5);
+                    pathPoints.push(new THREE.Vector3(point.m0, normLoss + 0.05, point.m1));
+                }
+                
+                const pathGeometry = new THREE.BufferGeometry().setFromPoints(pathPoints);
+                const pathMaterial = new THREE.LineBasicMaterial({ 
+                    color: 0x4ecca3, 
+                    linewidth: 3 
+                });
+                pathLine = new THREE.Line(pathGeometry, pathMaterial);
+                scene.add(pathLine);
+                
+                // Add spheres at each history point
+                for (const point of history) {
+                    const loss = calculateLoss(point.m0, point.m1);
+                    const normLoss = Math.min(loss / maxLoss * 5, 5);
+                    const sphereGeom = new THREE.SphereGeometry(0.08, 8, 8);
+                    const sphereMat = new THREE.MeshPhongMaterial({ color: 0x4ecca3 });
+                    const sphere = new THREE.Mesh(sphereGeom, sphereMat);
+                    sphere.position.set(point.m0, normLoss + 0.05, point.m1);
+                    scene.add(sphere);
+                }
+            }
+            
+            // Add axes helper
+            const axesHelper = new THREE.AxesHelper(5);
+            scene.add(axesHelper);
+            
+            // Add grid on the base plane
+            const gridHelper = new THREE.GridHelper(10, 10, 0x4a5568, 0x2a3548);
+            gridHelper.position.y = -0.1;
+            scene.add(gridHelper);
+        }
+        
+        // Update displays
+        function updateDisplays() {
+            const loss = calculateLoss(m0, m1);
+            const grad = calculateGradient(m0, m1);
+            const gradMag = Math.sqrt(grad.gradM0 ** 2 + grad.gradM1 ** 2);
+            
+            // Step size calculation: Δ = α · ∇E
+            const stepM0 = learningRate * grad.gradM0;
+            const stepM1 = learningRate * grad.gradM1;
+            const stepMag = Math.sqrt(stepM0 ** 2 + stepM1 ** 2);
+            
+            document.getElementById('m0-display').textContent = m0.toFixed(2);
+            document.getElementById('m1-display').textContent = m1.toFixed(2);
+            document.getElementById('loss-display').textContent = loss.toFixed(4);
+            document.getElementById('grad-display').textContent = `[${grad.gradM0.toFixed(3)}, ${grad.gradM1.toFixed(3)}]`;
+            document.getElementById('grad-mag-display').textContent = gradMag.toFixed(4);
+            document.getElementById('step-size-display').textContent = `[${stepM0.toFixed(3)}, ${stepM1.toFixed(3)}]`;
+            document.getElementById('step-mag-display').textContent = stepMag.toFixed(4);
+        }
+        
+        // Update all views
+        function updateAll() {
+            drawParamSpace();
+            updateDisplays();
+            
+            if (currentView === 'data') {
+                drawDataView();
+            } else {
+                formatErrorFormula();
+                createLossSurface();
+            }
+        }
+        
+        // Event handlers
+        document.getElementById('lr-slider').addEventListener('input', (e) => {
+            learningRate = parseFloat(e.target.value);
+            document.getElementById('lr-display').textContent = learningRate.toFixed(3);
+            updateAll();
+        });
+        
+        document.getElementById('step-button').addEventListener('click', () => {
+            const steps = parseInt(document.getElementById('steps-input').value);
+            for (let i = 0; i < steps; i++) {
+                gradientDescentStep();
+            }
+            updateAll();
+        });
+        
+        document.getElementById('reset-button').addEventListener('click', () => {
+            m0 = 0;
+            m1 = 0;
+            updateAll();
+        });
+        
+        document.getElementById('reset-path-button').addEventListener('click', () => {
+            history = [];
+            updateAll();
+        });
+        
+        document.getElementById('generate-data').addEventListener('click', () => {
+            generateData();
+            history = [];
+            updateAll();
+        });
+        
+        document.getElementById('show-gradient').addEventListener('change', (e) => {
+            showGradient = e.target.checked;
+            updateAll();
+        });
+        
+        document.getElementById('show-next-line').addEventListener('change', (e) => {
+            showNextLine = e.target.checked;
+            updateAll();
+        });
+        
+        // View switching
+        document.querySelectorAll('input[name="view"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                currentView = e.target.value;
+                const errorFormula = document.getElementById('error-formula');
+                if (currentView === 'data') {
+                    dataCanvas.style.display = 'block';
+                    threeContainer.style.display = 'none';
+                    errorFormula.style.display = 'none';
+                    document.getElementById('right-title').textContent = 'Data & Linear Fit';
+                } else {
+                    dataCanvas.style.display = 'none';
+                    threeContainer.style.display = 'block';
+                    errorFormula.style.display = 'block';
+                    document.getElementById('right-title').textContent = 'Error Surface E(m₀, m₁)';
+                    setTimeout(() => {
+                        if (renderer) {
+                            renderer.setSize(threeContainer.clientWidth, threeContainer.clientHeight);
+                            camera.aspect = threeContainer.clientWidth / threeContainer.clientHeight;
+                            camera.updateProjectionMatrix();
+                        }
+                        createLossSurface();
+                    }, 10);
+                }
+            });
+        });
+        
+        // Dragging in parameter space
+        paramCanvas.addEventListener('mousedown', (e) => {
+            const rect = paramCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const screenX = paramCanvas.toScreenX(m0);
+            const screenY = paramCanvas.toScreenY(m1);
+            const dist = Math.sqrt((x - screenX) ** 2 + (y - screenY) ** 2);
+            
+            if (dist < 15) {
+                isDragging = true;
+            }
+        });
+        
+        paramCanvas.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const rect = paramCanvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                m0 = Math.max(-5, Math.min(5, paramCanvas.fromScreenX(x)));
+                m1 = Math.max(-2, Math.min(4, paramCanvas.fromScreenY(y)));
+                
+                updateAll();
+            }
+        });
+        
+        paramCanvas.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+        
+        paramCanvas.addEventListener('mouseleave', () => {
+            isDragging = false;
+        });
+        
+        // Window resize
+        window.addEventListener('resize', () => {
+            updateAll();
+            if (currentView === 'loss' && renderer) {
+                renderer.setSize(threeContainer.clientWidth, threeContainer.clientHeight);
+                camera.aspect = threeContainer.clientWidth / threeContainer.clientHeight;
+                camera.updateProjectionMatrix();
+            }
+        });
+        
+        // Initialize
+        generateData();
+        initThree();
+        setTimeout(updateAll, 100);
+    </script>
+</body>
+</html>

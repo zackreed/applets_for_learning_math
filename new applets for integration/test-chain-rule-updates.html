@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Quick Test - Chain Rule Updates</title>
+    <style>
+        body {
+            margin: 20px;
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+        }
+        h1 { color: #4ecca3; }
+        h2 { color: #00d9ff; }
+        .test-section {
+            background: #0f3460;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border-left: 4px solid #4ecca3;
+        }
+        .success { color: #4ecca3; }
+        .info { color: #00d9ff; }
+        code {
+            background: #16213e;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #ffe66d;
+        }
+        ul { line-height: 1.8; }
+        iframe {
+            border: 3px solid #4ecca3;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+    <h1>✅ Multivariable Chain Rule - Update Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Instructions</h2>
+        <p>The applet below should now have the following improvements:</p>
+        <ul>
+            <li class="success"><strong>✓ Tangent Velocity Vector:</strong> The orange <code>dz/dt</code> vector on the main view should be tangent to the curve on the surface (not just horizontal).</li>
+            <li class="success"><strong>✓ Zoom Window:</strong> Top-left corner should show a diagram with vector addition:
+                <ul>
+                    <li>Blue arrow: (∂z/∂x)(dx/dt)</li>
+                    <li>Purple arrow: (∂z/∂y)(dy/dt) starting from blue arrow's end</li>
+                    <li>Orange dashed arrow: dz/dt from origin to final point</li>
+                </ul>
+            </li>
+            <li class="success"><strong>✓ Dynamic Legend:</strong> The "What's shown" section should only list items that are currently visible based on toggle states.</li>
+        </ul>
+    </div>
+    
+    <div class="test-section">
+        <h2>Quick Tests to Perform</h2>
+        <ol>
+            <li><strong>Test Tangent Vector:</strong>
+                <ul>
+                    <li>Set function to "Paraboloid" (z = x² + y²)</li>
+                    <li>Drag point to (1, 0) approximately</li>
+                    <li>Set direction pointing in +x direction (right)</li>
+                    <li>The orange <code>dz/dt</code> vector should point upward and forward (not horizontal)</li>
+                </ul>
+            </li>
+            
+            <li><strong>Test Zoom Window:</strong>
+                <ul>
+                    <li>Look at the top-left zoom window</li>
+                    <li>You should see three arrows forming a triangle</li>
+                    <li>Change direction in the circle → watch arrows update</li>
+                    <li>Move point → watch component magnitudes change</li>
+                </ul>
+            </li>
+            
+            <li><strong>Test Dynamic Legend:</strong>
+                <ul>
+                    <li>Go to "Display" tab</li>
+                    <li>Toggle "Gradient Vectors" OFF</li>
+                    <li>Check legend - should NOT mention cyan/purple vectors</li>
+                    <li>Toggle back ON - vectors should reappear in legend</li>
+                </ul>
+            </li>
+            
+            <li><strong>Test Vector Construction:</strong>
+                <ul>
+                    <li>Switch to "Saddle" function (z = x² - y²)</li>
+                    <li>Set point near origin</li>
+                    <li>Rotate direction slowly 360°</li>
+                    <li>Watch zoom window: blue/purple arrows should rotate and change size</li>
+                    <li>Orange total should always equal their vector sum</li>
+                </ul>
+            </li>
+        </ol>
+    </div>
+    
+    <div class="test-section">
+        <h2 class="info">Expected Behavior Examples</h2>
+        
+        <h3>Example 1: Paraboloid at (1, 0)</h3>
+        <ul>
+            <li>∂z/∂x ≈ 0.6, ∂z/∂y ≈ 0</li>
+            <li>Direction (1, 0): mainly in x-direction</li>
+            <li><strong>Zoom window:</strong> Large blue arrow (x-component), tiny purple arrow (y-component)</li>
+            <li><strong>Main view:</strong> Orange vector points up the paraboloid slope</li>
+        </ul>
+        
+        <h3>Example 2: Saddle at Origin</h3>
+        <ul>
+            <li>∂z/∂x = 0, ∂z/∂y = 0 (critical point)</li>
+            <li>Any direction: dz/dt = 0</li>
+            <li><strong>Zoom window:</strong> All arrows collapse to the center point</li>
+            <li><strong>Main view:</strong> No visible derivative vectors (or very tiny)</li>
+        </ul>
+        
+        <h3>Example 3: Toggle Test</h3>
+        <ul>
+            <li>Turn OFF "Gradient Vectors"</li>
+            <li><strong>Main view:</strong> Only see surface, point, line (no vector arrows)</li>
+            <li><strong>Legend:</strong> Should NOT list cyan/purple/orange vectors</li>
+            <li>Turn OFF "Zoom Window"</li>
+            <li><strong>Top-left:</strong> Zoom window disappears</li>
+            <li><strong>Legend:</strong> No mention of zoom window</li>
+        </ul>
+    </div>
+    
+    <div class="test-section">
+        <h2 class="info">Visual Quality Checks</h2>
+        <ul>
+            <li>✓ Zoom window has cyan border, dark background</li>
+            <li>✓ Info overlay is below zoom window (not overlapping)</li>
+            <li>✓ Arrows in zoom window have proper arrowheads</li>
+            <li>✓ Labels are readable and positioned well</li>
+            <li>✓ Colors are consistent: cyan = ∂z/∂x, purple = ∂z/∂y, orange = dz/dt</li>
+            <li>✓ Vector addition in zoom window is geometrically correct (tip-to-tail)</li>
+        </ul>
+    </div>
+    
+    <h2 style="margin-top: 30px;">Live Test</h2>
+    <iframe src="multivariable-chain-rule-standalone-example.html" width="1400" height="800"></iframe>
+    
+    <div class="test-section" style="margin-top: 20px;">
+        <h2 class="success">✓ If all tests pass, the updates are successful!</h2>
+        <p>Key achievements:</p>
+        <ol>
+            <li>Velocity vector is now properly tangent to the curve on the surface</li>
+            <li>Zoom window clearly shows the chain rule construction through vector addition</li>
+            <li>Legend dynamically reflects what's actually displayed</li>
+            <li>Educational value significantly improved through better visualization</li>
+        </ol>
+    </div>
+</body>
+</html>

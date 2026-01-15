@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gradient Descent for Linear Regression</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/quiz.js"></script>
+</head>
+<body>
+    <div class="page-container">
+        <header>
+            <a href="../index.html" style="color: #00d9ff; text-decoration: none; font-weight: bold;">&larr; Back to Home</a>
+            <h1>📉 Gradient Descent for Linear Regression</h1>
+            <p style="font-size: 1.2em; margin-top: 10px;">Understand how gradient descent finds optimal parameters by following the gradient downhill</p>
+        </header>
+        
+        <div class="content">
+            <!-- Introduction Section -->
+            <div class="section">
+                <h2>🎯 Introduction</h2>
+                <p>Gradient descent is a fundamental optimization algorithm used throughout machine learning and beyond. It finds the minimum of a function by iteratively taking steps in the direction of steepest descent.</p>
+                
+                <div class="key-concepts">
+                    <h4>Key Concept: Gradient Descent</h4>
+                    <p>For linear regression, we want to fit a line \(y = m_0 + m_1 x\) to data points. The <strong>error function</strong> (mean squared error) measures how well our line fits:</p>
+                    <p style="text-align: center; font-size: 1.3em; margin: 15px 0;">
+                        \(E(m_0, m_1) = \frac{1}{n} \sum_{i=1}^{n} (m_0 + m_1 x_i - y_i)^2\)
+                    </p>
+                    <p>The <strong>gradient</strong> \(\nabla E\) points in the direction of steepest <em>increase</em>, so we step in the <em>opposite</em> direction:</p>
+                    <p style="text-align: center; font-size: 1.3em; margin: 15px 0; background: #16213e; padding: 10px; border-radius: 8px;">
+                        \(m_0 \leftarrow m_0 - \alpha \frac{\partial E}{\partial m_0}\)
+                        <br>
+                        \(m_1 \leftarrow m_1 - \alpha \frac{\partial E}{\partial m_1}\)
+                    </p>
+                    <p>where \(\alpha\) is the <strong>learning rate</strong> - a crucial parameter that controls step size.</p>
+                </div>
+                
+                <div class="info-box" style="margin-top: 15px;">
+                    <h4>Why This Matters</h4>
+                    <p>Gradient descent powers modern machine learning:</p>
+                    <ul>
+                        <li><strong>Neural networks:</strong> Trained using gradient descent (or variants like SGD, Adam)</li>
+                        <li><strong>Logistic regression:</strong> Parameters optimized via gradient descent</li>
+                        <li><strong>Support vector machines:</strong> Can use gradient-based optimization</li>
+                        <li><strong>Deep learning:</strong> Backpropagation computes gradients for gradient descent</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Interactive Applet -->
+            <div class="section">
+                <h2>📊 Interactive Visualization</h2>
+                <p><strong>Instructions:</strong></p>
+                <ol>
+                    <li><strong>Parameter space (left):</strong> Shows your position in parameter space \((m_0, m_1)\). Drag the red point to set initial parameters.</li>
+                    <li><strong>Data view (right):</strong> Shows the data points and your current linear fit. Toggle to "Error Surface" to see the 3D error landscape.</li>
+                    <li><strong>Adjust learning rate:</strong> Use the \(\alpha\) slider to control step size.</li>
+                    <li><strong>Take steps:</strong> Click "Take Steps" to perform gradient descent iterations.</li>
+                    <li><strong>Observe:</strong> Watch the yellow gradient vector pointing downhill, and see how your path traces toward the minimum.</li>
+                </ol>
+                
+                <div class="key-concepts" style="margin-top: 15px;">
+                    <h4>What You're Seeing</h4>
+                    <ul>
+                        <li><strong>Red point:</strong> Current parameter values \((m_0, m_1)\)</li>
+                        <li><strong>Yellow arrow:</strong> Negative gradient \(-\nabla E\) (direction of steepest descent)</li>
+                        <li><strong>Green trail:</strong> Path taken by gradient descent</li>
+                        <li><strong>Red line (data view):</strong> Your current linear fit</li>
+                        <li><strong>Yellow dotted line:</strong> Next predicted fit after one gradient step</li>
+                        <li><strong>Error surface:</strong> 3D landscape showing \(E(m_0, m_1)\) - lower is better!</li>
+                    </ul>
+                </div>
+                
+                <div class="applet-container">
+                    <iframe src="../applets/gradient-descent.html" width="100%" height="800" style="border: none; border-radius: 8px; max-width: 100%; overflow: hidden;"></iframe>
+                </div>
+            </div>
+            
+            <!-- Guided Explorations -->
+            <div class="section">
+                <h2>🧪 Guided Explorations</h2>
+                
+                <div class="exploration" id="exp1">
+                    <h4>Exploration 1: Understanding the Gradient</h4>
+                    <p><strong>Try this:</strong> Reset the position and generate new data. Look at the gradient vector in parameter space.</p>
+                    <p><strong>Question:</strong> The gradient \(\nabla E\) points in which direction?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'exp1', 'a')">
+                            <input type="radio" name="exp1" value="a"> Toward the minimum (downhill)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp1', 'b')">
+                            <input type="radio" name="exp1" value="b"> Uphill (direction of steepest increase)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp1', 'c')">
+                            <input type="radio" name="exp1" value="c"> Parallel to the contour lines
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('exp1', 'b', 'Correct! The gradient points uphill (steepest increase), which is why we subtract it: we move in the direction of \(-\\nabla E\) to go downhill.')">Check Answer</button>
+                    <div class="feedback" id="exp1-feedback"></div>
+                </div>
+                
+                <div class="exploration" id="exp2">
+                    <h4>Exploration 2: Convergence with Good Learning Rate</h4>
+                    <p><strong>Setup:</strong> Reset position, set learning rate \(\alpha = 0.01\), and take 50-100 steps.</p>
+                    <p><strong>Question:</strong> What happens to the error as you take many steps with a reasonable learning rate?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'exp2', 'a')">
+                            <input type="radio" name="exp2" value="a"> It decreases steadily toward a minimum
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp2', 'b')">
+                            <input type="radio" name="exp2" value="b"> It oscillates wildly
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp2', 'c')">
+                            <input type="radio" name="exp2" value="c"> It increases
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('exp2', 'a', 'Exactly! With a good learning rate, gradient descent converges smoothly to the minimum.')">Check Answer</button>
+                    <div class="feedback" id="exp2-feedback"></div>
+                </div>
+                
+                <div class="exploration" id="exp3">
+                    <h4>Exploration 3: Learning Rate Too High - Overshooting</h4>
+                    <p><strong>Critical experiment:</strong> Reset path. Set learning rate \(\alpha = 0.08\) or higher. Take steps and observe carefully.</p>
+                    <p><strong>Question:</strong> When the learning rate is too high, what problem occurs?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'exp3', 'a')">
+                            <input type="radio" name="exp3" value="a"> The algorithm converges faster
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp3', 'b')">
+                            <input type="radio" name="exp3" value="b"> Steps become too large, overshooting the minimum and possibly diverging
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp3', 'c')">
+                            <input type="radio" name="exp3" value="c"> The gradient becomes zero
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('exp3', 'b', 'Correct! High learning rates cause overshooting - each step is so large that you jump past the minimum, and may even diverge to infinity!')">Check Answer</button>
+                    <div class="feedback" id="exp3-feedback"></div>
+                </div>
+                
+                <div class="exploration" id="exp4">
+                    <h4>Exploration 4: Why Overshooting Prevents Convergence</h4>
+                    <p><strong>Deep dive:</strong> With \(\alpha = 0.09\), take several steps while watching the error value.</p>
+                    <p><strong>Question:</strong> Why does a high learning rate prevent convergence to the minimum?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'exp4', 'a')">
+                            <input type="radio" name="exp4" value="a"> The gradient calculation becomes inaccurate
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp4', 'b')">
+                            <input type="radio" name="exp4" value="b"> Each step is so large that we overshoot the minimum, bouncing back and forth with increasing error
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp4', 'c')">
+                            <input type="radio" name="exp4" value="c"> The algorithm gets stuck at a local minimum
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('exp4', 'b', 'Exactly! The step size \\(\\alpha \\cdot ||\\nabla E||\\) becomes larger than the distance to the minimum. We leap past it, land on the other side where the error is higher, then leap back even further. This creates divergence.')">Check Answer</button>
+                    <div class="feedback" id="exp4-feedback"></div>
+                </div>
+                
+                <div class="exploration" id="exp5">
+                    <h4>Exploration 5: Error Surface Visualization</h4>
+                    <p><strong>Switch views:</strong> Toggle to "Error Surface" view and rotate the 3D visualization.</p>
+                    <p><strong>Question:</strong> What shape is the error surface for linear regression?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'exp5', 'a')">
+                            <input type="radio" name="exp5" value="a"> A paraboloid (bowl shape) with one global minimum
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp5', 'b')">
+                            <input type="radio" name="exp5" value="b"> A saddle point with multiple minima
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'exp5', 'c')">
+                            <input type="radio" name="exp5" value="c"> A flat plane
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('exp5', 'a', 'Perfect! The mean squared error for linear regression is a quadratic function, creating a smooth paraboloid with exactly one minimum. This is why gradient descent always finds the global optimum (given a good learning rate).')">Check Answer</button>
+                    <div class="feedback" id="exp5-feedback"></div>
+                </div>
+            </div>
+            
+            <!-- Practice Problems -->
+            <div class="section">
+                <h2>✏️ Practice Problems</h2>
+                
+                <div class="problem" id="prob1">
+                    <h4>Problem 1: Computing a Gradient Step</h4>
+                    <p>Suppose at the current position:</p>
+                    <ul style="margin-left: 20px;">
+                        <li>\(m_0 = 2.0\), \(m_1 = 1.5\)</li>
+                        <li>\(\frac{\partial E}{\partial m_0} = -0.8\), \(\frac{\partial E}{\partial m_1} = 1.2\)</li>
+                        <li>Learning rate: \(\alpha = 0.1\)</li>
+                    </ul>
+                    <p><strong>Question:</strong> What will \(m_0\) be after one gradient descent step?</p>
+                    <div class="number-input">
+                        <label>\(m_0^{\text{new}}\) =</label>
+                        <input type="number" id="prob1-input" step="0.01" placeholder="Enter value">
+                    </div>
+                    <button class="check-btn" onclick="checkNumericAnswer('prob1', 2.08, 0.01, 'Remember: \\(m_0^{\\text{new}} = m_0 - \\alpha \\frac{\\partial E}{\\partial m_0} = 2.0 - 0.1 \\times (-0.8) = 2.0 + 0.08 = 2.08\\)')">Check Answer</button>
+                    <div class="feedback" id="prob1-feedback"></div>
+                </div>
+                
+                <div class="problem" id="prob2">
+                    <h4>Problem 2: Step Size Magnitude</h4>
+                    <p>Given:</p>
+                    <ul style="margin-left: 20px;">
+                        <li>Gradient: \(\nabla E = [6.0, 8.0]\)</li>
+                        <li>Learning rate: \(\alpha = 0.05\)</li>
+                    </ul>
+                    <p><strong>Question:</strong> What is the magnitude of the step taken? (i.e., \(||\alpha \nabla E||\))</p>
+                    <div class="number-input">
+                        <label>Step magnitude =</label>
+                        <input type="number" id="prob2-input" step="0.01" placeholder="Enter value">
+                    </div>
+                    <button class="check-btn" onclick="checkNumericAnswer('prob2', 0.5, 0.01, 'The step is \\(\\alpha \\nabla E = 0.05 [6.0, 8.0] = [0.3, 0.4]\\). Its magnitude is \\(\\sqrt{0.3^2 + 0.4^2} = \\sqrt{0.09 + 0.16} = \\sqrt{0.25} = 0.5\\).')">Check Answer</button>
+                    <div class="feedback" id="prob2-feedback"></div>
+                </div>
+                
+                <div class="problem" id="prob3">
+                    <h4>Problem 3: Understanding Divergence</h4>
+                    <p><strong>Scenario:</strong> You're doing gradient descent and the error starts at 10.0. After one step, it becomes 15.0. After another step, it becomes 25.0.</p>
+                    <p><strong>Question:</strong> What is the most likely problem?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'prob3', 'a')">
+                            <input type="radio" name="prob3" value="a"> The gradient calculation is wrong
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'prob3', 'b')">
+                            <input type="radio" name="prob3" value="b"> The learning rate is too high, causing divergence
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'prob3', 'c')">
+                            <input type="radio" name="prob3" value="c"> The algorithm is stuck at a local minimum
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'prob3', 'd')">
+                            <input type="radio" name="prob3" value="d"> The learning rate is too low
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('prob3', 'b', 'Correct! When the error increases after each step (and keeps increasing), the learning rate is too high. The steps are overshooting the minimum, and each overshoot gets worse.')">Check Answer</button>
+                    <div class="feedback" id="prob3-feedback"></div>
+                </div>
+                
+                <div class="problem" id="prob4">
+                    <h4>Problem 4: Optimal Learning Rate Strategy</h4>
+                    <p><strong>Question:</strong> In practice, which strategy works best for setting the learning rate?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'prob4', 'a')">
+                            <input type="radio" name="prob4" value="a"> Always use the largest possible value
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'prob4', 'b')">
+                            <input type="radio" name="prob4" value="b"> Start with a reasonable value and decrease it over time (learning rate schedule)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'prob4', 'c')">
+                            <input type="radio" name="prob4" value="c"> Use a random value each iteration
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'prob4', 'd')">
+                            <input type="radio" name="prob4" value="d"> Always use the smallest possible value
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('prob4', 'b', 'Exactly! Starting with a moderate learning rate and decreasing it over time (called a learning rate schedule) is a common best practice. This allows fast initial progress while ensuring convergence near the minimum.')">Check Answer</button>
+                    <div class="feedback" id="prob4-feedback"></div>
+                </div>
+                
+                <div class="problem" id="prob5">
+                    <h4>Problem 5: Gradient Magnitude at Minimum</h4>
+                    <p><strong>Question:</strong> When gradient descent converges to the minimum, what happens to the gradient magnitude \(||\nabla E||\)?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'prob5', 'a')">
+                            <input type="radio" name="prob5" value="a"> It approaches zero
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'prob5', 'b')">
+                            <input type="radio" name="prob5" value="b"> It approaches infinity
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'prob5', 'c')">
+                            <input type="radio" name="prob5" value="c"> It stays constant
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'prob5', 'd')">
+                            <input type="radio" name="prob5" value="d"> It oscillates
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('prob5', 'a', 'Perfect! At a minimum, the gradient is zero (or very close to zero). This is why gradient descent stops making progress - the steps become tiny as \\(||\\nabla E|| \\to 0\\).')">Check Answer</button>
+                    <div class="feedback" id="prob5-feedback"></div>
+                </div>
+            </div>
+            
+            <!-- Challenge Section -->
+            <div class="section">
+                <h2>🚀 Challenge Problems</h2>
+                
+                <div class="problem" id="chal1">
+                    <h4>Challenge 1: Critical Learning Rate</h4>
+                    <p>For a given error function, there exists a <em>critical learning rate</em> \(\alpha_{\text{crit}}\) above which gradient descent diverges.</p>
+                    <p><strong>Question:</strong> What determines this critical learning rate?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'chal1', 'a')">
+                            <input type="radio" name="chal1" value="a"> The initial parameter values
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'chal1', 'b')">
+                            <input type="radio" name="chal1" value="b"> The curvature of the error surface (related to the Hessian matrix)
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'chal1', 'c')">
+                            <input type="radio" name="chal1" value="c"> The number of data points
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'chal1', 'd')">
+                            <input type="radio" name="chal1" value="d"> The gradient magnitude
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('chal1', 'b', 'Excellent! The critical learning rate depends on the curvature of the error surface, specifically the largest eigenvalue of the Hessian matrix. Steeper curvature requires smaller learning rates.')">Check Answer</button>
+                    <div class="feedback" id="chal1-feedback"></div>
+                </div>
+                
+                <div class="problem" id="chal2">
+                    <h4>Challenge 2: Experimenting with High Learning Rates</h4>
+                    <p><strong>Hands-on:</strong> In the applet, reset and try these learning rates: 0.05, 0.08, 0.10, 0.15. For each, take 10 steps and note the final error.</p>
+                    <p><strong>Question:</strong> Estimate the approximate critical learning rate \(\alpha_{\text{crit}}\) where divergence begins.</p>
+                    <div class="number-input">
+                        <label>\(\alpha_{\text{crit}} \approx\)</label>
+                        <input type="number" id="chal2-input" step="0.01" placeholder="Enter value">
+                    </div>
+                    <button class="check-btn" onclick="checkNumericAnswer('chal2', 0.09, 0.02, 'The critical learning rate varies by dataset, but for typical linear regression it is often around \\(\\alpha_{\\text{crit}} \\approx 0.08-0.10\\). Above this, overshooting causes divergence.')">Check Answer</button>
+                    <div class="feedback" id="chal2-feedback"></div>
+                </div>
+            </div>
+            
+            <!-- Conclusion -->
+            <div class="section">
+                <h2>🎓 Key Takeaways</h2>
+                <div class="key-concepts">
+                    <ul style="margin-left: 20px; line-height: 1.8;">
+                        <li><strong>Gradient descent minimizes functions</strong> by iteratively moving in the direction of steepest descent: \(-\nabla E\)</li>
+                        <li><strong>Learning rate \(\alpha\) is critical:</strong> Too small = slow convergence. Too large = overshooting and divergence.</li>
+                        <li><strong>Convergence requires:</strong> \(\alpha < \alpha_{\text{crit}}\), where the critical rate depends on the error surface curvature.</li>
+                        <li><strong>High learning rates don't converge</strong> because steps overshoot the minimum, bouncing to higher error values.</li>
+                        <li><strong>The gradient magnitude \(||\nabla E||\)</strong> decreases as we approach the minimum, becoming zero at the optimal point.</li>
+                        <li><strong>Linear regression has a convex error surface</strong>, guaranteeing a unique global minimum that gradient descent will find (with proper \(\alpha\)).</li>
+                    </ul>
+                </div>
+                
+                <div class="info-box" style="margin-top: 20px;">
+                    <h4>Going Deeper</h4>
+                    <p>Gradient descent is just the beginning! Advanced variants include:</p>
+                    <ul>
+                        <li><strong>Stochastic Gradient Descent (SGD):</strong> Uses mini-batches for faster training on large datasets</li>
+                        <li><strong>Momentum:</strong> Adds "inertia" to smooth out oscillations and speed convergence</li>
+                        <li><strong>Adam:</strong> Adaptive learning rates for each parameter, combining momentum with RMSprop</li>
+                        <li><strong>Learning rate schedules:</strong> Automatically decrease \(\alpha\) over time</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <footer style="text-align: center; padding: 30px 20px; color: #aaa; margin-top: 40px; border-top: 1px solid #4a5568;">
+            <p>© 2024 Math Learning Applets | <a href="../index.html" style="color: #00d9ff;">Home</a></p>
+        </footer>
+    </div>
+    
+    <script>
+        // Render LaTeX after page loads
+        document.addEventListener("DOMContentLoaded", function() {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: "$$", right: "$$", display: true},
+                    {left: "$", right: "$", display: false},
+                    {left: "\\[", right: "\\]", display: true},
+                    {left: "\\(", right: "\\)", display: false}
+                ]
+            });
+        });
+    </script>
+</body>
+</html>

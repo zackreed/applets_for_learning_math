@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gradient Descent - Standalone Example</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            color: #e0e0e0;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #4ecca3;
+        }
+        
+        .instructions {
+            max-width: 1400px;
+            margin: 0 auto 20px;
+            background: #16213e;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #3a4a6b;
+        }
+        
+        .code-example {
+            background: #0a0e27;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+        }
+        
+        #viz-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .api-demo {
+            max-width: 1400px;
+            margin: 20px auto;
+            background: #16213e;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #3a4a6b;
+        }
+        
+        .api-demo h3 {
+            color: #00d9ff;
+            margin-top: 0;
+        }
+        
+        .api-demo button {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            transition: all 0.2s;
+        }
+        
+        .api-demo button:hover {
+            background: #d93550;
+            transform: translateY(-1px);
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <h1>Gradient Descent Visualization - Standalone JS Example</h1>
+    
+    <div class="instructions">
+        <h3 style="color: #00d9ff; margin-top: 0;">📚 How to Use the Standalone JavaScript</h3>
+        <p>This page demonstrates the <code>GradientDescentViz</code> class, which can be used in any JavaScript environment.</p>
+        
+        <h4 style="color: #f9d423; margin-top: 20px;">Basic Usage:</h4>
+        <div class="code-example">
+// 1. Include the script<br>
+&lt;script src="path/to/gradient-descent-standalone.js"&gt;&lt;/script&gt;<br>
+<br>
+// 2. Create a container element<br>
+&lt;div id="viz-container"&gt;&lt;/div&gt;<br>
+<br>
+// 3. Initialize the visualization<br>
+const container = document.getElementById('viz-container');<br>
+const viz = new GradientDescentViz(container, {<br>
+&nbsp;&nbsp;width: 1300,<br>
+&nbsp;&nbsp;height: 750,<br>
+&nbsp;&nbsp;learningRate: 0.01,<br>
+&nbsp;&nbsp;numDataPoints: 20,<br>
+&nbsp;&nbsp;showControls: true  // Set to false for embedded use<br>
+});
+        </div>
+        
+        <h4 style="color: #f9d423; margin-top: 20px;">Public API Methods:</h4>
+        <div class="code-example">
+// Set learning rate<br>
+viz.setLearningRate(0.05);<br>
+<br>
+// Take gradient descent steps<br>
+viz.step();        // Take 1 step<br>
+viz.step(10);      // Take 10 steps<br>
+<br>
+// Reset to new random position<br>
+viz.reset();<br>
+<br>
+// Generate new data<br>
+viz.newData();<br>
+<br>
+// Get current state<br>
+const state = viz.getState();<br>
+console.log('m0:', state.m0, 'm1:', state.m1, 'error:', state.error);
+        </div>
+    </div>
+    
+    <!-- The visualization will be inserted here -->
+    <div id="viz-container"></div>
+    
+    <div class="api-demo">
+        <h3>🎮 API Demo Controls</h3>
+        <p>These buttons demonstrate programmatic control of the visualization using the public API:</p>
+        <button onclick="viz.setLearningRate(0.001)">Set α = 0.001 (slow)</button>
+        <button onclick="viz.setLearningRate(0.01)">Set α = 0.01 (good)</button>
+        <button onclick="viz.setLearningRate(0.05)">Set α = 0.05 (moderate)</button>
+        <button onclick="viz.setLearningRate(0.09)">Set α = 0.09 (high - watch it diverge!)</button>
+        <br>
+        <button onclick="viz.step(50)">Take 50 Steps</button>
+        <button onclick="viz.step(100)">Take 100 Steps</button>
+        <button onclick="logState()">Log Current State</button>
+    </div>
+    
+    <script src="../js/gradient-descent-standalone.js"></script>
+    <script>
+        // Initialize the visualization
+        const container = document.getElementById('viz-container');
+        const viz = new GradientDescentViz(container, {
+            width: 1300,
+            height: 750,
+            learningRate: 0.01,
+            numDataPoints: 20,
+            showControls: true
+        });
+        
+        // Helper function to log state
+        function logState() {
+            const state = viz.getState();
+            console.log('Current State:', state);
+            alert(`Current State:\n\nm₀ = ${state.m0.toFixed(4)}\nm₁ = ${state.m1.toFixed(4)}\nError (MSE) = ${state.error.toFixed(4)}`);
+        }
+    </script>
+</body>
+</html>

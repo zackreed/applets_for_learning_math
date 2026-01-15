@@ -3,75 +3,194 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multivariable Chain Rule - Standalone Example</title>
+    <title>Multivariable Chain Rule - Directional Derivative</title>
     <style>
         body {
             margin: 0;
-            padding: 20px;
+            padding: 10px;
             font-family: Arial, sans-serif;
             background: #1a1a2e;
             color: #eee;
+            overflow: hidden;
+            height: 100vh;
         }
         
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
+        .main-container {
             display: flex;
-            gap: 20px;
+            gap: 15px;
+            height: calc(100vh - 80px);
+            max-width: 1600px;
+            margin: 0 auto;
         }
         
         h1 {
             text-align: center;
             color: #e94560;
-            margin-bottom: 20px;
+            margin: 10px 0 15px 0;
+            font-size: 24px;
+        }
+        
+        .canvas-area {
+            flex: 1;
+            position: relative;
         }
         
         canvas {
             border: 2px solid #4a5568;
             background: #16213e;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            cursor: grab;
+            border-radius: 4px;
         }
         
-        canvas:active {
-            cursor: grabbing;
+        #vizCanvas {
+            width: 100%;
+            height: 100%;
+        }
+        
+        #domainCanvas {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            border: 2px solid #4ecca3;
+            background: rgba(22, 33, 62, 0.95);
+            cursor: crosshair;
+        }
+        
+        #zoomCanvas {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            border: 2px solid #00d9ff;
+            background: rgba(22, 33, 62, 0.95);
+        }
+        
+        .rotation-controls {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(15, 52, 96, 0.95);
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #4a5568;
+            font-size: 12px;
+        }
+        
+        .rotation-controls button {
+            width: 46px;
+            height: 46px;
+            margin: 2px;
+            padding: 0;
+            font-size: 20px;
+        }
+        
+        .rotation-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 46px);
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .info-overlay {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(15, 52, 96, 0.95);
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            border: 1px solid #4a5568;
+            max-width: 250px;
+        }
+        
+        .info-overlay .value {
+            color: #00d9ff;
+            font-weight: bold;
         }
         
         #controls {
-            width: 300px;
+            width: 320px;
             background: #0f3460;
-            padding: 20px;
+            padding: 15px;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #4a5568;
+        }
+        
+        .tab {
+            padding: 8px 16px;
+            background: #16213e;
+            border: none;
+            border-radius: 4px 4px 0 0;
+            cursor: pointer;
+            color: #eee;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .tab:hover {
+            background: #1f3a5f;
+        }
+        
+        .tab.active {
+            background: #4ecca3;
+            color: #1a1a2e;
+            font-weight: bold;
+        }
+        
+        .tab-content {
+            display: none;
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .tab-content.active {
+            display: block;
         }
         
         h3 {
             color: #4ecca3;
-            margin-bottom: 10px;
+            margin: 0 0 10px 0;
+            font-size: 16px;
         }
         
         button {
             width: 100%;
             padding: 10px;
-            margin: 5px 0;
+            margin: 4px 0;
             background: #4ecca3;
             color: #1a1a2e;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             font-weight: bold;
+            font-size: 13px;
+            transition: all 0.3s;
         }
         
         button:hover {
             background: #3db894;
+            transform: translateY(-1px);
         }
         
-        .info {
+        button.active {
+            background: #ffe66d;
+        }
+        
+        .info-box {
             background: #16213e;
-            padding: 15px;
+            padding: 12px;
             border-radius: 4px;
-            margin-top: 20px;
-            font-size: 14px;
+            margin-top: 15px;
+            font-size: 13px;
             line-height: 1.8;
         }
         
@@ -79,93 +198,949 @@
             color: #00d9ff;
             font-weight: bold;
         }
+        
+        .formula {
+            margin-top: 10px;
+            padding: 8px;
+            background: #0a0e27;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #4ecca3;
+            font-size: 12px;
+        }
+        
+        hr {
+            margin: 10px 0;
+            border: none;
+            border-top: 1px solid #4a5568;
+        }
+        
+        .instruction {
+            font-size: 12px;
+            line-height: 1.6;
+            color: #ccc;
+        }
+        
+        .highlight {
+            background: rgba(255, 230, 109, 0.2);
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
     </style>
 </head>
 <body>
-    <h1>Multivariable Chain Rule - Standalone Example</h1>
+    <h1>Multivariable Chain Rule - Directional Derivative Explorer</h1>
     
-    <div class="container">
-        <canvas id="vizCanvas" width="900" height="700"></canvas>
+    <div class="main-container">
+        <div class="canvas-area">
+            <canvas id="vizCanvas"></canvas>
+            <canvas id="domainCanvas" width="280" height="280"></canvas>
+            <canvas id="zoomCanvas" width="300" height="300"></canvas>
+        </div>
         
         <div id="controls">
-            <h3>Instructions</h3>
-            <p style="font-size: 13px; line-height: 1.6;">
-                • <strong>Drag</strong> to rotate the 3D view<br>
-                • <strong>Scroll</strong> to zoom<br>
-                • <strong>Click</strong> to set the point<br>
-                • Use buttons below to change function
-            </p>
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('display')">Display</button>
+                <button class="tab" onclick="switchTab('functions')">Functions</button>
+                <button class="tab" onclick="switchTab('values')">Values</button>
+            </div>
             
-            <h3 style="margin-top: 20px;">Surface Function</h3>
-            <button onclick="viz.setFunction('paraboloid'); updateValues();">z = x² + y²</button>
-            <button onclick="viz.setFunction('saddle'); updateValues();">z = x² - y²</button>
-            <button onclick="viz.setFunction('waves'); updateValues();">z = sin(x)cos(y)</button>
-            <button onclick="viz.setFunction('hill'); updateValues();">z = 3/(1+x²+y²)</button>
+            <div id="display-tab" class="tab-content active">
+                <h3>Rotation Controls</h3>
+                <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                    <div style="flex: 1;">
+                        <div style="margin-bottom: 8px; color: #4ecca3; font-weight: bold; font-size: 13px;">Main View</div>
+                        <div class="rotation-grid" style="display: inline-grid; grid-template-columns: repeat(3, 36px); gap: 3px; margin-bottom: 6px;">
+                            <button onclick="viz.adjustRotation(0, 0.2)" style="width: 36px; height: 36px; padding: 0; font-size: 14px;">↖</button>
+                            <button onclick="viz.adjustRotation(0, -0.2)" style="width: 36px; height: 36px; padding: 0; font-size: 14px;">↑</button>
+                            <button onclick="viz.adjustRotation(0, -0.2)" style="width: 36px; height: 36px; padding: 0; font-size: 14px;">↗</button>
+                            <button onclick="viz.adjustRotation(-0.2, 0)" style="width: 36px; height: 36px; padding: 0; font-size: 14px;">←</button>
+                            <button onclick="viz.resetRotation()" title="Reset" style="width: 36px; height: 36px; padding: 0; font-size: 14px;">⊙</button>
+                            <button onclick="viz.adjustRotation(0.2, 0)" style="width: 36px; height: 36px; padding: 0; font-size: 14px;">→</button>
+                            <button onclick="viz.adjustRotation(0, 0.2)" style="width: 36px; height: 36px; padding: 0; font-size: 14px;">↙</button>
+                            <button onclick="viz.adjustRotation(0, 0.2)" style="width: 36px; height: 36px; padding: 0; font-size: 14px;">↓</button>
+                            <button onclick="viz.adjustRotation(0, 0.2)" style="width: 36px; height: 36px; padding: 0; font-size: 14px;">↘</button>
+                        </div>
+                        <div style="margin-top: 4px;">
+                            <button onclick="viz.adjustZoom(-20)" style="width: 55px; height: 28px; font-size: 11px;">Zoom -</button>
+                            <button onclick="viz.adjustZoom(20)" style="width: 55px; height: 28px; font-size: 11px;">Zoom +</button>
+                        </div>
+                    </div>
+                    
+                    <div style="flex: 1;">
+                        <div style="margin-bottom: 8px; color: #00d9ff; font-weight: bold; font-size: 13px;">Zoom Window</div>
+                        <div class="rotation-grid" style="display: inline-grid; grid-template-columns: repeat(3, 36px); gap: 3px;">
+                            <button onclick="viz.adjustZoomRotation(0, 0.2)" style="width: 36px; height: 36px; padding: 0; font-size: 14px;">↖</button>
+                            <button onclick="viz.adjustZoomRotation(0, -0.2)" style="width: 36px; height: 36px; padding: 0; font-size: 14px;">↑</button>
+                            <button onclick="viz.adjustZoomRotation(0, -0.2)" style="width: 36px; height: 36px; padding: 0; font-size: 14px;">↗</button>
+                            <button onclick="viz.adjustZoomRotation(-0.2, 0)" style="width: 36px; height: 36px; padding: 0; font-size: 14px;">←</button>
+                            <button onclick="viz.resetZoomRotation()" title="Reset" style="width: 36px; height: 36px; padding: 0; font-size: 14px;">⊙</button>
+                            <button onclick="viz.adjustZoomRotation(0.2, 0)" style="width: 36px; height: 36px; padding: 0; font-size: 14px;">→</button>
+                            <button onclick="viz.adjustZoomRotation(0, 0.2)" style="width: 36px; height: 36px; padding: 0; font-size: 14px;">↙</button>
+                            <button onclick="viz.adjustZoomRotation(0, 0.2)" style="width: 36px; height: 36px; padding: 0; font-size: 14px;">↓</button>
+                            <button onclick="viz.adjustZoomRotation(0, 0.2)" style="width: 36px; height: 36px; padding: 0; font-size: 14px;">↘</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                <h3>Visualization Options</h3>
+                <button onclick="toggleOption('grid')">Toggle Grid</button>
+                <button onclick="toggleOption('line')">Toggle Direction Line</button>
+                <button onclick="toggleOption('plane')">Toggle Tangent Plane</button>
+                <button onclick="toggleOption('vectors')">Toggle Gradient Vectors</button>
+                <button onclick="toggleOption('zoom')">Toggle Zoom Window</button>
+            </div>
             
-            <h3 style="margin-top: 20px;">Display Toggles</h3>
-            <button onclick="viz.toggleGrid();">Toggle Grid</button>
-            <button onclick="viz.toggleCurve();">Toggle Curve</button>
-            <button onclick="viz.toggleTangentPlane();">Toggle Tangent Plane</button>
-            <button onclick="viz.toggleVectors();">Toggle Vectors</button>
+            <div id="functions-tab" class="tab-content">
+                <h3>Surface Function</h3>
+                <button id="btn-paraboloid" class="active" onclick="setFunction('paraboloid')">z = x² + y²</button>
+                <button id="btn-saddle" onclick="setFunction('saddle')">z = x² - y²</button>
+                <button id="btn-waves" onclick="setFunction('waves')">z = sin(x)cos(y)</button>
+                <button id="btn-hill" onclick="setFunction('hill')">z = 3/(1+x²+y²)</button>
+            </div>
             
-            <div class="info">
-                <h3 style="margin-top: 0;">Chain Rule Values</h3>
-                <div style="margin: 8px 0;">
-                    Point: <span class="value" id="point-val">(0.00, 0.00)</span>
-                </div>
-                <div style="margin: 8px 0;">
-                    z = <span class="value" id="z-val">0.00</span>
-                </div>
-                <hr style="margin: 10px 0; border-color: #4a5568;">
-                <div style="margin: 8px 0;">
-                    ∂z/∂x = <span class="value" id="dzdx-val">0.00</span>
-                </div>
-                <div style="margin: 8px 0;">
-                    ∂z/∂y = <span class="value" id="dzdy-val">0.00</span>
-                </div>
-                <div style="margin: 8px 0;">
-                    dx/dt = <span class="value" id="dxdt-val">0.00</span>
-                </div>
-                <div style="margin: 8px 0;">
-                    dy/dt = <span class="value" id="dydt-val">0.00</span>
-                </div>
-                <hr style="margin: 10px 0; border-color: #4a5568;">
-                <div style="margin: 8px 0; font-size: 16px;">
-                    <strong>dz/dt = <span class="value" id="dzdt-val">0.00</span></strong>
-                </div>
-                <div style="margin-top: 10px; font-size: 12px; font-family: monospace; color: #4ecca3;">
-                    dz/dt = (∂z/∂x)(dx/dt) + (∂z/∂y)(dy/dt)
+            <div id="values-tab" class="tab-content">
+                <h3>Differential Calculation</h3>
+                <div class="info-box">
+                    <div>Point: <span class="value" id="point-val-2">(0.00, 0.00)</span></div>
+                    <div>z = <span class="value" id="z-val">0.00</span></div>
+                    <hr>
+                    <div>∂z/∂x = <span class="value" id="dzdx-val">0.00</span></div>
+                    <div>∂z/∂y = <span class="value" id="dzdy-val">0.00</span></div>
+                    <hr>
+                    <div>Differentials:</div>
+                    <div>  dx = <span class="value" id="dxdt-val">0.0000</span></div>
+                    <div>  dy = <span class="value" id="dydt-val">0.0000</span></div>
+                    <hr>
+                    <div style="font-size: 15px;">
+                        <strong>dz = <span class="value" id="dzdt-val-2">0.0000</span></strong>
+                    </div>
+                    <div class="formula">
+                        dz = (∂z/∂x)dx + (∂z/∂y)dy
+                    </div>
+                    <div class="formula" id="calculation">
+                        = (0.00)(0.0000) + (0.00)(0.0000)<br>
+                        = 0.0000
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Include the standalone JavaScript class -->
-    <script src="../js/multivariable-chain-rule-standalone.js"></script>
-    
     <script>
-        // Initialize the visualization
-        const viz = new MultivariableChainRuleViz('vizCanvas');
-        viz.render();
+        let viz;
         
-        // Update display values
-        function updateValues() {
-            const values = viz.getChainRuleValues();
-            document.getElementById('point-val').textContent = 
-                `(${values.pointX.toFixed(2)}, ${values.pointY.toFixed(2)})`;
-            document.getElementById('z-val').textContent = values.z.toFixed(3);
-            document.getElementById('dzdx-val').textContent = values.dzdx.toFixed(3);
-            document.getElementById('dzdy-val').textContent = values.dzdy.toFixed(3);
-            document.getElementById('dxdt-val').textContent = values.dxdt.toFixed(3);
-            document.getElementById('dydt-val').textContent = values.dydt.toFixed(3);
-            document.getElementById('dzdt-val').textContent = values.dzdt.toFixed(3);
+        class MultivariableChainRuleViz {
+            constructor(canvasId, domainCanvasId, zoomCanvasId) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                this.domainCanvas = document.getElementById(domainCanvasId);
+                this.domainCtx = this.domainCanvas.getContext('2d');
+                this.zoomCanvas = document.getElementById(zoomCanvasId);
+                this.zoomCtx = this.zoomCanvas.getContext('2d');
+                
+                this.currentFunction = 'paraboloid';
+                this.options = {
+                    grid: true,
+                    line: true,
+                    plane: false,
+                    vectors: true,
+                    zoom: true
+                };
+                
+                // Camera/rotation
+                this.rotX = 0.6;
+                this.rotZ = 0.8;
+                this.zoom = 150;
+                
+                // Zoom window rotation
+                this.zoomRotX = 0.6;
+                this.zoomRotZ = 0.8;
+                
+                // Point and direction (user-controlled)
+                this.px = 1;
+                this.py = 0;
+                this.dirX = 1/Math.sqrt(2);
+                this.dirY = 1/Math.sqrt(2);
+                
+                // Dragging states
+                this.draggingPoint = false;
+                this.draggingDirection = false;
+                this.draggingView = false;
+                
+                this.resizeCanvas();
+                window.addEventListener('resize', () => this.resizeCanvas());
+                this.setupInteraction();
+                this.render();
+            }
+            
+            resizeCanvas() {
+                const container = this.canvas.parentElement;
+                this.canvas.width = container.clientWidth;
+                this.canvas.height = container.clientHeight;
+                this.render();
+            }
+            
+            setupInteraction() {
+                let lastX, lastY;
+                
+                // Main canvas - only for rotation
+                this.canvas.addEventListener('mousedown', (e) => {
+                    this.draggingView = true;
+                    lastX = e.clientX;
+                    lastY = e.clientY;
+                });
+                
+                this.canvas.addEventListener('mousemove', (e) => {
+                    if (this.draggingView) {
+                        const dx = e.clientX - lastX;
+                        const dy = e.clientY - lastY;
+                        this.rotZ += dx * 0.01;
+                        this.rotX = Math.max(-Math.PI/2 + 0.1, Math.min(Math.PI/2 - 0.1, this.rotX - dy * 0.01));
+                        lastX = e.clientX;
+                        lastY = e.clientY;
+                        this.render();
+                    }
+                });
+                
+                this.canvas.addEventListener('mouseup', () => {
+                    this.draggingView = false;
+                });
+                
+                this.canvas.addEventListener('mouseleave', () => {
+                    this.draggingView = false;
+                });
+                
+                this.canvas.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    this.zoom *= e.deltaY > 0 ? 0.95 : 1.05;
+                    this.zoom = Math.max(50, Math.min(300, this.zoom));
+                    this.render();
+                });
+                
+                // Domain canvas - for dragging point and direction
+                this.domainCanvas.addEventListener('mousedown', (e) => {
+                    const rect = this.domainCanvas.getBoundingClientRect();
+                    const mx = e.clientX - rect.left;
+                    const my = e.clientY - rect.top;
+                    const w = this.domainCanvas.width;
+                    const h = this.domainCanvas.height;
+                    const cx = w / 2;
+                    const cy = h / 2;
+                    const scale = 50;
+                    
+                    // Check if clicking near point first
+                    const pointX = cx + this.px * scale;
+                    const pointY = cy - this.py * scale;
+                    const distToPoint = Math.sqrt((mx - pointX)**2 + (my - pointY)**2);
+                    
+                    // Check if clicking near arrow tip (arrow starts from point, not origin)
+                    const arrowTipX = pointX + this.dirX * scale;
+                    const arrowTipY = pointY - this.dirY * scale;
+                    const distToArrow = Math.sqrt((mx - arrowTipX)**2 + (my - arrowTipY)**2);
+                    
+                    if (distToArrow < 15) {
+                        this.draggingDirection = true;
+                    } else if (distToPoint < 15) {
+                        this.draggingPoint = true;
+                    }
+                });
+                
+                this.domainCanvas.addEventListener('mousemove', (e) => {
+                    const rect = this.domainCanvas.getBoundingClientRect();
+                    const mx = e.clientX - rect.left;
+                    const my = e.clientY - rect.top;
+                    const w = this.domainCanvas.width;
+                    const h = this.domainCanvas.height;
+                    const cx = w / 2;
+                    const cy = h / 2;
+                    const scale = 50;
+                    
+                    if (this.draggingPoint) {
+                        this.px = (mx - cx) / scale;
+                        this.py = -(my - cy) / scale;
+                        this.px = Math.max(-2, Math.min(2, this.px));
+                        this.py = Math.max(-2, Math.min(2, this.py));
+                        this.render();
+                    } else if (this.draggingDirection) {
+                        const dx = mx - cx;
+                        const dy = -(my - cy);
+                        const len = Math.sqrt(dx*dx + dy*dy);
+                        if (len > 5) {
+                            this.dirX = dx / len;
+                            this.dirY = dy / len;
+                        }
+                        this.render();
+                    }
+                });
+                
+                this.domainCanvas.addEventListener('mouseup', () => {
+                    this.draggingPoint = false;
+                    this.draggingDirection = false;
+                });
+                
+                this.domainCanvas.addEventListener('mouseleave', () => {
+                    this.draggingPoint = false;
+                    this.draggingDirection = false;
+                });
+                
+                this.renderDomainCanvas();
+            }
+            
+            renderDomainCanvas() {
+                const ctx = this.domainCtx;
+                const w = this.domainCanvas.width;
+                const h = this.domainCanvas.height;
+                const cx = w / 2;
+                const cy = h / 2;
+                const scale = 50;
+                
+                ctx.fillStyle = 'rgba(22, 33, 62, 0.95)';
+                ctx.fillRect(0, 0, w, h);
+                
+                // Title
+                ctx.fillStyle = '#4ecca3';
+                ctx.font = 'bold 14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Domain (xy-plane)', cx, 20);
+                
+                // Draw grid
+                ctx.strokeStyle = '#2d3748';
+                ctx.lineWidth = 1;
+                for (let i = -2; i <= 2; i++) {
+                    const x = cx + i * scale;
+                    const y = cy - i * scale;
+                    ctx.beginPath();
+                    ctx.moveTo(x, cy - 2*scale);
+                    ctx.lineTo(x, cy + 2*scale);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(cx - 2*scale, y);
+                    ctx.lineTo(cx + 2*scale, y);
+                    ctx.stroke();
+                }
+                
+                // Draw axes
+                ctx.strokeStyle = '#4a5568';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(cx - 2*scale, cy);
+                ctx.lineTo(cx + 2*scale, cy);
+                ctx.moveTo(cx, cy - 2*scale);
+                ctx.lineTo(cx, cy + 2*scale);
+                ctx.stroke();
+                
+                // Labels
+                ctx.fillStyle = '#4ecca3';
+                ctx.font = 'bold 12px Arial';
+                ctx.fillText('x', cx + 2*scale + 15, cy);
+                ctx.fillText('y', cx, cy - 2*scale - 10);
+                
+                // Draw point
+                const pointX = cx + this.px * scale;
+                const pointY = cy - this.py * scale;
+                ctx.fillStyle = '#e94560';
+                ctx.beginPath();
+                ctx.arc(pointX, pointY, 8, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // Draw direction arrow
+                const arrowLen = scale;
+                const arrowX = pointX + this.dirX * arrowLen;
+                const arrowY = pointY - this.dirY * arrowLen;
+                
+                ctx.strokeStyle = '#ff9d76';
+                ctx.fillStyle = '#ff9d76';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(pointX, pointY);
+                ctx.lineTo(arrowX, arrowY);
+                ctx.stroke();
+                
+                const angle = Math.atan2(this.dirY, this.dirX);
+                const headLen = 10;
+                ctx.beginPath();
+                ctx.moveTo(arrowX, arrowY);
+                ctx.lineTo(arrowX - headLen * Math.cos(angle - Math.PI/6), arrowY + headLen * Math.sin(angle - Math.PI/6));
+                ctx.lineTo(arrowX - headLen * Math.cos(angle + Math.PI/6), arrowY + headLen * Math.sin(angle + Math.PI/6));
+                ctx.closePath();
+                ctx.fill();
+                
+                // Labels
+                ctx.font = '11px Arial';
+                ctx.fillStyle = '#eee';
+                ctx.textAlign = 'left';
+                ctx.fillText('Drag point & arrow', 10, h - 10);
+            }
+            
+            project(x, y, z) {
+                let y1 = y * Math.cos(this.rotX) - z * Math.sin(this.rotX);
+                let z1 = y * Math.sin(this.rotX) + z * Math.cos(this.rotX);
+                
+                let x2 = x * Math.cos(this.rotZ) - y1 * Math.sin(this.rotZ);
+                let y2 = x * Math.sin(this.rotZ) + y1 * Math.cos(this.rotZ);
+                
+                const perspective = 400 / (400 + z1);
+                
+                return {
+                    x: this.canvas.width/2 + x2 * this.zoom * perspective,
+                    y: this.canvas.height/2 - y2 * this.zoom * perspective,
+                    z: z1
+                };
+            }
+            
+            f(x, y) {
+                switch(this.currentFunction) {
+                    case 'paraboloid':
+                        return 0.3 * (x*x + y*y);
+                    case 'saddle':
+                        return 0.3 * (x*x - y*y);
+                    case 'waves':
+                        return Math.sin(x * 1.5) * Math.cos(y * 1.5);
+                    case 'hill':
+                        return 2 / (1 + 0.5 * x*x + 0.5 * y*y);
+                }
+            }
+            
+            getDerivatives(x, y) {
+                const h = 0.001;
+                const dzdx = (this.f(x + h, y) - this.f(x - h, y)) / (2 * h);
+                const dzdy = (this.f(x, y + h) - this.f(x, y - h)) / (2 * h);
+                return { dzdx, dzdy };
+            }
+            
+            setFunction(name) {
+                this.currentFunction = name;
+                this.render();
+            }
+            
+            toggleOption(option) {
+                this.options[option] = !this.options[option];
+                this.render();
+            }
+            
+            adjustRotation(dx, dy) {
+                this.rotZ += dx;
+                this.rotX += dy;
+                this.rotX = Math.max(-Math.PI/2 + 0.1, Math.min(Math.PI/2 - 0.1, this.rotX));
+                this.render();
+            }
+            
+            resetRotation() {
+                this.rotX = 0.6;
+                this.rotZ = 0.8;
+                this.zoom = 150;
+                this.render();
+            }
+            
+            adjustZoomRotation(dx, dy) {
+                this.zoomRotZ += dx;
+                this.zoomRotX += dy;
+                this.zoomRotX = Math.max(-Math.PI/2 + 0.1, Math.min(Math.PI/2 - 0.1, this.zoomRotX));
+                this.render();
+            }
+            
+            resetZoomRotation() {
+                this.zoomRotX = 0.6;
+                this.zoomRotZ = 0.8;
+                this.render();
+            }
+            
+            adjustZoom(delta) {
+                this.zoom += delta;
+                this.zoom = Math.max(50, Math.min(300, this.zoom));
+                this.render();
+            }
+            
+            render() {
+                this.ctx.fillStyle = '#16213e';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                const pz = this.f(this.px, this.py);
+                
+                if (this.options.grid) this.drawGrid();
+                this.drawSurface();
+                if (this.options.plane) this.drawTangentPlane(this.px, this.py, pz);
+                if (this.options.line) this.drawDirectionLine();
+                if (this.options.vectors) this.drawVectors(this.px, this.py, pz);
+                this.drawPoint(this.px, this.py, pz);
+                this.drawAxes();
+                
+                this.renderDomainCanvas();
+                if (this.options.zoom) {
+                    this.drawZoomWindow();
+                } else {
+                    // Clear zoom window when toggled off
+                    this.zoomCtx.fillStyle = 'rgba(22, 33, 62, 0.95)';
+                    this.zoomCtx.fillRect(0, 0, this.zoomCanvas.width, this.zoomCanvas.height);
+                }
+                
+                updateValues();
+            }
+            
+            drawGrid() {
+                this.ctx.strokeStyle = '#2d3748';
+                this.ctx.lineWidth = 1;
+                
+                for (let x = -2; x <= 2; x += 0.5) {
+                    for (let y = -2; y <= 2; y += 0.5) {
+                        const p1 = this.project(x, y, 0);
+                        const p2 = this.project(x + 0.5, y, 0);
+                        const p3 = this.project(x, y + 0.5, 0);
+                        
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(p1.x, p1.y);
+                        this.ctx.lineTo(p2.x, p2.y);
+                        this.ctx.stroke();
+                        
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(p1.x, p1.y);
+                        this.ctx.lineTo(p3.x, p3.y);
+                        this.ctx.stroke();
+                    }
+                }
+            }
+            
+            drawSurface() {
+                const step = 0.2;
+                const points = [];
+                
+                for (let x = -2; x <= 2; x += step) {
+                    for (let y = -2; y <= 2; y += step) {
+                        const z = this.f(x, y);
+                        const p1 = this.project(x, y, z);
+                        const p2 = this.project(x + step, y, this.f(x + step, y));
+                        const p3 = this.project(x, y + step, this.f(x, y + step));
+                        const p4 = this.project(x + step, y + step, this.f(x + step, y + step));
+                        
+                        points.push({
+                            vertices: [p1, p2, p4, p3],
+                            z: (p1.z + p2.z + p3.z + p4.z) / 4
+                        });
+                    }
+                }
+                
+                points.sort((a, b) => a.z - b.z);
+                
+                points.forEach(face => {
+                    this.ctx.fillStyle = 'rgba(78, 204, 163, 0.3)';
+                    this.ctx.strokeStyle = 'rgba(78, 204, 163, 0.6)';
+                    this.ctx.lineWidth = 1;
+                    
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(face.vertices[0].x, face.vertices[0].y);
+                    for (let i = 1; i < face.vertices.length; i++) {
+                        this.ctx.lineTo(face.vertices[i].x, face.vertices[i].y);
+                    }
+                    this.ctx.closePath();
+                    this.ctx.fill();
+                    this.ctx.stroke();
+                });
+            }
+            
+            drawDirectionLine() {
+                this.ctx.strokeStyle = '#ff9d76';
+                this.ctx.lineWidth = 3;
+                this.ctx.setLineDash([5, 5]);
+                
+                this.ctx.beginPath();
+                let started = false;
+                for (let t = -2; t <= 2; t += 0.1) {
+                    const x = this.px + this.dirX * t;
+                    const y = this.py + this.dirY * t;
+                    if (x >= -2 && x <= 2 && y >= -2 && y <= 2) {
+                        const z = this.f(x, y);
+                        const p = this.project(x, y, z);
+                        if (!started) {
+                            this.ctx.moveTo(p.x, p.y);
+                            started = true;
+                        } else {
+                            this.ctx.lineTo(p.x, p.y);
+                        }
+                    }
+                }
+                this.ctx.stroke();
+                this.ctx.setLineDash([]);
+            }
+            
+            drawTangentPlane(px, py, pz) {
+                const { dzdx, dzdy } = this.getDerivatives(px, py);
+                const size = 0.5;
+                
+                const corners = [
+                    [px - size, py - size],
+                    [px + size, py - size],
+                    [px + size, py + size],
+                    [px - size, py + size]
+                ];
+                
+                const projectedCorners = corners.map(([x, y]) => {
+                    const z = pz + dzdx * (x - px) + dzdy * (y - py);
+                    return this.project(x, y, z);
+                });
+                
+                this.ctx.fillStyle = 'rgba(255, 230, 109, 0.4)';
+                this.ctx.strokeStyle = 'rgba(255, 230, 109, 0.8)';
+                this.ctx.lineWidth = 2;
+                
+                this.ctx.beginPath();
+                this.ctx.moveTo(projectedCorners[0].x, projectedCorners[0].y);
+                for (let i = 1; i < projectedCorners.length; i++) {
+                    this.ctx.lineTo(projectedCorners[i].x, projectedCorners[i].y);
+                }
+                this.ctx.closePath();
+                this.ctx.fill();
+                this.ctx.stroke();
+            }
+            
+            drawVectors(px, py, pz) {
+                const { dzdx, dzdy } = this.getDerivatives(px, py);
+                
+                // Small differential amounts
+                const scale = 0.1;
+                const dx = this.dirX * scale;
+                const dy = this.dirY * scale;
+                const dz = dzdx * dx + dzdy * dy;
+                
+                const p0 = this.project(px, py, pz);
+                
+                // Draw dx component
+                const pDx = this.project(px + dx, py, pz);
+                this.drawArrow(p0, pDx, '#00d9ff', 'dx');
+                
+                // Draw dy component (from end of dx)
+                const pDy = this.project(px + dx, py + dy, pz);
+                this.drawArrow(pDx, pDy, '#9d4edd', 'dy');
+                
+                // Draw dz component (from end of dy)
+                const pDz = this.project(px + dx, py + dy, pz + dz);
+                this.drawArrow(pDy, pDz, '#e94560', 'dz');
+                
+                // Draw total differential ds (from origin to final point)
+                const pDs = this.project(px + dx, py + dy, pz + dz);
+                this.ctx.strokeStyle = '#ff9d76';
+                this.ctx.fillStyle = '#ff9d76';
+                this.ctx.lineWidth = 3;
+                this.ctx.setLineDash([5, 5]);
+                this.ctx.beginPath();
+                this.ctx.moveTo(p0.x, p0.y);
+                this.ctx.lineTo(pDs.x, pDs.y);
+                this.ctx.stroke();
+                this.ctx.setLineDash([]);
+                
+                // Draw arrow head for ds
+                const angle = Math.atan2(pDs.y - p0.y, pDs.x - p0.x);
+                const headLen = 10;
+                this.ctx.beginPath();
+                this.ctx.moveTo(pDs.x, pDs.y);
+                this.ctx.lineTo(
+                    pDs.x - headLen * Math.cos(angle - Math.PI/6),
+                    pDs.y - headLen * Math.sin(angle - Math.PI/6)
+                );
+                this.ctx.lineTo(
+                    pDs.x - headLen * Math.cos(angle + Math.PI/6),
+                    pDs.y - headLen * Math.sin(angle + Math.PI/6)
+                );
+                this.ctx.closePath();
+                this.ctx.fill();
+                
+                this.ctx.font = 'bold 12px Arial';
+                this.ctx.fillText('ds', pDs.x + 5, pDs.y - 5);
+            }
+            
+            drawArrow(from, to, color, label, thick = false) {
+                this.ctx.strokeStyle = color;
+                this.ctx.fillStyle = color;
+                this.ctx.lineWidth = thick ? 3 : 2;
+                
+                this.ctx.beginPath();
+                this.ctx.moveTo(from.x, from.y);
+                this.ctx.lineTo(to.x, to.y);
+                this.ctx.stroke();
+                
+                const angle = Math.atan2(to.y - from.y, to.x - from.x);
+                const headLen = 10;
+                this.ctx.beginPath();
+                this.ctx.moveTo(to.x, to.y);
+                this.ctx.lineTo(
+                    to.x - headLen * Math.cos(angle - Math.PI/6),
+                    to.y - headLen * Math.sin(angle - Math.PI/6)
+                );
+                this.ctx.lineTo(
+                    to.x - headLen * Math.cos(angle + Math.PI/6),
+                    to.y - headLen * Math.sin(angle + Math.PI/6)
+                );
+                this.ctx.closePath();
+                this.ctx.fill();
+                
+                if (label) {
+                    this.ctx.font = '12px Arial';
+                    this.ctx.fillText(label, to.x + 5, to.y - 5);
+                }
+            }
+            
+            drawPoint(px, py, pz) {
+                const p = this.project(px, py, pz);
+                
+                this.ctx.fillStyle = '#e94560';
+                this.ctx.beginPath();
+                this.ctx.arc(p.x, p.y, 10, 0, 2 * Math.PI);
+                this.ctx.fill();
+                this.ctx.strokeStyle = '#fff';
+                this.ctx.lineWidth = 2;
+                this.ctx.stroke();
+            }
+            
+            drawZoomWindow() {
+                if (!this.options.zoom) return;
+                
+                const ctx = this.zoomCtx;
+                const w = this.zoomCanvas.width;
+                const h = this.zoomCanvas.height;
+                const cx = w / 2;
+                const cy = h / 2;
+                const scale = 250;
+                
+                // Clear
+                ctx.fillStyle = 'rgba(22, 33, 62, 0.95)';
+                ctx.fillRect(0, 0, w, h);
+                
+                // Title
+                ctx.fillStyle = '#00d9ff';
+                ctx.font = 'bold 14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Differential Construction', cx, 20);
+                
+                const { dzdx, dzdy } = this.getDerivatives(this.px, this.py);
+                
+                // Small differential amounts
+                const dx = this.dirX * 0.1;
+                const dy = this.dirY * 0.1;
+                const dz = dzdx * dx + dzdy * dy;
+                
+                // Helper function to project 3D points using zoom window's rotation
+                const project3DZoom = (x, y, z) => {
+                    // Apply rotation
+                    let y1 = y * Math.cos(this.zoomRotX) - z * Math.sin(this.zoomRotX);
+                    let z1 = y * Math.sin(this.zoomRotX) + z * Math.cos(this.zoomRotX);
+                    
+                    let x2 = x * Math.cos(this.zoomRotZ) - y1 * Math.sin(this.zoomRotZ);
+                    let y2 = x * Math.sin(this.zoomRotZ) + y1 * Math.cos(this.zoomRotZ);
+                    let z2 = z1;
+                    
+                    // Perspective projection
+                    const distance = 4;
+                    const pScale = distance / (distance + z2);
+                    
+                    return {
+                        x: cx + x2 * scale * pScale,
+                        y: cy - y2 * scale * pScale,
+                        z: z2
+                    };
+                };
+                
+                // Draw only z-axis
+                const axisLen = 1.2;
+                const zAxisStart = project3DZoom(0, 0, 0);
+                const zAxisEnd = project3DZoom(0, 0, axisLen);
+                
+                ctx.strokeStyle = '#e94560';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(zAxisStart.x, zAxisStart.y);
+                ctx.lineTo(zAxisEnd.x, zAxisEnd.y);
+                ctx.stroke();
+                
+                ctx.fillStyle = '#e94560';
+                ctx.font = 'bold 14px Arial';
+                ctx.fillText('z', zAxisEnd.x + 10, zAxisEnd.y);
+                
+                // Origin point
+                const origin = project3DZoom(0, 0, 0);
+                ctx.fillStyle = '#e94560';
+                ctx.beginPath();
+                ctx.arc(origin.x, origin.y, 6, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // Scale for vectors
+                const vScale = 12;
+                
+                // First component: (∂z/∂x)dx
+                const comp1Z = dzdx * dx * vScale;
+                
+                ctx.strokeStyle = '#00d9ff';
+                ctx.fillStyle = '#00d9ff';
+                ctx.lineWidth = 3;
+                this.drawArrow3DZoom(ctx, project3DZoom, 0, 0, 0, 0, 0, comp1Z, scale, 10);
+                
+                const p1Mid = project3DZoom(0, 0, comp1Z/2);
+                ctx.font = 'bold 13px Arial';
+                ctx.fillText('(∂z/∂x)dx', p1Mid.x + 15, p1Mid.y);
+                
+                // Second component: (∂z/∂y)dy - starts where first ended
+                const comp2Z = dzdy * dy * vScale;
+                
+                ctx.strokeStyle = '#9d4edd';
+                ctx.fillStyle = '#9d4edd';
+                this.drawArrow3DZoom(ctx, project3DZoom, 0, 0, comp1Z, 0, 0, comp1Z + comp2Z, scale, 10);
+                
+                const p2Mid = project3DZoom(0, 0, comp1Z + comp2Z/2);
+                ctx.font = 'bold 13px Arial';
+                ctx.fillText('(∂z/∂y)dy', p2Mid.x + 15, p2Mid.y);
+                
+                // Total differential: dz (from origin to final point)
+                ctx.strokeStyle = '#ff9d76';
+                ctx.fillStyle = '#ff9d76';
+                ctx.lineWidth = 4;
+                ctx.setLineDash([5, 5]);
+                this.drawArrow3DZoom(ctx, project3DZoom, 0, 0, 0, 0, 0, comp1Z + comp2Z, scale, 12);
+                ctx.setLineDash([]);
+                
+                const totalMid = project3DZoom(0, 0, (comp1Z + comp2Z)/2);
+                ctx.font = 'bold 14px Arial';
+                ctx.fillText('dz', totalMid.x - 25, totalMid.y);
+                
+                // Info text
+                ctx.font = '10px Arial';
+                ctx.fillStyle = '#aaa';
+                ctx.textAlign = 'left';
+                ctx.fillText('Showing dz = (∂z/∂x)dx + (∂z/∂y)dy', 10, h - 10);
+            }
+            
+            drawArrow3DZoom(ctx, projectFunc, x1, y1, z1, x2, y2, z2, scale, headLen = 10) {
+                const p1 = projectFunc(x1, y1, z1);
+                const p2 = projectFunc(x2, y2, z2);
+                
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
+                
+                // Arrow head
+                const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+                ctx.beginPath();
+                ctx.moveTo(p2.x, p2.y);
+                ctx.lineTo(
+                    p2.x - headLen * Math.cos(angle - Math.PI/6),
+                    p2.y - headLen * Math.sin(angle - Math.PI/6)
+                );
+                ctx.lineTo(
+                    p2.x - headLen * Math.cos(angle + Math.PI/6),
+                    p2.y - headLen * Math.sin(angle + Math.PI/6)
+                );
+                ctx.closePath();
+                ctx.fill();
+            }
+            
+            drawArrow2D(ctx, x1, y1, x2, y2, headLen = 10) {
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+                
+                const angle = Math.atan2(y2 - y1, x2 - x1);
+                ctx.beginPath();
+                ctx.moveTo(x2, y2);
+                ctx.lineTo(
+                    x2 - headLen * Math.cos(angle - Math.PI/6),
+                    y2 - headLen * Math.sin(angle - Math.PI/6)
+                );
+                ctx.lineTo(
+                    x2 - headLen * Math.cos(angle + Math.PI/6),
+                    y2 - headLen * Math.sin(angle + Math.PI/6)
+                );
+                ctx.closePath();
+                ctx.fill();
+            }
+            
+            drawAxes() {
+                const axisLen = 2.5;
+                const origin = this.project(0, 0, 0);
+                const xEnd = this.project(axisLen, 0, 0);
+                const yEnd = this.project(0, axisLen, 0);
+                const zEnd = this.project(0, 0, axisLen);
+                
+                this.ctx.strokeStyle = '#4ecca3';
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                this.ctx.moveTo(origin.x, origin.y);
+                this.ctx.lineTo(xEnd.x, xEnd.y);
+                this.ctx.stroke();
+                
+                this.ctx.strokeStyle = '#f9d423';
+                this.ctx.beginPath();
+                this.ctx.moveTo(origin.x, origin.y);
+                this.ctx.lineTo(yEnd.x, yEnd.y);
+                this.ctx.stroke();
+                
+                this.ctx.strokeStyle = '#ff6b6b';
+                this.ctx.beginPath();
+                this.ctx.moveTo(origin.x, origin.y);
+                this.ctx.lineTo(zEnd.x, zEnd.y);
+                this.ctx.stroke();
+                
+                this.ctx.fillStyle = '#4ecca3';
+                this.ctx.font = 'bold 14px Arial';
+                this.ctx.fillText('x', xEnd.x + 10, xEnd.y);
+                
+                this.ctx.fillStyle = '#f9d423';
+                this.ctx.fillText('y', yEnd.x + 10, yEnd.y);
+                
+                this.ctx.fillStyle = '#ff6b6b';
+                this.ctx.fillText('z', zEnd.x + 10, zEnd.y);
+            }
         }
         
-        // Update values every 100ms while interacting
-        setInterval(updateValues, 100);
+        function updateValues() {
+            if (!viz) return; // Guard against undefined
+            
+            const { dzdx, dzdy } = viz.getDerivatives(viz.px, viz.py);
+            const dx = viz.dirX * 0.1;
+            const dy = viz.dirY * 0.1;
+            const dz = dzdx * dx + dzdy * dy;
+            const z = viz.f(viz.px, viz.py);
+            
+            document.getElementById('point-val-2').textContent = `(${viz.px.toFixed(2)}, ${viz.py.toFixed(2)})`;
+            document.getElementById('dzdt-val-2').textContent = dz.toFixed(4);
+            document.getElementById('z-val').textContent = z.toFixed(3);
+            document.getElementById('dzdx-val').textContent = dzdx.toFixed(3);
+            document.getElementById('dzdy-val').textContent = dzdy.toFixed(3);
+            document.getElementById('dxdt-val').textContent = dx.toFixed(4);
+            document.getElementById('dydt-val').textContent = dy.toFixed(4);
+            
+            const term1 = dzdx * dx;
+            const term2 = dzdy * dy;
+            document.getElementById('calculation').innerHTML = 
+                `= (${dzdx.toFixed(3)})(${dx.toFixed(4)}) + (${dzdy.toFixed(3)})(${dy.toFixed(4)})<br>` +
+                `= ${term1.toFixed(4)} + ${term2.toFixed(4)}<br>` +
+                `= ${dz.toFixed(4)}`;
+        }
         
-        // Initial update
-        updateValues();
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        }
+        
+        function setFunction(name) {
+            document.querySelectorAll('#functions-tab button').forEach(b => b.classList.remove('active'));
+            document.getElementById(`btn-${name}`).classList.add('active');
+            viz.setFunction(name);
+        }
+        
+        function toggleOption(option) {
+            viz.toggleOption(option);
+        }
+        
+        window.addEventListener('load', () => {
+            viz = new MultivariableChainRuleViz('vizCanvas', 'domainCanvas', 'zoomCanvas');
+        });
     </script>
 </body>
 </html>
