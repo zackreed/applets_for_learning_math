@@ -108,59 +108,58 @@
                 <div class="exploration" id="exp2">
                     <h4>Exploration 2: Convergence with Good Learning Rate</h4>
                     <p><strong>Setup:</strong> Reset position, set learning rate \(\alpha = 0.01\), and take 50-100 steps.</p>
-                    <p><strong>Question:</strong> What happens to the error as you take many steps with a reasonable learning rate?</p>
+                    <p><strong>Question:</strong> Why does the point \([m_0,m_1]\) eventually stop?</p>
                     <div class="options">
                         <div class="option" onclick="selectRadio(this, 'exp2', 'a')">
-                            <input type="radio" name="exp2" value="a"> It decreases steadily toward a minimum
+                            <input type="radio" name="exp2" value="a"> It converges only because the gradient magnitude approaches zero
                         </div>
                         <div class="option" onclick="selectRadio(this, 'exp2', 'b')">
-                            <input type="radio" name="exp2" value="b"> It oscillates wildly
+                            <input type="radio" name="exp2" value="b"> It stops because the learning rate becomes zero
                         </div>
                         <div class="option" onclick="selectRadio(this, 'exp2', 'c')">
-                            <input type="radio" name="exp2" value="c"> It increases
+                            <input type="radio" name="exp2" value="c"> It stops because the small learning rate times the gradient results in tiny steps as the gradient magnitude decreases, eventually making no progress
                         </div>
                     </div>
-                    <button class="check-btn" onclick="checkAnswer('exp2', 'a', 'Exactly! With a good learning rate, gradient descent converges smoothly to the minimum.')">Check Answer</button>
+                    <button class="check-btn" onclick="checkAnswer('exp2', 'c', 'Exactly! With a good learning rate, gradient descent converges smoothly to the minimum.')">Check Answer</button>
                     <div class="feedback" id="exp2-feedback"></div>
                 </div>
                 
                 <div class="exploration" id="exp3">
                     <h4>Exploration 3: Learning Rate Too High - Overshooting</h4>
-                    <p><strong>Critical experiment:</strong> Reset path. Set learning rate \(\alpha = 0.08\) or higher. Take steps and observe carefully.</p>
-                    <p><strong>Question:</strong> When the learning rate is too high, what problem occurs?</p>
+                    <p><strong>Critical experiment:</strong> Reset path. Set learning rate around \(\alpha = .15\) or higher. Reset the path, position, and data, and move the starting point farther from the minimum.</p>
+                    <p><strong>Question:</strong> Take 10 or 20 steps at a time and see what happens to the convergence. Sometimes you might eventually converge, other times you will keep moving farther from the minimum. Why is this happening?</p>
                     <div class="options">
                         <div class="option" onclick="selectRadio(this, 'exp3', 'a')">
-                            <input type="radio" name="exp3" value="a"> The algorithm converges faster
+                            <input type="radio" name="exp3" value="a"> If the step size is too big, the gradients become inaccurate
                         </div>
                         <div class="option" onclick="selectRadio(this, 'exp3', 'b')">
-                            <input type="radio" name="exp3" value="b"> Steps become too large, overshooting the minimum and possibly diverging
+                            <input type="radio" name="exp3" value="b"> If the step size is too big, we overshoot the minimum and bounce back and forth with increasing error
                         </div>
                         <div class="option" onclick="selectRadio(this, 'exp3', 'c')">
-                            <input type="radio" name="exp3" value="c"> The gradient becomes zero
+                            <input type="radio" name="exp3" value="c"> If the step size is too big, we will find some other local minimum or maximum
                         </div>
                     </div>
                     <button class="check-btn" onclick="checkAnswer('exp3', 'b', 'Correct! High learning rates cause overshooting - each step is so large that you jump past the minimum, and may even diverge to infinity!')">Check Answer</button>
                     <div class="feedback" id="exp3-feedback"></div>
                 </div>
-                
                 <div class="exploration" id="exp4">
-                    <h4>Exploration 4: Why Overshooting Prevents Convergence</h4>
-                    <p><strong>Deep dive:</strong> With \(\alpha = 0.09\), take several steps while watching the error value.</p>
-                    <p><strong>Question:</strong> Why does a high learning rate prevent convergence to the minimum?</p>
+                    <h4>Exploration 4: Why Do We Need a Learning Rate?</h4>
+                    <p><strong>Try this:</strong> Set the learning rate \(\alpha\) to a very small value (e.g., 0.001) and take many steps.</p>
+                    <p><strong>Question:</strong> Why is the learning rate necessary in gradient descent?</p>
                     <div class="options">
                         <div class="option" onclick="selectRadio(this, 'exp4', 'a')">
-                            <input type="radio" name="exp4" value="a"> The gradient calculation becomes inaccurate
+                            <input type="radio" name="exp4" value="a"> It scales the gradient to control step size, preventing overshooting or tiny steps
                         </div>
                         <div class="option" onclick="selectRadio(this, 'exp4', 'b')">
-                            <input type="radio" name="exp4" value="b"> Each step is so large that we overshoot the minimum, bouncing back and forth with increasing error
+                            <input type="radio" name="exp4" value="b"> It determines the direction of the gradient
                         </div>
                         <div class="option" onclick="selectRadio(this, 'exp4', 'c')">
-                            <input type="radio" name="exp4" value="c"> The algorithm gets stuck at a local minimum
+                            <input type="radio" name="exp4" value="c"> It makes the algorithm faster
                         </div>
                     </div>
-                    <button class="check-btn" onclick="checkAnswer('exp4', 'b', 'Exactly! The step size \\(\\alpha \\cdot ||\\nabla E||\\) becomes larger than the distance to the minimum. We leap past it, land on the other side where the error is higher, then leap back even further. This creates divergence.')">Check Answer</button>
+                    <button class="check-btn" onclick="checkAnswer('exp4', 'a', 'Exactly! The learning rate \\(\\alpha\\) scales the gradient to control the step size. A good \\(\\alpha\\) ensures efficient convergence without overshooting or taking tiny steps.')">Check Answer</button>
                     <div class="feedback" id="exp4-feedback"></div>
-                </div>
+                </div>  
                 
                 <div class="exploration" id="exp5">
                     <h4>Exploration 5: Error Surface Visualization</h4>
@@ -285,7 +284,7 @@
             </div>
             
             <!-- Challenge Section -->
-            <div class="section">
+            <!-- <div class="section">
                 <h2>🚀 Challenge Problems</h2>
                 
                 <div class="problem" id="chal1">
@@ -321,7 +320,7 @@
                     <button class="check-btn" onclick="checkNumericAnswer('chal2', 0.09, 0.02, 'The critical learning rate varies by dataset, but for typical linear regression it is often around \\(\\alpha_{\\text{crit}} \\approx 0.08-0.10\\). Above this, overshooting causes divergence.')">Check Answer</button>
                     <div class="feedback" id="chal2-feedback"></div>
                 </div>
-            </div>
+            </div> -->
             
             <!-- Conclusion -->
             <div class="section">
