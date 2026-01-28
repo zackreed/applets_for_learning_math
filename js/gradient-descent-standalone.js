@@ -163,7 +163,7 @@ class GradientDescentViz {
             <div class="gd-viz-container">
                 ${this.options.showControls ? `
                 <div class="gd-viz-header">
-                    <h2>🎯 Gradient Descent for Linear Regression</h2>
+                    <h2>Gradient Descent for Linear Regression</h2>
                     <p style="color: #aaa;">Drag the red point in parameter space to set initial values. Adjust learning rate and take steps.</p>
                 </div>
                 ` : ''}
@@ -173,7 +173,7 @@ class GradientDescentViz {
                         <div class="gd-viz-canvas-container">
                             <canvas id="gd-param-canvas" width="600" height="600"></canvas>
                         </div>
-                        <div class="gd-viz-canvas-label">Parameter Space (m₀, m₁)</div>
+                        <div class="gd-viz-canvas-label">Parameter Space (m_0, m_1)</div>
                     </div>
                     <div>
                         <div class="gd-viz-canvas-container" id="gd-right-container">
@@ -187,9 +187,9 @@ class GradientDescentViz {
                 ${this.options.showControls ? `
                 <div class="gd-viz-controls">
                     <div class="gd-viz-control-group">
-                        <span class="gd-viz-label">Learning Rate α:</span>
+                        <span class="gd-viz-label">Learning Rate alpha:</span>
                         <input type="range" id="gd-learning-rate" class="gd-viz-slider" 
-                               min="0.001" max="0.1" step="0.001" value="${this.learningRate}">
+                               min="0.005" max="1.0" step="0.005" value="${this.learningRate}">
                         <span id="gd-lr-value" style="color: #f9d423; font-weight: bold; min-width: 60px;">${this.learningRate.toFixed(3)}</span>
                         
                         <button id="gd-step-btn" class="gd-viz-button">Take 1 Step</button>
@@ -205,11 +205,11 @@ class GradientDescentViz {
                     
                     <div class="gd-viz-info">
                         <div class="gd-viz-info-item">
-                            <div class="gd-viz-info-label">m₀ (intercept)</div>
+                            <div class="gd-viz-info-label">m_0 (intercept)</div>
                             <div class="gd-viz-info-value" id="gd-m0-value">${this.m0.toFixed(4)}</div>
                         </div>
                         <div class="gd-viz-info-item">
-                            <div class="gd-viz-info-label">m₁ (slope)</div>
+                            <div class="gd-viz-info-label">m_1 (slope)</div>
                             <div class="gd-viz-info-value" id="gd-m1-value">${this.m1.toFixed(4)}</div>
                         </div>
                         <div class="gd-viz-info-item">
@@ -444,7 +444,7 @@ class GradientDescentViz {
             if (this.currentView === 'surface') {
                 dataCanvas.style.display = 'none';
                 threeContainer.style.display = 'block';
-                label.textContent = 'Error Surface E(m₀, m₁)';
+                label.textContent = 'Error Surface E(m_0, m_1)';
                 this.updateThreeScene();
             } else {
                 dataCanvas.style.display = 'block';
@@ -590,8 +590,8 @@ class GradientDescentViz {
         // Labels
         ctx.fillStyle = '#00d9ff';
         ctx.font = 'bold 16px Arial';
-        ctx.fillText('m₀', canvas.width - 30, this.toScreenY(0) - 10);
-        ctx.fillText('m₁', this.toScreenX(0) + 10, 20);
+        ctx.fillText('m_0', canvas.width - 30, this.toScreenY(0) - 10);
+        ctx.fillText('m_1', this.toScreenX(0) + 10, 20);
         
         // Path history
         if (this.pathHistory.length > 1) {

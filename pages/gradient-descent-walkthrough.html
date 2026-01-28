@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gradient Descent for Linear Regression</title>
+    <title>Gradient Descent: Application to Linear Regression</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
     <link rel="stylesheet" href="../css/styles.css">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
@@ -15,7 +15,7 @@
     <div class="page-container">
         <header>
             <a href="../index.html" style="color: #00d9ff; text-decoration: none; font-weight: bold;">&larr; Back to Home</a>
-            <h1>📉 Gradient Descent for Linear Regression</h1>
+            <h1>📉 Gradient Descent: Application to Linear Regression</h1>
             <p style="font-size: 1.2em; margin-top: 10px;">Understand how gradient descent finds optimal parameters by following the gradient downhill</p>
         </header>
         
@@ -23,28 +23,29 @@
             <!-- Introduction Section -->
             <div class="section">
                 <h2>🎯 Introduction</h2>
-                <p>Gradient descent is a fundamental optimization algorithm used throughout machine learning and beyond. It finds the minimum of a function by iteratively taking steps in the direction of steepest descent.</p>
+                <p>Gradient descent is a fundamental optimization algorithm used in STEM fields. It finds the minimum of a function by iteratively taking steps in the direction of steepest descent.</p>
                 
                 <div class="key-concepts">
                     <h4>Key Concept: Gradient Descent</h4>
+                    <p>Gradient descent iteratively adjusts parameters (inputs) to a function until a (local) minimum is reached. In the applet below you can explore some subtleties to this process in the context of linear regression.</p>
                     <p>For linear regression, we want to fit a line \(y = m_0 + m_1 x\) to data points. The <strong>error function</strong> (mean squared error) measures how well our line fits:</p>
                     <p style="text-align: center; font-size: 1.3em; margin: 15px 0;">
                         \(E(m_0, m_1) = \frac{1}{n} \sum_{i=1}^{n} (m_0 + m_1 x_i - y_i)^2\)
                     </p>
+                    <p> Despite its initial complexity, once all of the calculations are done, \(E\) is simply a quadratic function in terms of \(m_0\) and \(m_1\).</p>
                     <p>The <strong>gradient</strong> \(\nabla E\) points in the direction of steepest <em>increase</em>, so we step in the <em>opposite</em> direction:</p>
+                    <p> If we are currently at location \((m_0, m_1)\), then after calculating the gradient, we take a step according to the following update rule to find a new location that is closer to a local minimum.</p>
                     <p style="text-align: center; font-size: 1.3em; margin: 15px 0; background: #16213e; padding: 10px; border-radius: 8px;">
-                        \(m_0 \leftarrow m_0 - \alpha \frac{\partial E}{\partial m_0}\)
-                        <br>
-                        \(m_1 \leftarrow m_1 - \alpha \frac{\partial E}{\partial m_1}\)
+                        \(\left[m_0, m_1\right] \leftarrow \left[m_0, m_1\right] - \alpha \nabla E\)
                     </p>
-                    <p>where \(\alpha\) is the <strong>learning rate</strong> - a crucial parameter that controls step size.</p>
+                    <p>where \(\alpha\) is a constant known as the <strong>learning rate</strong>. You will explore what impact different values of \(\alpha\) have on the convergence of gradient descent.</p>
                 </div>
                 
                 <div class="info-box" style="margin-top: 15px;">
                     <h4>Why This Matters</h4>
                     <p>Gradient descent powers modern machine learning:</p>
                     <ul>
-                        <li><strong>Neural networks:</strong> Trained using gradient descent (or variants like SGD, Adam)</li>
+                        <li><strong>Neural networks:</strong> Trained using (variants of) gradient descent</li>
                         <li><strong>Logistic regression:</strong> Parameters optimized via gradient descent</li>
                         <li><strong>Support vector machines:</strong> Can use gradient-based optimization</li>
                         <li><strong>Deep learning:</strong> Backpropagation computes gradients for gradient descent</li>
@@ -67,12 +68,12 @@
                 <div class="key-concepts" style="margin-top: 15px;">
                     <h4>What You're Seeing</h4>
                     <ul>
-                        <li><strong>Red point:</strong> Current parameter values \((m_0, m_1)\)</li>
-                        <li><strong>Yellow arrow:</strong> Negative gradient \(-\nabla E\) (direction of steepest descent)</li>
-                        <li><strong>Green trail:</strong> Path taken by gradient descent</li>
-                        <li><strong>Red line (data view):</strong> Your current linear fit</li>
-                        <li><strong>Yellow dotted line:</strong> Next predicted fit after one gradient step</li>
-                        <li><strong>Error surface:</strong> 3D landscape showing \(E(m_0, m_1)\) - lower is better!</li>
+                        <li><strong>Red point (Left Screen):</strong> Current parameter values \((m_0, m_1)\)</li>
+                        <li><strong>Yellow arrow (Left Screen):</strong> Negative gradient \(-\nabla E\) (direction of steepest descent)</li>
+                        <li><strong>Green trail (Left Screen after multiple steps):</strong> Path taken by gradient descent</li>
+                        <li><strong>Red line (data view):</strong> Your current linear fit to the data</li>
+                        <li><strong>Yellow dotted line (data view):</strong> Next predicted fit after one gradient step</li>
+                        <li><strong>Error surface (error view):</strong> 3D landscape showing \(E(m_0, m_1)\) - lower is better!</li>
                     </ul>
                 </div>
                 
