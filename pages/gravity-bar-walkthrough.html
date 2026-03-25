@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gravity from a Rod: Local Mass Approximation</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/quiz.js"></script>
+</head>
+<body>
+    <div class="page-container">
+        <header>
+            <a href="../index.html" style="color: #00d9ff; text-decoration: none; font-weight: bold;">&larr; Back to Home</a>
+            <h1>🪐 Gravity from a Rod: Local Mass Approximation</h1>
+            <p style="font-size: 1.2em; margin-top: 10px;">Approximate gravitational force by sampling short rod segments and tracking how distance changes force.</p>
+        </header>
+
+        <div class="content">
+            <div class="section">
+                <h2>🎯 Introduction</h2>
+                <p>When mass is spread along a rod, each tiny piece contributes to gravitational pull on a nearby point mass. A useful way to build intuition is to split the rod into equal segments and approximate one segment's contribution at a time.</p>
+                <div class="key-concepts">
+                    <h4>Key Concept: Local Force Contribution</h4>
+                    <p>If a segment has mass \(\Delta m\), the point mass is \(m_p\), and distance is \(D\), then a local contribution has the form:</p>
+                    <p style="text-align: center; font-size: 1.3em; margin: 15px 0;">\(\Delta F \propto \frac{G\,\Delta m\,m_p}{D^2}\)</p>
+                    <p>As segment count \(N\) increases, each segment gets smaller. This is the stepping stone to integration.</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>🧭 Interactive Applet</h2>
+                <p><strong>Instructions:</strong></p>
+                <ol>
+                    <li>Use the <strong>Sample Distance</strong> slider to move the point mass left/right relative to the selected sample point.</li>
+                    <li>Use the <strong>Segments \(N\)</strong> slider to split the rod into more or fewer equal pieces.</li>
+                    <li>Click a green sample point on the rod to choose where the sampled segment begins.</li>
+                    <li>Watch the colored equation update with current values for \(\Delta m\), \(D\), and \(\Delta F\).</li>
+                </ol>
+
+                <div class="applet-container">
+                    <iframe src="../applets/gravity-bar-point-mass.html" width="100%" height="760" style="border: none; border-radius: 8px;"></iframe>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>🧪 Guided Explorations</h2>
+
+                <div class="exploration" id="grav-exp1">
+                    <h4>Exploration 1: Inverse-Square Effect</h4>
+                    <p><strong>Try this:</strong> Keep \(N\) fixed and increase \(D\).</p>
+                    <p><strong>Question:</strong> If distance doubles, how does the sample force factor \(\frac{1}{D^2}\) change?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'grav-exp1', 'a')">
+                            <input type="radio" name="grav-exp1" value="a"> It becomes half as large
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'grav-exp1', 'b')">
+                            <input type="radio" name="grav-exp1" value="b"> It becomes one-fourth as large
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'grav-exp1', 'c')">
+                            <input type="radio" name="grav-exp1" value="c"> It stays the same
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('grav-exp1', 'b', 'Correct. Since force scales like 1/D², doubling D reduces that factor to 1/4 of its previous value.')">Check Answer</button>
+                    <div class="feedback" id="grav-exp1-feedback"></div>
+                </div>
+
+                <div class="exploration" id="grav-exp2">
+                    <h4>Exploration 2: Segment Count and Sample Mass</h4>
+                    <p><strong>Try this:</strong> Keep rod length and rod mass fixed while increasing \(N\).</p>
+                    <p><strong>Question:</strong> What happens to the sample segment mass \(\Delta m\)?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'grav-exp2', 'a')">
+                            <input type="radio" name="grav-exp2" value="a"> It increases because there are more segments
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'grav-exp2', 'b')">
+                            <input type="radio" name="grav-exp2" value="b"> It decreases because total mass is split into more pieces
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'grav-exp2', 'c')">
+                            <input type="radio" name="grav-exp2" value="c"> It remains unchanged
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('grav-exp2', 'b', 'Exactly. With fixed total rod mass M, each segment has mass M/N, so increasing N makes each sampled segment lighter.')">Check Answer</button>
+                    <div class="feedback" id="grav-exp2-feedback"></div>
+                </div>
+
+                <div class="exploration" id="grav-exp3">
+                    <h4>Exploration 3: Preparing for Integration</h4>
+                    <p><strong>Question:</strong> Why is increasing \(N\) conceptually important?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'grav-exp3', 'a')">
+                            <input type="radio" name="grav-exp3" value="a"> It gives a better approximation to summing many tiny contributions
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'grav-exp3', 'b')">
+                            <input type="radio" name="grav-exp3" value="b"> It removes distance from the formula
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'grav-exp3', 'c')">
+                            <input type="radio" name="grav-exp3" value="c"> It makes every segment identical in distance
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('grav-exp3', 'a', 'Right. A Riemann-sum idea appears: many smaller segments capture local variation and approach a continuous integral model.')">Check Answer</button>
+                    <div class="feedback" id="grav-exp3-feedback"></div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>✏️ Practice Problems</h2>
+
+                <div class="problem" id="grav-prob1">
+                    <h4>Problem 1: Compute Sample Mass</h4>
+                    <p>Suppose rod length is \(L=7\), rod mass is \(M=10\), and \(N=5\) equal segments are used.</p>
+                    <p><strong>Question:</strong> What is the segment mass \(\Delta m\)?</p>
+                    <div class="number-input">
+                        <label>\(\Delta m\) =</label>
+                        <input type="number" id="grav-prob1-input" step="0.01" placeholder="Enter value">
+                    </div>
+                    <button class="check-btn" onclick="checkNumericAnswer('grav-prob1', 2, 0.01, 'Since the rod is split evenly, each segment has mass M/N = 10/5 = 2.')">Check Answer</button>
+                    <div class="feedback" id="grav-prob1-feedback"></div>
+                </div>
+
+                <div class="problem" id="grav-prob2">
+                    <h4>Problem 2: Distance-Squared Denominator</h4>
+                    <p>If \(D=3\), what value appears in the denominator of \(\frac{G\,\Delta m\,m_p}{D^2}\)?</p>
+                    <div class="number-input">
+                        <label>\(D^2\) =</label>
+                        <input type="number" id="grav-prob2-input" step="0.01" placeholder="Enter value">
+                    </div>
+                    <button class="check-btn" onclick="checkNumericAnswer('grav-prob2', 9, 0.01, 'Square the distance: D² = 3² = 9.')">Check Answer</button>
+                    <div class="feedback" id="grav-prob2-feedback"></div>
+                </div>
+
+                <div class="problem" id="grav-prob3">
+                    <h4>Problem 3: Concept Check</h4>
+                    <p>Which expression best represents total force from the full rod when many tiny segments are used?</p>
+                    <div class="options">
+                        <div class="option" onclick="selectRadio(this, 'grav-prob3', 'a')">
+                            <input type="radio" name="grav-prob3" value="a"> \(F = \sum \Delta F\), and in the limit this becomes an integral along the rod
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'grav-prob3', 'b')">
+                            <input type="radio" name="grav-prob3" value="b"> \(F = \Delta F\) for just one segment, always
+                        </div>
+                        <div class="option" onclick="selectRadio(this, 'grav-prob3', 'c')">
+                            <input type="radio" name="grav-prob3" value="c"> \(F = D^2\)
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('grav-prob3', 'a', 'Correct. One segment gives a local piece; total force is a sum over all segments, then an integral in the continuous limit.')">Check Answer</button>
+                    <div class="feedback" id="grav-prob3-feedback"></div>
+                </div>
+            </div>
+        </div>
+
+        <footer style="text-align:center; margin: 40px 0 10px 0; font-size: 0.95em; color: #888;">
+            © 2025 Zackery Reed. All rights reserved.
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.renderMathInElement) {
+                renderMathInElement(document.body, {
+                    delimiters: [
+                        { left: '$$', right: '$$', display: true },
+                        { left: '\\(', right: '\\)', display: false }
+                    ]
+                });
+            }
+        });
+    </script>
+</body>
+</html>

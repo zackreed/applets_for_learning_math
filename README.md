@@ -15,6 +15,7 @@ This repository contains interactive HTML5/JavaScript applets and walkthroughs f
 - Circle Series Visualization
 - Local Linearity Explorer
 - Population Density Visualization
+- Gravity from a Rod (Point-Mass Interaction)
 - Tortoise-Hare Race
 - Vector Projection
 

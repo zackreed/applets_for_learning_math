@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gravity Between a Rod and Point Mass</title>
+    <link rel="stylesheet" href="../css/applet-styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            margin: 0;
+            padding: 18px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #16213e;
+            border: 1px solid #4a5568;
+            border-radius: 10px;
+            padding: 16px;
+        }
+
+        .top-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin-bottom: 14px;
+        }
+
+        .control-card {
+            background: #0f3460;
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        .control-card label {
+            color: #f3f6fb;
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .control-card input[type="range"] {
+            width: 100%;
+        }
+
+        .equation-box {
+            background: #0f1925;
+            border: 1px solid #4a5568;
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+            overflow-x: auto;
+        }
+
+        .equation {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+            font-size: 1.9rem;
+            line-height: 1.25;
+        }
+
+        .fraction {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 280px;
+            margin: 0 6px;
+        }
+
+        .fraction .num {
+            padding: 0 8px 4px 8px;
+            border-bottom: 2px solid #d8dee9;
+        }
+
+        .fraction .den {
+            padding-top: 3px;
+        }
+
+        .sample-color {
+            color: #c74b56;
+            font-weight: 700;
+        }
+
+        .point-color {
+            color: #3f7fff;
+            font-weight: 700;
+        }
+
+        .distance-color {
+            color: #37b24d;
+            font-weight: 700;
+        }
+
+        .scene-wrap {
+            background: #0f1925;
+            border: 1px solid #4a5568;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        canvas {
+            width: 100%;
+            height: auto;
+            max-height: 420px;
+            border: 1px solid #4a5568;
+            border-radius: 6px;
+            background: #f5f6f8;
+            cursor: pointer;
+        }
+
+        .legend {
+            margin-top: 10px;
+            font-size: 0.94rem;
+            color: #d1d5db;
+        }
+
+        .legend strong {
+            color: #f5f5f5;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+    </style>
+</head>
+<body>
+    <main class="container">
+        <div class="top-controls">
+            <div class="control-card">
+                <label for="distance-slider">Sample Distance \(D\) = <span id="distance-display">4.0</span></label>
+                <input id="distance-slider" type="range" min="1" max="12" step="0.1" value="4" aria-describedby="distance-help">
+                <div id="distance-help" class="legend">Controls the horizontal distance from the point mass to the selected sample location.</div>
+            </div>
+
+            <div class="control-card">
+                <label for="n-slider">Segments \(N\) = <span id="n-display">4</span></label>
+                <input id="n-slider" type="range" min="2" max="16" step="1" value="4" aria-describedby="n-help">
+                <div id="n-help" class="legend">Changes the number of equal rod segments used for local sampling.</div>
+            </div>
+        </div>
+
+        <section class="equation-box" aria-live="polite">
+            <div class="equation" id="equation-line">
+                <span>Sample Force =</span>
+                <span class="fraction">
+                    <span class="num">G · <span class="sample-color">Sample Mass</span> · <span class="point-color">Point Mass</span></span>
+                    <span class="den"><span class="distance-color">D</span><sup>2</sup></span>
+                </span>
+                <span>=</span>
+                <span class="fraction" style="min-width: 200px;">
+                    <span class="num" id="numeric-num">G · 2.500 · 6</span>
+                    <span class="den" id="numeric-den">16.000</span>
+                </span>
+            </div>
+        </section>
+
+        <section class="scene-wrap">
+            <canvas id="scene" width="1100" height="380" aria-label="Rod and point mass gravity scene"></canvas>
+            <p class="legend"><strong>Interaction:</strong> Click any green sample point on the rod to change the sampled location. The highlighted segment determines the sample mass value.</p>
+            <p class="legend" id="summary" aria-live="polite"></p>
+            <p class="sr-only" id="a11y-status" aria-live="polite"></p>
+        </section>
+    </main>
+
+    <script>
+        const rodLength = 7;
+        const rodMass = 10;
+        const pointMass = 6;
+        const G = 1;
+
+        const distanceSlider = document.getElementById('distance-slider');
+        const nSlider = document.getElementById('n-slider');
+        const distanceDisplay = document.getElementById('distance-display');
+        const nDisplay = document.getElementById('n-display');
+        const numericNum = document.getElementById('numeric-num');
+        const numericDen = document.getElementById('numeric-den');
+        const summary = document.getElementById('summary');
+        const a11yStatus = document.getElementById('a11y-status');
+        const canvas = document.getElementById('scene');
+        const ctx = canvas.getContext('2d');
+
+        let N = 4;
+        let D = 4;
+        let selectedIndex = 0;
+        let samplePoints = [];
+
+        function toCanvasX(x, minX, maxX) {
+            const margin = 36;
+            const w = canvas.width - 2 * margin;
+            return margin + ((x - minX) / (maxX - minX)) * w;
+        }
+
+        function round(value, places = 3) {
+            return Number(value).toFixed(places);
+        }
+
+        function updateEquation(sampleMass, dSquared) {
+            numericNum.textContent = `G · ${round(sampleMass)} · ${pointMass}`;
+            numericDen.textContent = round(dSquared);
+        }
+
+        function updateSummary(sampleMass, forceCoeff) {
+            summary.textContent = `Rod length = ${rodLength}, rod mass = ${rodMass}, point mass = ${pointMass}, sample mass = ${round(sampleMass)}, D = ${round(D, 2)}. Sample force = ${round(forceCoeff)}·G.`;
+            a11yStatus.textContent = `Updated sample force. Segment ${selectedIndex + 1} of ${N}, sample mass ${round(sampleMass)}, distance ${round(D, 2)}.`;
+        }
+
+        function drawScene() {
+            const dr = rodLength / N;
+            const density = rodMass / rodLength;
+            const sampleMass = density * dr;
+            const sampleX = selectedIndex * dr;
+            const pointX = sampleX - D;
+            const dSquared = D * D;
+            const forceCoeff = (G * sampleMass * pointMass) / dSquared;
+
+            const minX = Math.min(pointX - 0.8, -0.8);
+            const maxX = rodLength + 0.8;
+
+            const yAxis = 255;
+            const yTop = 165;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#f5f6f8';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const xBarStart = toCanvasX(0, minX, maxX);
+            const xBarEnd = toCanvasX(rodLength, minX, maxX);
+            const xSample = toCanvasX(sampleX, minX, maxX);
+            const xPoint = toCanvasX(pointX, minX, maxX);
+
+            ctx.strokeStyle = '#b6b6b6';
+            ctx.lineWidth = 13;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(xBarStart, yAxis);
+            ctx.lineTo(xBarEnd, yAxis);
+            ctx.stroke();
+
+            const selectedSegmentEnd = Math.min(sampleX + dr, rodLength);
+            ctx.strokeStyle = '#a64040';
+            ctx.lineWidth = 8;
+            ctx.beginPath();
+            ctx.moveTo(xSample, yAxis);
+            ctx.lineTo(toCanvasX(selectedSegmentEnd, minX, maxX), yAxis);
+            ctx.stroke();
+
+            samplePoints = [];
+            for (let i = 0; i <= N; i++) {
+                const x = i * dr;
+                const cx = toCanvasX(x, minX, maxX);
+                samplePoints.push({ index: i, x: cx, worldX: x, y: yTop });
+                ctx.beginPath();
+                ctx.arc(cx, yTop, i === selectedIndex ? 11 : 10, 0, Math.PI * 2);
+                ctx.fillStyle = i === selectedIndex ? '#c43d3d' : '#0fa015';
+                ctx.fill();
+                ctx.strokeStyle = '#111';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+            }
+
+            ctx.strokeStyle = '#37b24d';
+            ctx.lineWidth = 7;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(xPoint, yTop - 20);
+            ctx.lineTo(xSample, yTop - 20);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(xPoint, yAxis, 18, 0, Math.PI * 2);
+            ctx.fillStyle = '#4a56ff';
+            ctx.fill();
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#1a1a1a';
+            ctx.stroke();
+
+            ctx.fillStyle = '#1f7a30';
+            ctx.font = 'italic 58px Georgia, serif';
+            ctx.fillText(`D = ${round(D, 2)}`, xPoint + 18, yTop - 38);
+
+            ctx.fillStyle = '#1d35d5';
+            ctx.font = '56px Georgia, serif';
+            ctx.fillText(`Point Mass = ${pointMass}`, xPoint - 18, yAxis + 62);
+
+            ctx.fillStyle = '#8f2f35';
+            ctx.font = '54px Georgia, serif';
+            ctx.fillText(`Sample Mass = ${round(sampleMass)}`, xSample - 18, yTop - 42);
+            ctx.font = '50px Georgia, serif';
+            ctx.fillText(`Mass = ${round(sampleMass)}`, xSample + 90, yAxis + 62);
+
+            ctx.fillStyle = '#202020';
+            ctx.font = '56px Georgia, serif';
+            ctx.fillText(`Length = ${rodLength}`, xBarStart - 250, yAxis + 18);
+            ctx.fillText(`Mass = ${rodMass}`, xBarStart - 250, yAxis + 76);
+
+            updateEquation(sampleMass, dSquared);
+            updateSummary(sampleMass, forceCoeff);
+        }
+
+        function updateState() {
+            D = Number(distanceSlider.value);
+            N = Number(nSlider.value);
+            selectedIndex = Math.min(selectedIndex, N - 1);
+
+            distanceDisplay.textContent = round(D, 2);
+            nDisplay.textContent = String(N);
+            drawScene();
+        }
+
+        distanceSlider.addEventListener('input', updateState);
+        nSlider.addEventListener('input', updateState);
+
+        canvas.addEventListener('click', (event) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = (event.clientX - rect.left) * (canvas.width / rect.width);
+            const y = (event.clientY - rect.top) * (canvas.height / rect.height);
+
+            let best = null;
+            for (const point of samplePoints) {
+                const dx = x - point.x;
+                const dy = y - point.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance <= 18 && point.index < N) {
+                    if (!best || distance < best.distance) {
+                        best = { index: point.index, distance };
+                    }
+                }
+            }
+
+            if (best) {
+                selectedIndex = best.index;
+                drawScene();
+            }
+        });
+
+        updateState();
+    </script>
+</body>
+</html>
